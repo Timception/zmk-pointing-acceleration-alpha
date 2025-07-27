@@ -1,6 +1,8 @@
-# This is [Template](https://github.com/oleksandrmaslov/zmk-pointing-acceleration)
+I have created a template from [Template](https://github.com/oleksandrmaslov/zmk-pointing-acceleration).
+**Please create a template based on the original source. Do not fork from here.**
 
 ---
+
 # ZMK POINTING ACCELERATION
 
 This repository contains a pointer acceleration implementation for pointing devices in ZMK.
