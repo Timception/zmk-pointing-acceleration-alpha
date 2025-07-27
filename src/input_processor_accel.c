@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 #ifndef CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_MAX
-#define CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_MAX 2000  // Maximum acceleration speed
+#define CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_MAX 4000  // Maximum acceleration speed
 #endif
 
 #ifndef CONFIG_INPUT_PROCESSOR_ACCEL_EXPONENT
