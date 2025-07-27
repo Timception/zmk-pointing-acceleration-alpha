@@ -96,18 +96,6 @@ struct accel_data {
     uint16_t last_factor; // Record the last acceleration factor
 };
 
-int input_processor_forward_event(const struct device *dev,
-                                 struct input_event *event,
-                                 uint32_t param1,
-                                 uint32_t param2,
-                                 struct zmk_input_processor_state *state);
-
-
-static int accel_handle_event(const struct device *dev, struct input_event *event,
-                             uint32_t param1, uint32_t param2,
-                             struct zmk_input_processor_state *state);
-
-
 #define ACCEL_INST_INIT(inst)                                                  \
 static const uint16_t accel_codes_##inst[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEEL, INPUT_REL_HWHEEL };     \
 static const struct accel_config accel_config_##inst = {                       \
@@ -146,39 +134,15 @@ DEVICE_DT_INST_DEFINE(inst,                                                    \
 // Example: Generate only one instance
 ACCEL_INST_INIT(0)
 
-
-int input_processor_forward_event(const struct device *dev,
-                                 struct input_event *event,
-                                 uint32_t param1,
-                                 uint32_t param2,
-                                 struct zmk_input_processor_state *state) {
-
-    
-    // Directly report to ZMK input system
-    if (event->type == INPUT_EV_REL) {
-        input_report_rel(dev, event->code, event->value, event->sync, K_FOREVER);
-        return 0; // Processing complete
-    } else if (event->type == INPUT_EV_KEY) {
-        input_report_key(dev, event->code, event->value, event->sync, K_FOREVER);
-        return 0; // Processing complete
-    }
-    
-    return 0; // Processing complete
-}
-
 static int accel_handle_event(const struct device *dev, struct input_event *event,
                              uint32_t param1, uint32_t param2,
                              struct zmk_input_processor_state *state) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
-
-
     // Pass through if not the specified type
     if (event->type != cfg->input_type) {
-
-        input_processor_forward_event(dev, event, param1, param2, state);
-        return 0;
+        return ZMK_INPUT_PROC_CONTINUE;
     }
     
     // Check for code match
@@ -190,23 +154,17 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
         }
     }
     if (!code_matched) {
-
-        input_processor_forward_event(dev, event, param1, param2, state);
-        return 0;
+        return ZMK_INPUT_PROC_CONTINUE;
     }
 
     // Forward if value is 0 (important: 0 value is meaningful)
     if (event->value == 0) {
-
-        input_processor_forward_event(dev, event, param1, param2, state);
-        return 0;
+        return ZMK_INPUT_PROC_CONTINUE;
     }
 
     // Pass through wheel events as is
     if (event->code == INPUT_REL_WHEEL || event->code == INPUT_REL_HWHEEL) {
-
-        input_processor_forward_event(dev, event, param1, param2, state);
-        return 0;
+        return ZMK_INPUT_PROC_CONTINUE;
     }
 
     // Add basic acceleration processing
@@ -224,14 +182,14 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
         bool should_flush = false;
         int64_t time_since_flush = current_time - data->last_flush_time;
         
-        if (time_since_flush >= cfg->pair_window_ms || // Time elapsed
-            abs(data->vector_x) + abs(data->vector_y) >= 3) { // Enough movement
+        if (time_since_flush >= cfg->pair_window_ms ||
+            abs(data->vector_x) + abs(data->vector_y) >= 3) {
             should_flush = true;
         }
         
         if (!should_flush) {
             // If not flushing yet, accumulate event and exit
-            return 0;
+            return ZMK_INPUT_PROC_STOP;
         }
 
         // Execute vector processing
@@ -245,92 +203,76 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
         
         // Do nothing if there is no movement
         if (dx == 0 && dy == 0) {
-            return 0;
+            return ZMK_INPUT_PROC_STOP;
         }
         
         // Calculate speed (vector-based)
         int64_t time_delta = current_time - data->last_time;
         if (time_delta <= 0) time_delta = 1;
-        if (time_delta > 100) time_delta = 100; // Limit to max 100ms
+        if (time_delta > 100) time_delta = 100;
         
-        // Calculate vector magnitude
         uint32_t magnitude = (uint32_t)sqrtf((float)dx * dx + (float)dy * dy);
-        uint32_t speed = (magnitude * 1000) / time_delta; // pixels/second
+        uint32_t speed = (magnitude * 1000) / time_delta;
         
-        // Basic acceleration calculation
-        uint16_t factor = cfg->min_factor; // Default 1.0x (1000 = 1.0)
+        uint16_t factor = cfg->min_factor;
         
         if (speed > cfg->speed_threshold) {
             if (speed >= cfg->speed_max) {
                 factor = cfg->max_factor;
             } else {
-                // t = (speed - threshold) / (speed_max - threshold) を1000倍整数で
                 uint32_t speed_range = cfg->speed_max - cfg->speed_threshold;
                 uint32_t speed_offset = speed - cfg->speed_threshold;
-                uint32_t t_int = (speed_offset * 1000) / speed_range; // 0～1000
+                uint32_t t_int = (speed_offset * 1000) / speed_range;
 
-                uint32_t curve = t_int; // 1乗
+                uint32_t curve = t_int;
                 switch (cfg->acceleration_exponent) {
                     case 1:
-                        // curve = t_int;
                         break;
                     case 2:
-                        curve = (curve * t_int) / 1000; // 2乗
+                        curve = (curve * t_int) / 1000;
                         break;
                     case 3:
-                        curve = (curve * t_int) / 1000; // 3乗
+                        curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         break;
                     case 4:
-                        curve = (curve * t_int) / 1000; // 4乗
+                        curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         break;
                     case 5:
-                        curve = (curve * t_int) / 1000; // 5乗
+                        curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         break;
                     default:
-                        // 6以上は5乗と同じ
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         break;
                 }
-                // factor = min + (max - min) * curve / 1000
                 factor = cfg->min_factor + (uint16_t)(((cfg->max_factor - cfg->min_factor) * curve) / 1000);
                 if (factor > cfg->max_factor) factor = cfg->max_factor;
             }
         }
 
-
-        
-        // Calculate DPI adjustment
-        // DPI adjustment factor = (target_dpi / sensor_dpi) * dpi_multiplier
         uint32_t dpi_factor = ((uint32_t)cfg->target_dpi * cfg->dpi_multiplier) / cfg->sensor_dpi;
         
-        // Apply aspect ratio correction (adjust X and Y axes individually)
-        // Use high-precision calculation for remainder processing
         int64_t precise_x = ((int64_t)dx * factor * dpi_factor * cfg->x_aspect_scale);
         int64_t precise_y = ((int64_t)dy * factor * dpi_factor * cfg->y_aspect_scale);
         
         int32_t accelerated_x = precise_x / (1000 * 1000 * 1000);
         int32_t accelerated_y = precise_y / (1000 * 1000 * 1000);
         
-        // Improve accuracy by handling remainders
         if (cfg->track_remainders) {
-            // Calculate remainder (manage in units of 1/1000)
             int32_t remainder_x = (precise_x % (1000 * 1000 * 1000)) / (1000 * 1000);
             int32_t remainder_y = (precise_y % (1000 * 1000 * 1000)) / (1000 * 1000);
             
-            // Add to previous remainder
-            data->remainders[0] += remainder_x;  // X-axis remainder
-            data->remainders[1] += remainder_y;  // Y-axis remainder
+            data->remainders[0] += remainder_x;
+            data->remainders[1] += remainder_y;
             
-            // If remainder exceeds 1000, add to integer part
             if (abs(data->remainders[0]) >= 1000) {
                 int32_t carry = data->remainders[0] / 1000;
                 accelerated_x += carry;
@@ -344,7 +286,6 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
             }
         }
         
-        // Guarantee minimum sensitivity (respond even to small movements)
         if (dx != 0 && accelerated_x == 0) {
             accelerated_x = (dx > 0) ? 1 : -1;
         }
@@ -352,33 +293,31 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
             accelerated_y = (dy > 0) ? 1 : -1;
         }
 
-        // Send X and Y axes in order
+        // X軸イベント
         if (accelerated_x != 0) {
-            struct input_event out_x = *event;
-            out_x.code = INPUT_REL_X;
-            out_x.value = accelerated_x;
-            out_x.sync = false;
-            input_processor_forward_event(dev, &out_x, param1, param2, state);
+            event->code = INPUT_REL_X;
+            event->value = accelerated_x;
+            event->sync = (accelerated_y == 0); // Yがなければsync
+            // ここでreturnすることで、ZMKに加速済みイベントを渡す
+            data->last_time = current_time;
+            data->last_factor = factor;
+            return ZMK_INPUT_PROC_STOP;
         }
-        
+        // Y軸イベント
         if (accelerated_y != 0) {
-            struct input_event out_y = *event;
-            out_y.code = INPUT_REL_Y;
-            out_y.value = accelerated_y;
-            out_y.sync = true; // Sync on the last event
-            input_processor_forward_event(dev, &out_y, param1, param2, state);
+            event->code = INPUT_REL_Y;
+            event->value = accelerated_y;
+            event->sync = true;
+            data->last_time = current_time;
+            data->last_factor = factor;
+            return ZMK_INPUT_PROC_STOP;
         }
-        
-        // Update state
-        data->last_time = current_time;
-        data->last_factor = factor;
-        
-        return 0;
+        // どちらも0なら何も送らない
+        return ZMK_INPUT_PROC_STOP;
     }
 
     // Pass through other events as is
-    input_processor_forward_event(dev, event, param1, param2, state);
-    return 0;
+    return ZMK_INPUT_PROC_CONTINUE;
 }
 
 #endif // DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
