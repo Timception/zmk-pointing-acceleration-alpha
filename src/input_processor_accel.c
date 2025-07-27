@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 #ifndef CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR
-#define CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR 2500  // 2.5x (maximum acceleration)
+#define CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR 4000  // 4.0x (maximum acceleration for high-res displays)
 #endif
 
 #ifndef CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD
@@ -50,11 +50,16 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 #ifndef CONFIG_INPUT_PROCESSOR_ACCEL_DPI_MULTIPLIER
-#define CONFIG_INPUT_PROCESSOR_ACCEL_DPI_MULTIPLIER 1000  // DPI multiplier (1000 = 1.0x)
+#define CONFIG_INPUT_PROCESSOR_ACCEL_DPI_MULTIPLIER 1500  // DPI multiplier (1500 = 1.5x for high-res displays)
 #endif
 
 #ifndef CONFIG_INPUT_PROCESSOR_ACCEL_TARGET_DPI
-#define CONFIG_INPUT_PROCESSOR_ACCEL_TARGET_DPI 800  // Target DPI (reference for sensitivity adjustment)
+#define CONFIG_INPUT_PROCESSOR_ACCEL_TARGET_DPI 1600  // Target DPI (reference for sensitivity adjustment, matches sensor DPI for 1:1 ratio)
+#endif
+
+// High-resolution display support
+#ifndef CONFIG_INPUT_PROCESSOR_ACCEL_AUTO_SCALE_4K
+#define CONFIG_INPUT_PROCESSOR_ACCEL_AUTO_SCALE_4K 1  // Enable automatic scaling for 4K+ displays
 #endif
 
 struct accel_config {
@@ -190,6 +195,8 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
                         // Exponential curve (mild): f(t) = e^(2*t) - 1
                         // Approximation using Taylor series: e^x ≈ 1 + x + x²/2 + x³/6
                         {
+                            // Prevent overflow by clamping t_int
+                            if (t_int > 500) t_int = 500; // Limit to prevent overflow
                             uint32_t x = (t_int * 2000) / 1000; // 2*t scaled by 1000
                             uint32_t x2 = (x * x) / 1000;
                             uint32_t x3 = (x2 * x) / 1000;
@@ -200,6 +207,8 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
                     case 3:
                         // Exponential curve (moderate): f(t) = e^(3*t) - 1
                         {
+                            // Prevent overflow by clamping t_int
+                            if (t_int > 333) t_int = 333; // Limit to prevent overflow
                             uint32_t x = (t_int * 3000) / 1000; // 3*t scaled by 1000
                             uint32_t x2 = (x * x) / 1000;
                             uint32_t x3 = (x2 * x) / 1000;
@@ -210,6 +219,8 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
                     case 4:
                         // Exponential curve (strong): f(t) = e^(4*t) - 1
                         {
+                            // Prevent overflow by clamping t_int
+                            if (t_int > 250) t_int = 250; // Limit to prevent overflow
                             uint32_t x = (t_int * 4000) / 1000; // 4*t scaled by 1000
                             uint32_t x2 = (x * x) / 1000;
                             uint32_t x3 = (x2 * x) / 1000;
@@ -220,6 +231,8 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
                     case 5:
                         // Exponential curve (aggressive): f(t) = e^(5*t) - 1
                         {
+                            // Prevent overflow by clamping t_int
+                            if (t_int > 200) t_int = 200; // Limit to prevent overflow
                             uint32_t x = (t_int * 5000) / 1000; // 5*t scaled by 1000
                             uint32_t x2 = (x * x) / 1000;
                             uint32_t x3 = (x2 * x) / 1000;
@@ -252,6 +265,8 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
                     default:
                         // Default to mild exponential curve
                         {
+                            // Prevent overflow by clamping t_int
+                            if (t_int > 500) t_int = 500; // Limit to prevent overflow
                             uint32_t x = (t_int * 2000) / 1000; // 2*t scaled by 1000
                             uint32_t x2 = (x * x) / 1000;
                             uint32_t x3 = (x2 * x) / 1000;
@@ -265,33 +280,84 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
             }
         }
 
-        // DPI adjustment factor
+        // DPI adjustment factor with overflow protection and high-res display support
         uint32_t dpi_factor = ((uint32_t)cfg->target_dpi * cfg->dpi_multiplier) / cfg->sensor_dpi;
+        
+        // Auto-scale for high-resolution displays (4K/5K/8K)
+        // This provides additional sensitivity boost for large screens
+        #if CONFIG_INPUT_PROCESSOR_ACCEL_AUTO_SCALE_4K
+        // Assume screen width > 3000 pixels needs additional scaling
+        // This is a heuristic - in practice, this could be configured per display
+        if (dpi_factor < 1000) {
+            // If base sensitivity is too low, boost it for high-res displays
+            dpi_factor = (dpi_factor * 1500) / 1000;  // 1.5x boost
+        }
+        // Clamp dpi_factor to prevent extreme scaling
+        if (dpi_factor > 5000) dpi_factor = 5000;  // Max 5x scaling
+        #endif
         
         // Aspect ratio adjustment
         uint16_t aspect_scale = (event->code == INPUT_REL_X) ? cfg->x_aspect_scale : cfg->y_aspect_scale;
         
-        // Precise calculation
+        // Precise calculation with improved overflow protection
         int64_t precise_value = ((int64_t)input_value * factor * dpi_factor * aspect_scale);
         int32_t accelerated_value = precise_value / (1000 * 1000 * 1000);
         
-        // Remainder processing
+        // Clamp to prevent extreme values that could cause jumping
+        if (accelerated_value > 32767) accelerated_value = 32767;
+        if (accelerated_value < -32767) accelerated_value = -32767;
+        
+        // Remainder processing with improved overflow protection
         if (cfg->track_remainders) {
             uint8_t remainder_idx = (event->code == INPUT_REL_X) ? 0 : 1;
             int32_t remainder = (precise_value % (1000 * 1000 * 1000)) / (1000 * 1000);
             
-            data->remainders[remainder_idx] += remainder;
+            // Clamp remainder to prevent accumulation issues
+            if (remainder > 10000) remainder = 10000;
+            if (remainder < -10000) remainder = -10000;
             
+            // Safe remainder addition with overflow protection
+            int32_t new_remainder = data->remainders[remainder_idx] + remainder;
+            if (new_remainder > 32767) {
+                data->remainders[remainder_idx] = 32767;
+            } else if (new_remainder < -32767) {
+                data->remainders[remainder_idx] = -32767;
+            } else {
+                data->remainders[remainder_idx] = new_remainder;
+            }
+            
+            // Apply carry with smooth transition
             if (abs(data->remainders[remainder_idx]) >= 1000) {
                 int32_t carry = data->remainders[remainder_idx] / 1000;
+                // Limit carry to prevent sudden jumps
+                if (carry > 10) carry = 10;
+                if (carry < -10) carry = -10;
+                
                 accelerated_value += carry;
                 data->remainders[remainder_idx] -= carry * 1000;
             }
         }
         
-        // Minimum movement guarantee
+        // Minimum movement guarantee with smoothing
         if (input_value != 0 && accelerated_value == 0) {
             accelerated_value = (input_value > 0) ? 1 : -1;
+        }
+        
+        // Smooth large jumps to prevent jarring movement
+        if (data->last_factor > 0) {
+            int32_t factor_diff = abs((int32_t)factor - (int32_t)data->last_factor);
+            if (factor_diff > 500) {  // If factor changed by more than 0.5x
+                // Gradually transition to new factor
+                uint16_t smooth_factor = data->last_factor + ((factor > data->last_factor) ? 250 : -250);
+                int64_t smooth_value = ((int64_t)input_value * smooth_factor * dpi_factor * aspect_scale);
+                int32_t smooth_accelerated = smooth_value / (1000 * 1000 * 1000);
+                
+                // Use the smoother value if it's significantly different
+                if (abs(smooth_accelerated - accelerated_value) > abs(accelerated_value) / 4) {
+                    accelerated_value = smooth_accelerated;
+                    factor = smooth_factor;  // Update factor for next iteration
+                }
+            }
         }
 
         // Update event
