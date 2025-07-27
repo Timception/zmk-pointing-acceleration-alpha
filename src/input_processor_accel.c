@@ -166,8 +166,6 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
     }
 
 
-    return 1; // debug
-
     // Add basic acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
         int64_t current_time = k_uptime_get();
