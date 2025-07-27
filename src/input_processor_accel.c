@@ -98,9 +98,7 @@ struct accel_data {
 
 static int accel_handle_event(const struct device *dev, struct input_event *event,
                              uint32_t param1, uint32_t param2,
-                             struct zmk_input_processor_state *state) {
-                                return 1;
-                             }
+                             struct zmk_input_processor_state *state);
 
 #define ACCEL_INST_INIT(inst)                                                  \
 static const uint16_t accel_codes_##inst[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEEL, INPUT_REL_HWHEEL };     \
@@ -145,6 +143,9 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
                              struct zmk_input_processor_state *state) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
+
+
+    return 1; // debug
 
     // Pass through if not the specified type
     if (event->type != cfg->input_type) {
