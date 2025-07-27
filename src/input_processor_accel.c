@@ -127,12 +127,12 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
-    // 指定typeでなければそのまま通す
+    // Pass through if not the specified type
     if (event->type != cfg->input_type) {
         return 0;
     }
 
-    // 指定codeでなければそのまま通す
+    // Pass through if not the specified code
     bool code_matched = false;
     for (uint32_t i = 0; i < cfg->codes_count; ++i) {
         if (event->code == cfg->codes[i]) {
@@ -144,31 +144,31 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
         return 0;
     }
 
-    // ホイールイベントはそのまま通す
+    // Pass through wheel events as-is
     if (event->code == INPUT_REL_WHEEL || event->code == INPUT_REL_HWHEEL) {
         return 0;
     }
 
-    // 値が0の場合もそのまま通す（重要：0値も意味がある）
+    // Pass through zero values as-is (important: zero values are meaningful)
     if (event->value == 0) {
         return 0;
     }
 
 
-    // マウス移動イベントの加速処理
+    // Mouse movement event acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
         int64_t current_time = k_uptime_get();
         int32_t input_value = event->value;
         
-        // 速度計算のための時間差
+        // Time delta for speed calculation
         int64_t time_delta = current_time - data->last_time;
         if (time_delta <= 0) time_delta = 1;
         if (time_delta > 100) time_delta = 100;
         
-        // 速度計算（単軸ベース）
+        // Speed calculation (single-axis based)
         uint32_t speed = (abs(input_value) * 1000) / time_delta;
         
-        // 加速係数計算
+        // Acceleration factor calculation
         uint16_t factor = cfg->min_factor;
         
         if (speed > cfg->speed_threshold) {
@@ -213,17 +213,17 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
             }
         }
 
-        // DPI調整係数
+        // DPI adjustment factor
         uint32_t dpi_factor = ((uint32_t)cfg->target_dpi * cfg->dpi_multiplier) / cfg->sensor_dpi;
         
-        // アスペクト比調整
+        // Aspect ratio adjustment
         uint16_t aspect_scale = (event->code == INPUT_REL_X) ? cfg->x_aspect_scale : cfg->y_aspect_scale;
         
-        // 精密計算
+        // Precise calculation
         int64_t precise_value = ((int64_t)input_value * factor * dpi_factor * aspect_scale);
         int32_t accelerated_value = precise_value / (1000 * 1000 * 1000);
         
-        // 余り処理
+        // Remainder processing
         if (cfg->track_remainders) {
             uint8_t remainder_idx = (event->code == INPUT_REL_X) ? 0 : 1;
             int32_t remainder = (precise_value % (1000 * 1000 * 1000)) / (1000 * 1000);
@@ -237,21 +237,21 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
             }
         }
         
-        // 最小移動保証
+        // Minimum movement guarantee
         if (input_value != 0 && accelerated_value == 0) {
             accelerated_value = (input_value > 0) ? 1 : -1;
         }
 
-        // イベント更新
+        // Update event
         event->value = accelerated_value;
         data->last_time = current_time;
         data->last_factor = factor;
         
-        // 処理継続
+        // Continue processing
         return 0;
     }
 
-    // その他のイベントはそのまま通す
+    // Pass through other events as-is
     return 0;
 }
 
