@@ -179,33 +179,85 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
                 uint32_t speed_offset = speed - cfg->speed_threshold;
                 uint32_t t_int = (speed_offset * 1000) / speed_range;
 
-                uint32_t curve = t_int;
+                // Apply acceleration curve based on exponent
+                uint32_t curve;
                 switch (cfg->acceleration_exponent) {
                     case 1:
+                        // Linear curve: f(t) = t
+                        curve = t_int;
                         break;
                     case 2:
-                        curve = (curve * t_int) / 1000;
+                        // Exponential curve (mild): f(t) = e^(2*t) - 1
+                        // Approximation using Taylor series: e^x ≈ 1 + x + x²/2 + x³/6
+                        {
+                            uint32_t x = (t_int * 2000) / 1000; // 2*t scaled by 1000
+                            uint32_t x2 = (x * x) / 1000;
+                            uint32_t x3 = (x2 * x) / 1000;
+                            curve = x + (x2 / 2) + (x3 / 6);
+                            if (curve > 1000) curve = 1000; // Clamp to prevent overflow
+                        }
                         break;
                     case 3:
-                        curve = (curve * t_int) / 1000;
-                        curve = (curve * t_int) / 1000;
+                        // Exponential curve (moderate): f(t) = e^(3*t) - 1
+                        {
+                            uint32_t x = (t_int * 3000) / 1000; // 3*t scaled by 1000
+                            uint32_t x2 = (x * x) / 1000;
+                            uint32_t x3 = (x2 * x) / 1000;
+                            curve = x + (x2 / 2) + (x3 / 6);
+                            if (curve > 1000) curve = 1000; // Clamp to prevent overflow
+                        }
                         break;
                     case 4:
+                        // Exponential curve (strong): f(t) = e^(4*t) - 1
+                        {
+                            uint32_t x = (t_int * 4000) / 1000; // 4*t scaled by 1000
+                            uint32_t x2 = (x * x) / 1000;
+                            uint32_t x3 = (x2 * x) / 1000;
+                            curve = x + (x2 / 2) + (x3 / 6);
+                            if (curve > 1000) curve = 1000; // Clamp to prevent overflow
+                        }
+                        break;
+                    case 5:
+                        // Exponential curve (aggressive): f(t) = e^(5*t) - 1
+                        {
+                            uint32_t x = (t_int * 5000) / 1000; // 5*t scaled by 1000
+                            uint32_t x2 = (x * x) / 1000;
+                            uint32_t x3 = (x2 * x) / 1000;
+                            curve = x + (x2 / 2) + (x3 / 6);
+                            if (curve > 1000) curve = 1000; // Clamp to prevent overflow
+                        }
+                        break;
+                    case 10:
+                        // Quadratic curve: f(t) = t^2
+                        curve = (t_int * t_int) / 1000;
+                        break;
+                    case 11:
+                        // Cubic curve: f(t) = t^3
+                        curve = (t_int * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
+                        break;
+                    case 12:
+                        // Quartic curve: f(t) = t^4
+                        curve = (t_int * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         break;
-                    case 5:
-                        curve = (curve * t_int) / 1000;
+                    case 13:
+                        // Quintic curve: f(t) = t^5
+                        curve = (t_int * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         curve = (curve * t_int) / 1000;
                         break;
                     default:
-                        curve = (curve * t_int) / 1000;
-                        curve = (curve * t_int) / 1000;
-                        curve = (curve * t_int) / 1000;
-                        curve = (curve * t_int) / 1000;
+                        // Default to mild exponential curve
+                        {
+                            uint32_t x = (t_int * 2000) / 1000; // 2*t scaled by 1000
+                            uint32_t x2 = (x * x) / 1000;
+                            uint32_t x3 = (x2 * x) / 1000;
+                            curve = x + (x2 / 2) + (x3 / 6);
+                            if (curve > 1000) curve = 1000; // Clamp to prevent overflow
+                        }
                         break;
                 }
                 factor = cfg->min_factor + (uint16_t)(((cfg->max_factor - cfg->min_factor) * curve) / 1000);

@@ -36,8 +36,19 @@ properties:
 
   acceleration-exponent:
     type: int
-    default: 1 # 1 = linear
-    description: Exponent for the acceleration curve. 1 = linear acceleration. 2 or higher applies a more exponential (polynomial) curve for acceleration above the threshold.
+    default: 2 # 2 = mild exponential
+    description: |
+      Acceleration curve type:
+      1 = Linear curve (f(t) = t)
+      2 = Mild exponential curve (f(t) = e^(2t) - 1) [DEFAULT]
+      3 = Moderate exponential curve (f(t) = e^(3t) - 1)
+      4 = Strong exponential curve (f(t) = e^(4t) - 1)
+      5 = Aggressive exponential curve (f(t) = e^(5t) - 1)
+      10 = Quadratic polynomial (f(t) = t^2)
+      11 = Cubic polynomial (f(t) = t^3)
+      12 = Quartic polynomial (f(t) = t^4)
+      13 = Quintic polynomial (f(t) = t^5)
+      Exponential curves (2-5) provide natural acceleration feel, while polynomial curves (10+) offer more predictable mathematical progression.
 
   track-remainders:
     type: boolean
