@@ -144,15 +144,12 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
-
-    return 1; // debug
-
-    // Pass through if not the specified type
+    // 指定typeでなければ何もしない
     if (event->type != cfg->input_type) {
         return 0;
     }
-    
-    // Check for code match
+
+    // 指定codeでなければ何もしない
     bool code_matched = false;
     for (uint32_t i = 0; i < cfg->codes_count; ++i) {
         if (event->code == cfg->codes[i]) {
@@ -173,6 +170,9 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
     if (event->code == INPUT_REL_WHEEL || event->code == INPUT_REL_HWHEEL) {
         return 0;
     }
+
+
+    return 1; // debug
 
     // Add basic acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
