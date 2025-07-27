@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: MIT
+description: ZMK Velocity-Based Pointer Acceleration Input Processor
+
+compatible: "zmk,input-processor-acceleration"
+
+properties:
+  input-type:
+    type: int
+    required: true
+    description: Input event type to accelerate (e.g. INPUT_EV_REL for relative events)
+
+  codes:
+    type: array
+    required: true
+    description: Array of event code values to accelerate (e.g. REL_X, REL_Y)
+
+  min-factor:
+    type: int
+    default: 1000 # 1.000x (no deceleration by default)
+    description: Minimum pointer speed factor (scaled by 1000). Values <1000 slow down movements at very low speeds (e.g. 500 for 0.5x).
+
+  max-factor:
+    type: int
+    default: 3500 # 3.500x
+    description: Maximum pointer speed factor (scaled by 1000). Movement will be accelerated up to this factor at high speeds.
+
+  speed-threshold:
+    type: int
+    default: 1000 # counts per second
+    description: Pointer speed (counts per second) at which acceleration factor reaches 1.0 (no scaling). Below this speed, movements may be decelerated; above it, movements accelerate.
+
+  speed-max:
+    type: int
+    default: 6000 # counts per second
+    description: Pointer speed (counts per second) at which the acceleration factor reaches max-factor. Movements faster than this use the maximum acceleration.
+
+  acceleration-exponent:
+    type: int
+    default: 1 # 1 = linear
+    description: Exponent for the acceleration curve. 1 = linear acceleration. 2 or higher applies a more exponential (polynomial) curve for acceleration above the threshold.
+
+  track-remainders:
+    type: boolean
+    description: Accumulate and apply fractional movement remainders for higher precision.
+
+  pair-window-ms:
+    type: int
+    default: 10
+    description: Time window in milliseconds to pair X/Y events for acceleration.
+
+  x-aspect-scale:
+    type: int
+    description: X axis aspect ratio scaling factor
+
+  y-aspect-scale:
+    type: int
+    default: 1500
+    description: Scale factor for Y axis movement to adjust for screen aspect ratio (scaled by 1000, e.g. 1500 = 1.5x).
+
+  sensor-dpi:
+    type: int
+    default: 1600
+    description: Mouse sensor DPI/CPI setting. Used for automatic scaling adjustment. Higher DPI sensors will have reduced acceleration to prevent oversensitivity.
+
+  target-dpi:
+    type: int
+    description: Target DPI for pointer movement scaling. Used to adjust acceleration for a desired on-screen sensitivity.
+
+  dpi-multiplier:
+    type: int
+    description: Multiplier for DPI scaling, used to fine-tune pointer sensitivity (scaled by 1000, e.g. 1500 = 1.5x).
