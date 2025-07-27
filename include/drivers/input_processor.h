@@ -10,24 +10,6 @@
 #include <zephyr/input/input.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Input event type constants */
-#ifndef INPUT_EV_REL
-#define INPUT_EV_REL EV_REL
-#endif
-
-/* Input event code constants for relative events */
-#ifndef INPUT_REL_X
-#define INPUT_REL_X REL_X
-#endif
-
-#ifndef INPUT_REL_Y
-#define INPUT_REL_Y REL_Y
-#endif
-
 /**
  * @brief ZMK Input Processor State
  * 
@@ -64,8 +46,3 @@ struct zmk_input_processor_driver_api {
                         uint32_t param2,
                         struct zmk_input_processor_state *state);
 };
-
-
-#ifdef __cplusplus
-}
-#endif
