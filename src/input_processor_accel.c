@@ -146,7 +146,7 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
 
     // Pass through if not the specified type
     if (event->type != cfg->input_type) {
-        return ZMK_INPUT_PROC_CONTINUE;
+        return 0;
     }
     
     // Check for code match
@@ -158,17 +158,17 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
         }
     }
     if (!code_matched) {
-        return ZMK_INPUT_PROC_CONTINUE;
+        return 0;
     }
 
     // Forward if value is 0 (important: 0 value is meaningful)
     if (event->value == 0) {
-        return ZMK_INPUT_PROC_CONTINUE;
+        return 0;
     }
 
     // Pass through wheel events as is
     if (event->code == INPUT_REL_WHEEL || event->code == INPUT_REL_HWHEEL) {
-        return ZMK_INPUT_PROC_CONTINUE;
+        return 0;
     }
 
     // Add basic acceleration processing
@@ -193,7 +193,7 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
         
         if (!should_flush) {
             // If not flushing yet, accumulate event and exit
-            return ZMK_INPUT_PROC_STOP;
+            return 1;
         }
 
         // Execute vector processing
@@ -207,7 +207,7 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
         
         // Do nothing if there is no movement
         if (dx == 0 && dy == 0) {
-            return ZMK_INPUT_PROC_STOP;
+            return 1;
         }
         
         // Calculate speed (vector-based)
@@ -305,7 +305,7 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
             // ここでreturnすることで、ZMKに加速済みイベントを渡す
             data->last_time = current_time;
             data->last_factor = factor;
-            return ZMK_INPUT_PROC_STOP;
+            return 1;
         }
         // Y軸イベント
         if (accelerated_y != 0) {
@@ -314,14 +314,14 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
             event->sync = true;
             data->last_time = current_time;
             data->last_factor = factor;
-            return ZMK_INPUT_PROC_STOP;
+            return 1;
         }
         // どちらも0なら何も送らない
-        return ZMK_INPUT_PROC_STOP;
+        return 1;
     }
 
     // Pass through other events as is
-    return ZMK_INPUT_PROC_CONTINUE;
+    return 0;
 }
 
 #endif // DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
