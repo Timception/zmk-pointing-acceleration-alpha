@@ -96,6 +96,10 @@ struct accel_data {
     uint16_t last_factor; // Record the last acceleration factor
 };
 
+static int accel_handle_event(const struct device *dev, struct input_event *event,
+                             uint32_t param1, uint32_t param2,
+                             struct zmk_input_processor_state *state);
+
 #define ACCEL_INST_INIT(inst)                                                  \
 static const uint16_t accel_codes_##inst[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEEL, INPUT_REL_HWHEEL };     \
 static const struct accel_config accel_config_##inst = {                       \
