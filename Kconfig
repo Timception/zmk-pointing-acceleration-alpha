@@ -60,7 +60,7 @@ config INPUT_PROCESSOR_ACCEL_SPEED_MAX
 config INPUT_PROCESSOR_ACCEL_EXPONENT
     int "Acceleration curve exponent"
     default 2
-    range 1 3
+    range 1 5
     depends on ZMK_INPUT_PROCESSOR_ACCELERATION
     help
       Exponent for acceleration curve. 1=linear, 2=quadratic, 3=cubic.
