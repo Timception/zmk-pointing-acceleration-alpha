@@ -7,10 +7,6 @@ I have created a template from [Template](https://github.com/oleksandrmaslov/zmk
 
 This repository contains a pointer acceleration implementation for pointing devices in ZMK.
 
-> [!WARNING]  
-> Known issue: The `&settings_reset` shield currently does not compile. This does not affect normal board builds or functionality.
-> The fix is in progress. Please DM @heisenberg_ukr on Discord if you encounter any other bugs.
-
 The acceleration makes fine cursor control more precise at slow speeds while allowing faster cursor movement when moving quickly. It supports customizable acceleration curves and can be configured for different input devices.
 
 **Device Compatibility Note:** This module has been right now only tested with Cirque trackpads. While it should theoretically work with other pointing devices (trackballs, trackpoints, other trackpads), these are untested, but have to work. Use with non-Cirque devices at your own risk.
@@ -46,11 +42,11 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
-    - name: oleksandrmaslov
-      url-base: https://github.com/oleksandrmaslov
+    - name: nuovotaka
+      url-base: https://github.com/nuovotaka
   projects:
-    - name: zmk-pointing-acceleration
-      remote: oleksandrmaslov
+    - name: zmk-pointing-acceleration-alpha
+      remote: nuovotaka
       revision: main
     - name: zmk
       remote: zmkfirmware
