@@ -18,8 +18,19 @@ input device by following this: https://zmk.dev/docs/features/pointing**
 
 - Configurable minimum and maximum acceleration factors
 - Adjustable speed thresholds for acceleration onset
-- Customizable acceleration curve (linear, quadratic, etc.)
-- Support for tracking fractional movement remainders
+- **Multiple acceleration curve types** with mathematical precision:
+  - **Linear curve (1)**: `f(t) = t` - Constant acceleration rate
+  - **Exponential curves (2-5)**: Natural, smooth acceleration feel
+    - Mild exponential (2): `f(t) = e^(2t) - 1` - Balanced for general use
+    - Moderate exponential (3): `f(t) = e^(3t) - 1` - More responsive
+    - Strong exponential (4): `f(t) = e^(4t) - 1` - Aggressive acceleration
+    - Aggressive exponential (5): `f(t) = e^(5t) - 1` - Maximum responsiveness
+  - **Polynomial curves (10-13)**: Predictable mathematical progression
+    - Quadratic (10): `f(t) = t²` - Classic smooth curve
+    - Cubic (11): `f(t) = t³` - Steeper acceleration
+    - Quartic (12): `f(t) = t⁴` - Very steep acceleration
+    - Quintic (13): `f(t) = t⁵` - Extremely steep acceleration
+- Support for tracking fractional movement remainders for pixel-perfect precision
 - Compatible with any relative input device (mouse, trackball, touchpad)
 
 ## Installation & Usage
@@ -79,7 +90,7 @@ Add the acceleration configuration to your device overlay. This configuration sh
     max-factor = <3000>;         // 3.0x at fast speeds
     speed-threshold = <1200>;     // 1200 counts/sec for 1x
     speed-max = <6000>;          // 6000 counts/sec for max accel
-    acceleration-exponent = <2>;  // Quadratic acceleration curve
+    acceleration-exponent = <2>;  // Mild exponential curve (default)
 };
 ```
 
@@ -139,12 +150,21 @@ The acceleration processor provides several settings to customize how your point
 
 ### Acceleration Behavior
 
-- `acceleration-exponent`: (Default: 1)
-  - Controls how quickly acceleration increases
-  - 1 = Linear (smooth, gradual acceleration)
-  - 2 = Quadratic (acceleration increases more rapidly)
-  - 3 = Cubic (very rapid acceleration increase)
-  - Example: `acceleration-exponent = <2>` for a more aggressive acceleration curve
+- `acceleration-exponent`: (Default: 2)
+  - Controls the mathematical curve type for acceleration
+  - **Exponential curves (recommended for natural feel):**
+    - 2 = Mild exponential `e^(2t) - 1` (default, balanced)
+    - 3 = Moderate exponential `e^(3t) - 1` (more responsive)
+    - 4 = Strong exponential `e^(4t) - 1` (aggressive)
+    - 5 = Aggressive exponential `e^(5t) - 1` (maximum)
+  - **Polynomial curves (predictable progression):**
+    - 10 = Quadratic `t²` (classic smooth curve)
+    - 11 = Cubic `t³` (steeper acceleration)
+    - 12 = Quartic `t⁴` (very steep)
+    - 13 = Quintic `t⁵` (extremely steep)
+  - **Linear curve:**
+    - 1 = Linear `t` (constant acceleration rate)
+  - Example: `acceleration-exponent = <3>` for moderate exponential acceleration
 
 ### Advanced Options
 
@@ -197,7 +217,7 @@ The configurations under are just starting points - every person's perfect point
     max-factor = <3000>;       // Good acceleration for large movements
     speed-threshold = <1200>;  // Balanced acceleration point
     speed-max = <6000>;
-    acceleration-exponent = <2>; // Smooth quadratic curve
+    acceleration-exponent = <2>; // Mild exponential curve
     track-remainders;         // Track fractional movements
 };
 ```
