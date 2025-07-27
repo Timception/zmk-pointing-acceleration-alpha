@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 
 #ifndef CONFIG_INPUT_PROCESSOR_ACCEL_Y_ASPECT_SCALE
-#define CONFIG_INPUT_PROCESSOR_ACCEL_Y_ASPECT_SCALE 1200  // Increase Y-axis sensitivity (1000 = 1.0x)
+#define CONFIG_INPUT_PROCESSOR_ACCEL_Y_ASPECT_SCALE 1500  // Increase Y-axis sensitivity (1000 = 1.0x, boosted for better vertical movement)
 #endif
 
 #ifndef CONFIG_INPUT_PROCESSOR_ACCEL_X_ASPECT_SCALE
@@ -296,8 +296,15 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
         if (dpi_factor > 5000) dpi_factor = 5000;  // Max 5x scaling
         #endif
         
-        // Aspect ratio adjustment
+        // Aspect ratio adjustment with Y-axis acceleration boost
         uint16_t aspect_scale = (event->code == INPUT_REL_X) ? cfg->x_aspect_scale : cfg->y_aspect_scale;
+        
+        // Additional Y-axis acceleration boost for better vertical movement feel
+        if (event->code == INPUT_REL_Y && factor > cfg->min_factor) {
+            // Apply extra boost to Y-axis when accelerating (1.2x additional boost)
+            uint16_t y_boost = (factor - cfg->min_factor) * 200 / (cfg->max_factor - cfg->min_factor);
+            aspect_scale = (aspect_scale * (1000 + y_boost)) / 1000;
+        }
         
         // Precise calculation with improved overflow protection
         int64_t precise_value = ((int64_t)input_value * factor * dpi_factor * aspect_scale);
