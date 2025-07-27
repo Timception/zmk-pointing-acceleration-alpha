@@ -58,12 +58,23 @@ config INPUT_PROCESSOR_ACCEL_SPEED_MAX
       Speed at which maximum acceleration factor is reached.
 
 config INPUT_PROCESSOR_ACCEL_EXPONENT
-    int "Acceleration curve exponent"
+    int "Acceleration curve type"
     default 2
-    range 1 5
+    range 1 13
     depends on ZMK_INPUT_PROCESSOR_ACCELERATION
     help
-      Exponent for acceleration curve. 1=linear, 2=quadratic, 3=cubic.
+      Acceleration curve type:
+      1 = Linear curve (f(t) = t)
+      2 = Mild exponential curve (f(t) = e^(2t) - 1) [DEFAULT]
+      3 = Moderate exponential curve (f(t) = e^(3t) - 1)
+      4 = Strong exponential curve (f(t) = e^(4t) - 1)
+      5 = Aggressive exponential curve (f(t) = e^(5t) - 1)
+      10 = Quadratic polynomial (f(t) = t^2)
+      11 = Cubic polynomial (f(t) = t^3)
+      12 = Quartic polynomial (f(t) = t^4)
+      13 = Quintic polynomial (f(t) = t^5)
+      Exponential curves (2-5) provide natural acceleration feel.
+      Polynomial curves (10+) offer predictable mathematical progression.
 
 config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
     int "Mouse sensor DPI/CPI setting"
