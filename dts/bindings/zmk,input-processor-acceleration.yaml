@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-description: ZMK Velocity-Based Pointer Acceleration Input Processor
+description: ZMK Multi-Level Pointer Acceleration Input Processor
 
 compatible: "zmk,input-processor-acceleration"
 
@@ -14,31 +14,81 @@ properties:
     required: true
     description: Array of event code values to accelerate (e.g. REL_X, REL_Y)
 
-  min-factor:
+  track-remainders:
+    type: boolean
+    default: true
+    description: Accumulate and apply fractional movement remainders for higher precision.
+
+  # =============================================================================
+  # LEVEL 1: SIMPLE PROPERTIES (Available when CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL=1)
+  # =============================================================================
+
+  sensitivity:
     type: int
-    default: 1000 # 1.000x (no deceleration by default)
-    description: Minimum pointer speed factor (scaled by 1000). Values <1000 slow down movements at very low speeds (e.g. 500 for 0.5x).
+    default: 1200
+    description: |
+      [LEVEL 1] Base sensitivity multiplier (scaled by 1000).
+      1000 = 1.0x, 1200 = 1.2x, 1500 = 1.5x
+      Simple way to adjust overall mouse sensitivity.
 
   max-factor:
     type: int
-    default: 3500 # 3.500x
-    description: Maximum pointer speed factor (scaled by 1000). Movement will be accelerated up to this factor at high speeds.
+    default: 2500
+    description: |
+      [LEVEL 1] Maximum acceleration factor (scaled by 1000).
+      2500 = 2.5x maximum acceleration at high speeds.
+
+  curve-type:
+    type: int
+    default: 1
+    description: |
+      [LEVEL 1] Acceleration curve type:
+      0 = Linear (gradual acceleration)
+      1 = Mild (smooth acceleration) [DEFAULT]
+      2 = Strong (aggressive acceleration)
+
+  # =============================================================================
+  # LEVEL 2: STANDARD PROPERTIES (Available when CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL=2)
+  # =============================================================================
+
+  y-boost:
+    type: int
+    default: 1200
+    description: |
+      [LEVEL 2] Y-axis sensitivity boost (scaled by 1000).
+      1000 = same as X-axis, 1200 = 1.2x Y-axis sensitivity.
+      Useful for widescreen displays.
 
   speed-threshold:
     type: int
-    default: 1000 # counts per second
-    description: Pointer speed (counts per second) at which acceleration factor reaches 1.0 (no scaling). Below this speed, movements may be decelerated; above it, movements accelerate.
+    default: 500
+    description: |
+      [LEVEL 2] Speed threshold for acceleration start (counts per second).
+      Below this speed, no acceleration is applied.
 
   speed-max:
     type: int
-    default: 6000 # counts per second
-    description: Pointer speed (counts per second) at which the acceleration factor reaches max-factor. Movements faster than this use the maximum acceleration.
+    default: 3500
+    description: |
+      [LEVEL 2] Speed at which maximum acceleration is reached (counts per second).
+      Movements faster than this use the maximum acceleration factor.
+
+  # =============================================================================
+  # LEVEL 3: ADVANCED PROPERTIES (Available when CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL=3)
+  # =============================================================================
+
+  min-factor:
+    type: int
+    default: 1000
+    description: |
+      [LEVEL 3] Minimum acceleration factor (scaled by 1000).
+      Values <1000 slow down movements at very low speeds.
 
   acceleration-exponent:
     type: int
-    default: 2 # 2 = mild exponential
+    default: 2
     description: |
-      Acceleration curve type:
+      [LEVEL 3] Advanced acceleration curve type:
       1 = Linear curve (f(t) = t)
       2 = Mild exponential curve (f(t) = e^(2t) - 1) [DEFAULT]
       3 = Moderate exponential curve (f(t) = e^(3t) - 1)
@@ -48,35 +98,39 @@ properties:
       11 = Cubic polynomial (f(t) = t^3)
       12 = Quartic polynomial (f(t) = t^4)
       13 = Quintic polynomial (f(t) = t^5)
-      Exponential curves (2-5) provide natural acceleration feel, while polynomial curves (10+) offer more predictable mathematical progression.
-
-  track-remainders:
-    type: boolean
-    description: Accumulate and apply fractional movement remainders for higher precision.
-
-  pair-window-ms:
-    type: int
-    default: 10
-    description: Time window in milliseconds to pair X/Y events for acceleration.
 
   x-aspect-scale:
     type: int
-    description: X axis aspect ratio scaling factor
+    default: 1000
+    description: |
+      [LEVEL 3] X-axis aspect ratio scaling factor (scaled by 1000).
+      1000 = 1.0x, adjust for display aspect ratio.
 
   y-aspect-scale:
     type: int
     default: 1500
-    description: Scale factor for Y axis movement to adjust for screen aspect ratio (scaled by 1000, e.g. 1500 = 1.5x).
+    description: |
+      [LEVEL 3] Y-axis aspect ratio scaling factor (scaled by 1000).
+      1500 = 1.5x, adjust for display aspect ratio and preference.
 
   sensor-dpi:
     type: int
     default: 1600
-    description: Mouse sensor DPI/CPI setting. Used for automatic scaling adjustment. Higher DPI sensors will have reduced acceleration to prevent oversensitivity.
+    description: |
+      [LEVEL 3] Mouse sensor DPI/CPI setting.
+      Used for automatic scaling adjustment. Higher DPI sensors 
+      will have reduced acceleration to prevent oversensitivity.
 
   target-dpi:
     type: int
-    description: Target DPI for pointer movement scaling. Used to adjust acceleration for a desired on-screen sensitivity.
+    default: 1600
+    description: |
+      [LEVEL 3] Target DPI for pointer movement scaling.
+      Used to adjust acceleration for desired on-screen sensitivity.
 
   dpi-multiplier:
     type: int
-    description: Multiplier for DPI scaling, used to fine-tune pointer sensitivity (scaled by 1000, e.g. 1500 = 1.5x).
+    default: 1500
+    description: |
+      [LEVEL 3] DPI scaling multiplier (scaled by 1000).
+      1500 = 1.5x, fine-tune pointer sensitivity for high-res displays.

@@ -3,22 +3,60 @@ I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-poi
 
 ---
 
-# ZMK POINTING ACCELERATION
+# ZMK MULTI-LEVEL POINTING ACCELERATION
 
-This repository contains a pointer acceleration implementation for pointing devices in ZMK.
+This repository contains a **3-level** pointer acceleration implementation for pointing devices in ZMK, designed to accommodate users from beginners to advanced enthusiasts.
 
 The acceleration makes fine cursor control more precise at slow speeds while allowing faster cursor movement when moving quickly. It supports customizable acceleration curves and can be configured for different input devices.
 
-**Device Compatibility Note:** This module has been right now only tested with Cirque trackpads. While it should theoretically work with other pointing devices (trackballs, trackpoints, other trackpads), these are untested, but have to work. Use with non-Cirque devices at your own risk.
+## 🎯 **Choose Your Level**
+
+### **Level 1: Simple** (Recommended for most users)
+
+- **3 basic settings** + **preset configurations**
+- Perfect for getting started quickly
+- Includes presets: Office, Gaming, 4K Display
+
+### **Level 2: Standard** (Balanced features)
+
+- **6 configurable settings**
+- Speed-based acceleration with Y-axis boost
+- Great for users who want more control
+
+### **Level 3: Advanced** (Full customization)
+
+- **12+ detailed settings**
+- DPI adjustment, aspect ratio control, multiple curve types
+- For enthusiasts who want complete control
+
+**Device Compatibility Note:** This module has been tested with Cirque trackpads and should work with other pointing devices (trackballs, trackpoints, other trackpads). Use with non-Cirque devices at your own risk.
 
 **Before you start, you should make sure that you have a working
 input device by following this: https://zmk.dev/docs/features/pointing**
 
-## Features
+## ✨ Features by Level
 
-- Configurable minimum and maximum acceleration factors
-- Adjustable speed thresholds for acceleration onset
-- **Multiple acceleration curve types** with mathematical precision:
+### **Level 1: Simple Features**
+
+- ✅ **Preset configurations** (Office, Gaming, 4K)
+- ✅ **Basic sensitivity** adjustment
+- ✅ **3 curve types** (Linear, Mild, Strong)
+- ✅ **Plug-and-play** setup
+
+### **Level 2: Standard Features**
+
+- ✅ All Level 1 features
+- ✅ **Speed-based acceleration** with configurable thresholds
+- ✅ **Y-axis boost** for widescreen displays
+- ✅ **6 configurable parameters**
+
+### **Level 3: Advanced Features**
+
+- ✅ All Level 1 & 2 features
+- ✅ **12+ detailed parameters**
+- ✅ **DPI adjustment** and scaling
+- ✅ **Aspect ratio control** (X/Y axis independent)
+- ✅ **Multiple acceleration curves** with mathematical precision:
   - **Linear curve (1)**: `f(t) = t` - Constant acceleration rate
   - **Exponential curves (2-5)**: Natural, smooth acceleration feel
     - Mild exponential (2): `f(t) = e^(2t) - 1` - Balanced for general use
@@ -30,8 +68,9 @@ input device by following this: https://zmk.dev/docs/features/pointing**
     - Cubic (11): `f(t) = t³` - Steeper acceleration
     - Quartic (12): `f(t) = t⁴` - Very steep acceleration
     - Quintic (13): `f(t) = t⁵` - Extremely steep acceleration
-- Support for tracking fractional movement remainders for pixel-perfect precision
-- Compatible with any relative input device (mouse, trackball, touchpad)
+- ✅ **Fractional movement tracking** for pixel-perfect precision
+- ✅ **4K/5K display auto-scaling**
+- ✅ Compatible with any relative input device (mouse, trackball, touchpad)
 
 ## Installation & Usage
 
@@ -77,20 +116,93 @@ Add the necessary includes to your device overlay file (e.g. `yourkeyboard_left.
 #include <behaviors/input_gestures_accel.dtsi>
 ```
 
+### Configure Your Level
+
+Choose your configuration level in your `prj.conf` file:
+
+```ini
+# Choose your level (1, 2, or 3)
+CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y      # Level 1: Simple
+# CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y  # Level 2: Standard
+# CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y  # Level 3: Advanced
+```
+
 ### Configure Acceleration
 
-Add the acceleration configuration to your device overlay. This configuration should go BEFORE your _input-listener_ This example provides a balanced acceleration curve:
+Add the acceleration configuration to your device overlay. This configuration should go BEFORE your _input-listener_.
+
+#### **Level 1: Simple Configuration**
+
+**Option A: Use a Preset (Recommended)**
+
+```ini
+# In your prj.conf, choose a preset:
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y     # Gaming preset
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE=y   # Office preset
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_4K=y       # 4K display preset
+```
 
 ```devicetree
 &pointer_accel {
-    input-type = <INPUT_EV_REL>;  // For relative input devices
-    codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
-    track-remainders;             // Accumulate fractional movements
-    min-factor = <800>;          // 0.8x at very slow speeds
-    max-factor = <3000>;         // 3.0x at fast speeds
-    speed-threshold = <1200>;     // 1200 counts/sec for 1x
-    speed-max = <6000>;          // 6000 counts/sec for max accel
-    acceleration-exponent = <2>;  // Mild exponential curve (default)
+    input-type = <INPUT_EV_REL>;
+    codes = <INPUT_REL_X INPUT_REL_Y>;
+    // Preset values are automatically applied!
+};
+```
+
+**Option B: Custom Simple Settings**
+
+```ini
+# In your prj.conf:
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
+```
+
+```devicetree
+&pointer_accel {
+    input-type = <INPUT_EV_REL>;
+    codes = <INPUT_REL_X INPUT_REL_Y>;
+    sensitivity = <1300>;     // 1.3x base sensitivity
+    max-factor = <2800>;      // 2.8x maximum acceleration
+    curve-type = <1>;         // 0=Linear, 1=Mild, 2=Strong
+};
+```
+
+#### **Level 2: Standard Configuration**
+
+```devicetree
+&pointer_accel {
+    input-type = <INPUT_EV_REL>;
+    codes = <INPUT_REL_X INPUT_REL_Y>;
+    sensitivity = <1200>;         // 1.2x base sensitivity
+    max-factor = <3000>;          // 3.0x maximum acceleration
+    curve-type = <1>;             // Mild curve
+    y-boost = <1300>;             // 1.3x Y-axis boost for widescreen
+    speed-threshold = <600>;      // Start acceleration at 600 counts/sec
+    speed-max = <3500>;           // Max acceleration at 3500 counts/sec
+};
+```
+
+#### **Level 3: Advanced Configuration**
+
+```devicetree
+&pointer_accel {
+    input-type = <INPUT_EV_REL>;
+    codes = <INPUT_REL_X INPUT_REL_Y>;
+    track-remainders = <1>;       // Enable precision tracking
+
+    // Advanced acceleration settings
+    min-factor = <1000>;          // 1.0x minimum (no deceleration)
+    max-factor = <4000>;          // 4.0x maximum acceleration
+    speed-threshold = <500>;      // Acceleration starts at 500 counts/sec
+    speed-max = <4000>;           // Max acceleration at 4000 counts/sec
+    acceleration-exponent = <2>;  // Mild exponential curve
+
+    // Aspect ratio and DPI settings
+    x-aspect-scale = <1000>;      // 1.0x X-axis scaling
+    y-aspect-scale = <1500>;      // 1.5x Y-axis scaling
+    sensor-dpi = <1600>;          // 1600 DPI sensor
+    target-dpi = <1600>;          // Target 1600 DPI
+    dpi-multiplier = <1500>;      // 1.5x DPI multiplier for high-res
 };
 ```
 
