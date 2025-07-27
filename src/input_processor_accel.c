@@ -129,7 +129,7 @@ DEVICE_DT_INST_DEFINE(inst,                                                    \
                           .handle_event = accel_handle_event                   \
                       });
 
-// Example: Generate only one instance
+// Generate only one instance
 ACCEL_INST_INIT(0)
 
 static int accel_handle_event(const struct device *dev, struct input_event *event,
