@@ -60,17 +60,11 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 #define CONFIG_INPUT_PROCESSOR_ACCEL_TARGET_DPI 800  // Target DPI (reference for sensitivity adjustment)
 #endif
 
-typedef enum {
-    ACCEL_CURVE_LINEAR = 0,
-    ACCEL_CURVE_EXPONENTIAL = 1,
-} accel_curve_t;
-
 struct accel_config {
     uint8_t input_type;
     const uint16_t *codes;
     uint32_t codes_count;
     bool track_remainders;
-    accel_curve_t curve_type;   // 0: linear, 1: exponential
     uint16_t min_factor;
     uint16_t max_factor;
     uint32_t speed_threshold;
