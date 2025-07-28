@@ -1,5 +1,9 @@
 // accel_config.c - Unified configuration management
 // Centralizes all configuration logic and reduces complexity
+//
+// Copyright (c) 2024 The ZMK Contributors
+// Modifications (c) 2025 NUOVOTAKA
+// SPDX-License-Identifier: MIT
 
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree.h>

@@ -1,6 +1,8 @@
 I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-pointing-acceleration).
 **Please create a template based on the original source. Do not fork from here.**
 
+**Modifications by NUOVOTAKA** - Enhanced code quality, improved error handling, and better maintainability.
+
 ---
 
 # ZMK MULTI-LEVEL POINTING ACCELERATION

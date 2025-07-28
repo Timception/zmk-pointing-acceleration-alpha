@@ -1,5 +1,9 @@
 // input_processor_accel_calc.c - Level-specific calculation functions
 // Separated for better code organization and maintainability
+//
+// Copyright (c) 2024 The ZMK Contributors
+// Modifications (c) 2025 NUOVOTAKA
+// SPDX-License-Identifier: MIT
 
 #include <zephyr/logging/log.h>
 #include <stdlib.h>

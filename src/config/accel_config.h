@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 The ZMK Contributors
+ * Modifications (c) 2025 NUOVOTAKA
  *
  * SPDX-License-Identifier: MIT
  */

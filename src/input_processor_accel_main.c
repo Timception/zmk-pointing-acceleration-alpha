@@ -1,5 +1,9 @@
 // input_processor_accel_main.c - ZMK Input Processor for Mouse Acceleration
 // Refactored for better maintainability and modularity
+// 
+// Copyright (c) 2024 The ZMK Contributors
+// Modifications (c) 2025 NUOVOTAKA
+// SPDX-License-Identifier: MIT
 
 #include <zephyr/logging/log.h>
 #include <drivers/input_processor_accel.h>
