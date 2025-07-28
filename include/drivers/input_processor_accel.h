@@ -39,9 +39,7 @@ extern "C" {
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 #define IS_VALID_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
-// Thread safety: Use atomic operations for shared data
-#define ATOMIC_READ(ptr) atomic_get((atomic_t*)(ptr))
-#define ATOMIC_WRITE(ptr, val) atomic_set((atomic_t*)(ptr), (val))
+// Thread safety: Use atomic operations for shared data (macros removed - use atomic_* functions directly)
 
 // =============================================================================
 // DATA STRUCTURES

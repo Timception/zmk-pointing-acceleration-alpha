@@ -1,4 +1,5 @@
 // input_processor_accel_main.c - ZMK Input Processor for Mouse Acceleration
+// Refactored for better maintainability and modularity
 
 #include <zephyr/logging/log.h>
 #include <drivers/input_processor_accel.h>

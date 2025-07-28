@@ -2,18 +2,14 @@
 // Separated for better code organization and maintainability
 
 #include <zephyr/logging/log.h>
-#include <math.h>
 #include <stdlib.h>
 #include <drivers/input_processor_accel.h>
 
 LOG_MODULE_DECLARE(input_processor_accel);
 
 // =============================================================================
-// VALIDATION FUNCTIONS
+// NOTE: Validation functions moved to src/validation/accel_validation.c
 // =============================================================================
-
-// Validation function moved to src/validation/accel_validation.c
-// This function is now just a stub that calls the new validation module
 
 // =============================================================================
 // MATHEMATICAL UTILITY FUNCTIONS
