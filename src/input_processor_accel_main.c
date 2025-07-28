@@ -5,8 +5,6 @@
 #include <drivers/input_processor_accel.h>
 #include "config/accel_config.h"
 
-#include <logging/log.h>
-
 LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zmk_input_processor_acceleration
@@ -100,12 +98,6 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                       struct zmk_input_processor_state *state) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
-
-
-    LOG_INF("ZMK log test start!");
-    LOG_INF("accel handle event!! ");
-
-
 
     // Input validation
     if (!dev || !event || !cfg || !data) {
