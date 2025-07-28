@@ -1,5 +1,6 @@
 I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-pointing-acceleration).
-**Please create a template based on the original source. Do not fork from here.**
+**Please create a template based on the original source.**
+**If necessary, please feel free to create a template from `Use this Template`.**
 
 ---
 
