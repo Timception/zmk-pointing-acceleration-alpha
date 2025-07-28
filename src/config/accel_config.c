@@ -119,8 +119,10 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
             DT_INST_PROP_OR(inst, y_boost, cfg->y_boost),
             500, 3000);
         cfg->speed_threshold = DT_INST_PROP_OR(inst, speed_threshold, cfg->speed_threshold);
-        cfg->speed_max = MAX(DT_INST_PROP_OR(inst, speed_max, cfg->speed_max),
-                            cfg->speed_threshold + 100);
+        cfg->speed_max = MAX(ACCEL_CLAMP(
+            DT_INST_PROP_OR(inst, speed_max, cfg->speed_max),
+            cfg->speed_threshold + 100, MAX_REASONABLE_SPEED),
+            cfg->speed_threshold + 100);
     } else { // level == 3
         cfg->min_factor = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, min_factor, cfg->min_factor),

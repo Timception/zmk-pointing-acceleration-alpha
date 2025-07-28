@@ -36,6 +36,12 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
  */
 const struct accel_config *accel_config_get_defaults(uint8_t level);
 
+/**
+ * @brief Apply Kconfig preset to configuration
+ * @param cfg Configuration structure to modify
+ */
+void accel_config_apply_kconfig_preset(struct accel_config *cfg);
+
 #ifdef __cplusplus
 }
 #endif

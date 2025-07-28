@@ -14,8 +14,8 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 // DEVICE INITIALIZATION
 // =============================================================================
 
-// Forward declarations
-void accel_config_apply_kconfig_preset(struct accel_config *cfg);
+// Forward declarations - moved to header
+// void accel_config_apply_kconfig_preset(struct accel_config *cfg);
 
 // Simplified device initialization function
 static int accel_init_device(const struct device *dev) {
@@ -74,6 +74,13 @@ static int accel_init_0(const struct device *dev) {
     
     // Apply Kconfig presets if any
     accel_config_apply_kconfig_preset(&accel_config_0);
+    
+    // Validate final configuration
+    ret = accel_validate_config(&accel_config_0);
+    if (ret < 0) {
+        LOG_ERR("Final configuration validation failed: %d", ret);
+        return ret;
+    }
     
     return accel_init_device(dev);
 }
