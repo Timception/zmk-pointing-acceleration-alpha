@@ -39,9 +39,7 @@ extern "C" {
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 #define IS_VALID_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
-// Thread safety: Use atomic operations for shared data
-#define ATOMIC_READ(ptr) atomic_get((atomic_t*)(ptr))
-#define ATOMIC_WRITE(ptr, val) atomic_set((atomic_t*)(ptr), (val))
+// Thread safety: Use atomic operations for shared data (macros removed - use atomic_* functions directly)
 
 // =============================================================================
 // DATA STRUCTURES
@@ -68,40 +66,35 @@ struct timing_data {
 };
 
 /**
- * @brief Acceleration configuration structure
+ * @brief Unified acceleration configuration structure
+ * All fields are present regardless of level - unused fields are set to defaults
  */
 struct accel_config {
     uint8_t input_type;
     const uint16_t *codes;
     uint32_t codes_count;
     bool track_remainders;
+    uint8_t level;  // Configuration level (1, 2, or 3)
     
-#if CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 1
-    // Simple configuration
+    // Core settings (used by all levels)
     uint16_t sensitivity;
     uint16_t max_factor;
     uint8_t curve_type;
-#elif CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 2
-    // Standard configuration
-    uint16_t sensitivity;
-    uint16_t max_factor;
-    uint8_t curve_type;
+    
+    // Standard level settings (level 2+)
     uint16_t y_boost;
     uint32_t speed_threshold;
     uint32_t speed_max;
-#else
-    // Advanced configuration (Level 3)
+    
+    // Advanced level settings (level 3 only)
     uint16_t min_factor;
-    uint16_t max_factor;
-    uint32_t speed_threshold;
-    uint32_t speed_max;
-    uint8_t  acceleration_exponent;
+    uint8_t acceleration_exponent;
     uint16_t y_aspect_scale;
     uint16_t x_aspect_scale;
     uint16_t sensor_dpi;
     uint16_t dpi_multiplier;
     uint16_t target_dpi;
-#endif
+    bool auto_scale_4k;
 };
 
 /**
@@ -124,6 +117,12 @@ struct accel_data {
  * @return 0 if valid, negative error code if invalid
  */
 int accel_validate_config(const struct accel_config *cfg);
+
+/**
+ * @brief Apply Kconfig preset to configuration
+ * @param cfg Configuration structure to modify
+ */
+void accel_config_apply_kconfig_preset(struct accel_config *cfg);
 
 /**
  * @brief Safely clamp input value to prevent overflow
@@ -177,16 +176,12 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
                       struct zmk_input_processor_state *state);
 
-// Level-specific calculation functions
-#if CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 1
+// Level-specific calculation functions (always available)
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code);
-#elif CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 2
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code);
-#else
 int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code);
-#endif
 
 #ifdef __cplusplus
 }

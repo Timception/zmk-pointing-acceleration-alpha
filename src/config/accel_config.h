@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024 The ZMK Contributors
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#pragma once
+
+#include <drivers/input_processor_accel.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Initialize configuration with defaults based on level
+ * @param cfg Configuration structure to initialize
+ * @param level Configuration level (1, 2, or 3)
+ * @param inst Device tree instance number
+ * @return 0 on success, negative error code on failure
+ */
+int accel_config_init(struct accel_config *cfg, uint8_t level, int inst);
+
+/**
+ * @brief Apply preset configuration
+ * @param cfg Configuration structure to modify
+ * @param preset_name Preset name ("office", "gaming", "4k")
+ * @return 0 on success, negative error code on failure
+ */
+int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name);
+
+/**
+ * @brief Get default configuration for specified level
+ * @param level Configuration level (1, 2, or 3)
+ * @return Pointer to default configuration structure
+ */
+const struct accel_config *accel_config_get_defaults(uint8_t level);
+
+#ifdef __cplusplus
+}
+#endif

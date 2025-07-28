@@ -2,7 +2,6 @@
 // Separated for better code organization and maintainability
 
 #include <zephyr/logging/log.h>
-#include <math.h>
 #include <stdlib.h>
 #include <drivers/input_processor_accel.h>
 
@@ -12,7 +11,6 @@ LOG_MODULE_DECLARE(input_processor_accel);
 // LEVEL-SPECIFIC CALCULATION FUNCTIONS
 // =============================================================================
 
-#if CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 1
 // Simple acceleration: Just apply sensitivity and basic curve with safety
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code) {
     // Apply base sensitivity with overflow protection
@@ -47,7 +45,6 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
 }
 
-#elif CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 2
 // Standard acceleration: Speed-based with Y-axis boost and enhanced timing
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code) {
@@ -98,7 +95,6 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
 }
 
-#else
 // Advanced acceleration: Full-featured with enhanced safety and timing
 int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code) {
@@ -150,12 +146,10 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
     uint32_t dpi_factor = ((uint32_t)cfg->target_dpi * cfg->dpi_multiplier) / cfg->sensor_dpi;
     
     // Auto-scale for high-resolution displays
-    #if CONFIG_INPUT_PROCESSOR_ACCEL_AUTO_SCALE_4K
-    if (dpi_factor < 1000) {
+    if (cfg->auto_scale_4k && dpi_factor < 1000) {
         dpi_factor = (dpi_factor * 1500) / 1000;
     }
     dpi_factor = ACCEL_CLAMP(dpi_factor, 100, 5000);
-    #endif
     
     // Aspect ratio adjustment
     uint16_t aspect_scale = (code == INPUT_REL_X) ? cfg->x_aspect_scale : cfg->y_aspect_scale;
@@ -233,4 +227,3 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
     
     return accelerated_value;
 }
-#endif
