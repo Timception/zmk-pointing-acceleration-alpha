@@ -273,10 +273,6 @@ endif # INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
 # debug
 # ======================
 
-config ZMK_LOG_LEVEL
-  int
-  default 4
-
 config LOG
   bool
   default y
