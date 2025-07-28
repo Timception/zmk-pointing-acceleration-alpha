@@ -99,6 +99,12 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
+
+
+    LOG_INF("Debug Start !");
+    LOG_INF("accel handle event !!");
+
+
     // Input validation
     if (!dev || !event || !cfg || !data) {
         LOG_ERR("Invalid parameters");
