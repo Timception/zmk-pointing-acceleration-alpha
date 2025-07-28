@@ -267,16 +267,3 @@ config INPUT_PROCESSOR_ACCEL_AUTO_SCALE_4K
       Automatically apply additional scaling for high-resolution displays (4K/5K/8K).
 
 endif # INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
-
-
-# ======================
-# debug
-# ======================
-
-config LOG
-  bool
-  default y
-
-config LOG_DEFAULT_LEVEL
-  int
-  default 4
