@@ -16,8 +16,10 @@ properties:
 
   track-remainders:
     type: boolean
-    default: true
-    description: Accumulate and apply fractional movement remainders for higher precision.
+    description: |
+      Accumulate and apply fractional movement remainders for higher precision.
+      This is a boolean property - include it to enable, omit it to disable.
+      Usage: track-remainders; (not track-remainders = <1>;)
 
   # =============================================================================
   # LEVEL 1: SIMPLE PROPERTIES (Available when CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL=1)

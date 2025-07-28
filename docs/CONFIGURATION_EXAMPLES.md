@@ -203,7 +203,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y
             compatible = "zmk,input-processor-acceleration";
             input-type = <INPUT_EV_REL>;
             codes = <INPUT_REL_X>, <INPUT_REL_Y>;
-            track-remainders = <1>;
+            track-remainders;             // Enable precision tracking (boolean property)
 
             // Gaming-optimized settings
             min-factor = <800>;           // Slight deceleration for precision
@@ -232,7 +232,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y
             compatible = "zmk,input-processor-acceleration";
             input-type = <INPUT_EV_REL>;
             codes = <INPUT_REL_X>, <INPUT_REL_Y>;
-            track-remainders = <1>;
+            track-remainders;             // Enable precision tracking (boolean property)
 
             // Precision-optimized settings
             min-factor = <600>;           // Deceleration for fine control
@@ -261,7 +261,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y
             compatible = "zmk,input-processor-acceleration";
             input-type = <INPUT_EV_REL>;
             codes = <INPUT_REL_X>, <INPUT_REL_Y>;
-            track-remainders = <1>;
+            track-remainders;             // Enable precision tracking (boolean property)
 
             // High-resolution display settings
             min-factor = <1000>;          // 1.0x minimum (no deceleration)

@@ -252,7 +252,7 @@ static const struct accel_config accel_config_##inst = {                       \
     .input_type = INPUT_EV_REL,                                                \
     .codes = accel_codes_##inst,                                               \
     .codes_count = 4,                                                          \
-    .track_remainders = DT_INST_PROP_OR(inst, track_remainders, true),         \
+    .track_remainders = DT_INST_NODE_HAS_PROP(inst, track_remainders),         \
     ACCEL_CONFIG_INIT(inst)                                                    \
 };                                                                             \
 static struct accel_data accel_data_##inst = {0};                              \

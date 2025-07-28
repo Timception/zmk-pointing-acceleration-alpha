@@ -188,7 +188,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
-    track-remainders = <1>;       // Enable precision tracking
+    track-remainders;             // Enable precision tracking (boolean property)
 
     // Advanced acceleration settings
     min-factor = <1000>;          // 1.0x minimum (no deceleration)
