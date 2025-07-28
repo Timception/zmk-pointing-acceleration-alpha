@@ -7,6 +7,9 @@ zephyr_library_sources(
   src/input_processor_accel_main.c
   src/input_processor_accel_utils.c
   src/input_processor_accel_calc.c
+  src/config/accel_config.c
+  src/presets/accel_presets.c
+  src/validation/accel_validation.c
 )
 
 # Include directories

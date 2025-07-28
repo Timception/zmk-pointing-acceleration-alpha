@@ -12,58 +12,8 @@ LOG_MODULE_DECLARE(input_processor_accel);
 // VALIDATION FUNCTIONS
 // =============================================================================
 
-int accel_validate_config(const struct accel_config *cfg) {
-    if (!cfg) {
-        LOG_ERR("Configuration is NULL");
-        return -EINVAL;
-    }
-
-#if CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 1
-    if (!IS_VALID_RANGE(cfg->sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY)) {
-        LOG_ERR("Invalid sensitivity: %u (range: %u-%u)", 
-                cfg->sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
-        return -EINVAL;
-    }
-    
-    if (!IS_VALID_RANGE(cfg->max_factor, 1000, MAX_SAFE_FACTOR)) {
-        LOG_ERR("Invalid max_factor: %u (range: 1000-%u)", 
-                cfg->max_factor, MAX_SAFE_FACTOR);
-        return -EINVAL;
-    }
-    
-    if (cfg->curve_type > 2) {
-        LOG_ERR("Invalid curve_type: %u (range: 0-2)", cfg->curve_type);
-        return -EINVAL;
-    }
-
-#elif CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 2
-    if (!IS_VALID_RANGE(cfg->sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY)) {
-        LOG_ERR("Invalid sensitivity: %u", cfg->sensitivity);
-        return -EINVAL;
-    }
-    
-    if (cfg->speed_threshold >= cfg->speed_max) {
-        LOG_ERR("speed_threshold (%u) must be less than speed_max (%u)", 
-                cfg->speed_threshold, cfg->speed_max);
-        return -EINVAL;
-    }
-
-#else // Level 3
-    if (cfg->min_factor > cfg->max_factor) {
-        LOG_ERR("min_factor (%u) must be <= max_factor (%u)", 
-                cfg->min_factor, cfg->max_factor);
-        return -EINVAL;
-    }
-    
-    if (cfg->sensor_dpi == 0 || cfg->target_dpi == 0) {
-        LOG_ERR("DPI values cannot be zero");
-        return -EINVAL;
-    }
-#endif
-
-    LOG_DBG("Configuration validation passed");
-    return 0;
-}
+// Validation function moved to src/validation/accel_validation.c
+// This function is now just a stub that calls the new validation module
 
 // =============================================================================
 // MATHEMATICAL UTILITY FUNCTIONS
