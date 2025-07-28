@@ -25,7 +25,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         
         switch (cfg->curve_type) {
             case 0: // Linear
-                curve_factor = 1000 + CLAMP(abs_input * 100, 0, cfg->max_factor - 1000);
+                curve_factor = 1000 + ACCEL_CLAMP(abs_input * 100, 0, cfg->max_factor - 1000);
                 break;
             case 1: // Mild
                 curve_factor = accel_safe_quadratic_curve(abs_input, 10);
@@ -35,16 +35,16 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 break;
             default:
                 LOG_WRN("Invalid curve_type: %u, using linear", cfg->curve_type);
-                curve_factor = 1000 + CLAMP(abs_input * 100, 0, cfg->max_factor - 1000);
+                curve_factor = 1000 + ACCEL_CLAMP(abs_input * 100, 0, cfg->max_factor - 1000);
                 break;
         }
         
-        curve_factor = CLAMP(curve_factor, 1000, cfg->max_factor);
+        curve_factor = ACCEL_CLAMP(curve_factor, 1000, cfg->max_factor);
         result = (result * curve_factor) / 1000;
     }
     
     // Clamp result to safe range
-    return (int32_t)CLAMP(result, INT16_MIN, INT16_MAX);
+    return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
 }
 
 #elif CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 2
@@ -81,11 +81,11 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                 default: curve = (t * t) / 1000; break;
             }
             
-            curve = CLAMP(curve, 0, 1000);
+            curve = ACCEL_CLAMP(curve, 0, 1000);
             factor = 1000 + (((cfg->max_factor - 1000) * curve) / 1000);
         }
         
-        factor = CLAMP(factor, 1000, cfg->max_factor);
+        factor = ACCEL_CLAMP(factor, 1000, cfg->max_factor);
         result = (result * factor) / 1000;
     }
     
@@ -95,7 +95,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     }
     
     // Clamp result to safe range
-    return (int32_t)CLAMP(result, INT16_MIN, INT16_MAX);
+    return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
 }
 
 #else
@@ -124,12 +124,12 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
                     break;
                 case 2:
                     {
-                        t_int = CLAMP(t_int, 0, 500); // Prevent overflow
+                        t_int = ACCEL_CLAMP(t_int, 0, 500); // Prevent overflow
                         uint32_t x = (t_int * 2000) / 1000;
                         uint32_t x2 = (x * x) / 1000;
                         uint32_t x3 = (x2 * x) / 1000;
                         curve = x + (x2 / 2) + (x3 / 6);
-                        curve = CLAMP(curve, 0, 1000);
+                        curve = ACCEL_CLAMP(curve, 0, 1000);
                     }
                     break;
                 case 10:
@@ -140,9 +140,9 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
                     break;
             }
             
-            curve = CLAMP(curve, 0, 1000);
+            curve = ACCEL_CLAMP(curve, 0, 1000);
             factor = cfg->min_factor + (uint16_t)(((cfg->max_factor - cfg->min_factor) * curve) / 1000);
-            factor = CLAMP(factor, cfg->min_factor, cfg->max_factor);
+            factor = ACCEL_CLAMP(factor, cfg->min_factor, cfg->max_factor);
         }
     }
 
@@ -154,7 +154,7 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
     if (dpi_factor < 1000) {
         dpi_factor = (dpi_factor * 1500) / 1000;
     }
-    dpi_factor = CLAMP(dpi_factor, 100, 5000);
+    dpi_factor = ACCEL_CLAMP(dpi_factor, 100, 5000);
     #endif
     
     // Aspect ratio adjustment
@@ -163,9 +163,9 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
     // Additional Y-axis acceleration boost with overflow protection
     if (code == INPUT_REL_Y && factor > cfg->min_factor) {
         uint16_t y_boost = ((factor - cfg->min_factor) * 200) / (cfg->max_factor - cfg->min_factor);
-        y_boost = CLAMP(y_boost, 0, 500);
+        y_boost = ACCEL_CLAMP(y_boost, 0, 500);
         aspect_scale = (aspect_scale * (1000 + y_boost)) / 1000;
-        aspect_scale = CLAMP(aspect_scale, 500, 3000);
+        aspect_scale = ACCEL_CLAMP(aspect_scale, 500, 3000);
     }
     
     // Precise calculation with overflow protection
@@ -173,7 +173,7 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
     int32_t accelerated_value = (int32_t)(precise_value / (1000LL * 1000LL * 1000LL));
     
     // Clamp to prevent extreme values
-    accelerated_value = CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
+    accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
     
     // Thread-safe remainder processing
     if (cfg->track_remainders) {
@@ -182,20 +182,20 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
             uint8_t remainder_idx = (code == INPUT_REL_X) ? 0 : 1;
             int32_t remainder = (int32_t)((precise_value % (1000LL * 1000LL * 1000LL)) / (1000LL * 1000LL));
             
-            remainder = CLAMP(remainder, -10000, 10000);
+            remainder = ACCEL_CLAMP(remainder, -10000, 10000);
             
             int32_t current_remainder = atomic_get(&data->remainders[remainder_idx]);
             int32_t new_remainder = current_remainder + remainder;
-            new_remainder = CLAMP(new_remainder, INT16_MIN, INT16_MAX);
+            new_remainder = ACCEL_CLAMP(new_remainder, INT16_MIN, INT16_MAX);
             
             atomic_set(&data->remainders[remainder_idx], new_remainder);
             
             if (abs(new_remainder) >= 1000) {
                 int32_t carry = new_remainder / 1000;
-                carry = CLAMP(carry, -10, 10);
+                carry = ACCEL_CLAMP(carry, -10, 10);
                 
                 accelerated_value += carry;
-                accelerated_value = CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
+                accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
                 
                 atomic_set(&data->remainders[remainder_idx], new_remainder - carry * 1000);
             }
@@ -215,11 +215,11 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
         int32_t factor_diff = abs((int32_t)factor - last_factor);
         if (factor_diff > 500) {
             uint16_t smooth_factor = last_factor + ((factor > last_factor) ? 250 : -250);
-            smooth_factor = CLAMP(smooth_factor, cfg->min_factor, cfg->max_factor);
+            smooth_factor = ACCEL_CLAMP(smooth_factor, cfg->min_factor, cfg->max_factor);
             
             int64_t smooth_value = ((int64_t)input_value * smooth_factor * dpi_factor * aspect_scale);
             int32_t smooth_accelerated = (int32_t)(smooth_value / (1000LL * 1000LL * 1000LL));
-            smooth_accelerated = CLAMP(smooth_accelerated, INT16_MIN, INT16_MAX);
+            smooth_accelerated = ACCEL_CLAMP(smooth_accelerated, INT16_MIN, INT16_MAX);
             
             if (abs(smooth_accelerated - accelerated_value) > abs(accelerated_value) / 4) {
                 accelerated_value = smooth_accelerated;

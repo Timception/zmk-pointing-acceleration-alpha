@@ -1,4 +1,4 @@
-// input_processor_accel.c - ZMK Input Processor for Mouse Acceleration
+// input_processor_accel_main.c - ZMK Input Processor for Mouse Acceleration
 // Multi-level configuration: Simple, Standard, Advanced
 // Enhanced with overflow protection, thread safety, and precise timing
 // Main file - core functionality only
@@ -145,22 +145,22 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 // Configuration initialization macros with validation
 #if CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 1
 #define ACCEL_CONFIG_INIT(inst) \
-    .sensitivity = CLAMP(DT_INST_PROP_OR(inst, sensitivity, CONFIG_INPUT_PROCESSOR_ACCEL_SENSITIVITY), \
+    .sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, CONFIG_INPUT_PROCESSOR_ACCEL_SENSITIVITY), \
                         MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY), \
-    .max_factor = CLAMP(DT_INST_PROP_OR(inst, max_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR), \
+    .max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR), \
                        1000, MAX_SAFE_FACTOR), \
-    .curve_type = CLAMP(DT_INST_PROP_OR(inst, curve_type, CONFIG_INPUT_PROCESSOR_ACCEL_CURVE_TYPE), \
+    .curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, CONFIG_INPUT_PROCESSOR_ACCEL_CURVE_TYPE), \
                        0, 2)
 
 #elif CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 2
 #define ACCEL_CONFIG_INIT(inst) \
-    .sensitivity = CLAMP(DT_INST_PROP_OR(inst, sensitivity, CONFIG_INPUT_PROCESSOR_ACCEL_SENSITIVITY), \
+    .sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, CONFIG_INPUT_PROCESSOR_ACCEL_SENSITIVITY), \
                         MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY), \
-    .max_factor = CLAMP(DT_INST_PROP_OR(inst, max_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR), \
+    .max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR), \
                        1000, MAX_SAFE_FACTOR), \
-    .curve_type = CLAMP(DT_INST_PROP_OR(inst, curve_type, CONFIG_INPUT_PROCESSOR_ACCEL_CURVE_TYPE), \
+    .curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, CONFIG_INPUT_PROCESSOR_ACCEL_CURVE_TYPE), \
                        0, 2), \
-    .y_boost = CLAMP(DT_INST_PROP_OR(inst, y_boost, CONFIG_INPUT_PROCESSOR_ACCEL_Y_BOOST), \
+    .y_boost = ACCEL_CLAMP(DT_INST_PROP_OR(inst, y_boost, CONFIG_INPUT_PROCESSOR_ACCEL_Y_BOOST), \
                     500, 3000), \
     .speed_threshold = DT_INST_PROP_OR(inst, speed_threshold, CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD), \
     .speed_max = MAX(DT_INST_PROP_OR(inst, speed_max, CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_MAX), \
@@ -168,25 +168,25 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 #else // Level 3
 #define ACCEL_CONFIG_INIT(inst) \
-    .min_factor = CLAMP(DT_INST_PROP_OR(inst, min_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MIN_FACTOR), \
+    .min_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, min_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MIN_FACTOR), \
                        200, 2000), \
-    .max_factor = MAX(CLAMP(DT_INST_PROP_OR(inst, max_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR), \
+    .max_factor = MAX(ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MAX_FACTOR), \
                            1000, MAX_SAFE_FACTOR), \
                      DT_INST_PROP_OR(inst, min_factor, CONFIG_INPUT_PROCESSOR_ACCEL_MIN_FACTOR)), \
     .speed_threshold = DT_INST_PROP_OR(inst, speed_threshold, CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD), \
     .speed_max = MAX(DT_INST_PROP_OR(inst, speed_max, CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_MAX), \
                     DT_INST_PROP_OR(inst, speed_threshold, CONFIG_INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD) + 100), \
-    .acceleration_exponent = CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, CONFIG_INPUT_PROCESSOR_ACCEL_EXPONENT), \
+    .acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, CONFIG_INPUT_PROCESSOR_ACCEL_EXPONENT), \
                                   1, 13), \
-    .y_aspect_scale = CLAMP(DT_INST_PROP_OR(inst, y_aspect_scale, CONFIG_INPUT_PROCESSOR_ACCEL_Y_ASPECT_SCALE), \
+    .y_aspect_scale = ACCEL_CLAMP(DT_INST_PROP_OR(inst, y_aspect_scale, CONFIG_INPUT_PROCESSOR_ACCEL_Y_ASPECT_SCALE), \
                            500, 3000), \
-    .x_aspect_scale = CLAMP(DT_INST_PROP_OR(inst, x_aspect_scale, CONFIG_INPUT_PROCESSOR_ACCEL_X_ASPECT_SCALE), \
+    .x_aspect_scale = ACCEL_CLAMP(DT_INST_PROP_OR(inst, x_aspect_scale, CONFIG_INPUT_PROCESSOR_ACCEL_X_ASPECT_SCALE), \
                            500, 3000), \
-    .sensor_dpi = CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, CONFIG_INPUT_PROCESSOR_ACCEL_SENSOR_DPI), \
+    .sensor_dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, CONFIG_INPUT_PROCESSOR_ACCEL_SENSOR_DPI), \
                        400, 8000), \
-    .dpi_multiplier = CLAMP(DT_INST_PROP_OR(inst, dpi_multiplier, CONFIG_INPUT_PROCESSOR_ACCEL_DPI_MULTIPLIER), \
+    .dpi_multiplier = ACCEL_CLAMP(DT_INST_PROP_OR(inst, dpi_multiplier, CONFIG_INPUT_PROCESSOR_ACCEL_DPI_MULTIPLIER), \
                            500, 3000), \
-    .target_dpi = CLAMP(DT_INST_PROP_OR(inst, target_dpi, CONFIG_INPUT_PROCESSOR_ACCEL_TARGET_DPI), \
+    .target_dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, target_dpi, CONFIG_INPUT_PROCESSOR_ACCEL_TARGET_DPI), \
                        400, 8000)
 #endif
 
@@ -242,9 +242,9 @@ ACCEL_INST_INIT(0)
 // MAIN EVENT HANDLER
 // =============================================================================
 
-static int accel_handle_event(const struct device *dev, struct input_event *event,
-                             uint32_t param1, uint32_t param2,
-                             struct zmk_input_processor_state *state) {
+int accel_handle_event(const struct device *dev, struct input_event *event,
+                      uint32_t param1, uint32_t param2,
+                      struct zmk_input_processor_state *state) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
@@ -302,7 +302,7 @@ static int accel_handle_event(const struct device *dev, struct input_event *even
 #endif
 
         // Final safety check
-        accelerated_value = CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
+        accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
 
         // Update event value
         event->value = accelerated_value;

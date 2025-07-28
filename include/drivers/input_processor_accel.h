@@ -35,8 +35,8 @@ extern "C" {
 #define MIN_SAFE_SENSITIVITY    100     // Minimum safe sensitivity
 #define MAX_REASONABLE_SPEED    50000   // Maximum reasonable speed (counts/sec)
 
-// Validation macros
-#define CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
+// Validation macros (use custom names to avoid conflicts)
+#define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 #define IS_VALID_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
 // Thread safety: Use atomic operations for shared data
@@ -171,6 +171,11 @@ uint32_t accel_calculate_smoothed_speed(struct timing_data *timing, uint32_t cur
  * @return Calculated and smoothed speed
  */
 uint32_t accel_calculate_enhanced_speed(struct timing_data *timing, int32_t input_value);
+
+// Main event handler
+int accel_handle_event(const struct device *dev, struct input_event *event,
+                      uint32_t param1, uint32_t param2,
+                      struct zmk_input_processor_state *state);
 
 // Level-specific calculation functions
 #if CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL == 1

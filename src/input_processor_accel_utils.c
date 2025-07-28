@@ -117,7 +117,7 @@ uint32_t accel_calculate_smoothed_speed(struct timing_data *timing, uint32_t cur
         }
         
         // Weight decreases with age: weight = 100 - (age_ms * 2)
-        uint32_t weight = 100 - CLAMP(age_us / 500, 0, 90); // age_us/500 = age_ms/0.5
+        uint32_t weight = 100 - ACCEL_CLAMP(age_us / 500, 0, 90); // age_us/500 = age_ms/0.5
         
         weighted_sum += timing->speed_history[i].speed * weight;
         total_weight += weight;
@@ -163,7 +163,7 @@ uint32_t accel_calculate_enhanced_speed(struct timing_data *timing, int32_t inpu
     }
     
     // Clamp to reasonable range
-    instant_speed = CLAMP(instant_speed, 0, MAX_REASONABLE_SPEED);
+    instant_speed = ACCEL_CLAMP(instant_speed, 0, MAX_REASONABLE_SPEED);
     
     // Update timestamp
     atomic_set(&timing->last_time_us, current_time_us);
