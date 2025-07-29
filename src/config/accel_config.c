@@ -21,8 +21,8 @@ static const struct accel_config level1_defaults = {
     .sensitivity = 1200,
     .max_factor = 2500,
     .curve_type = 1,
-    // Unused fields set to safe defaults
-    .y_boost = 1000,
+    // Y-axis boost now enabled from level 1
+    .y_boost = 1200,
     .speed_threshold = 0,
     .speed_max = 1000,
     .min_factor = 1000,
@@ -109,6 +109,9 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
         cfg->curve_type = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, curve_type, cfg->curve_type),
             0, 2);
+        cfg->y_boost = ACCEL_CLAMP(
+            DT_INST_PROP_OR(inst, y_boost, cfg->y_boost),
+            500, 3000);
     } else if (level == 2) {
         cfg->sensitivity = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, sensitivity, cfg->sensitivity),
