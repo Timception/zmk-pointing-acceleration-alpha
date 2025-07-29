@@ -17,7 +17,7 @@ The acceleration makes fine cursor control more precise at slow speeds while all
 
 - **3 basic settings** + **preset configurations**
 - Perfect for getting started quickly
-- Includes presets: Office, Gaming, 4K Display
+- Includes presets: Office, Gaming, High Sensitivity
 
 ### **Level 2: Standard** (Balanced features)
 
@@ -27,8 +27,8 @@ The acceleration makes fine cursor control more precise at slow speeds while all
 
 ### **Level 3: Advanced** (Full customization)
 
-- **12+ detailed settings**
-- DPI adjustment, aspect ratio control, multiple curve types
+- **8+ detailed settings**
+- Advanced curve types and precision control
 - For enthusiasts who want complete control
 
 **Device Compatibility Note:** This module has been tested with Cirque trackpads and should work with other pointing devices (trackballs, trackpoints, other trackpads). Use with non-Cirque devices at your own risk.
@@ -40,7 +40,7 @@ input device by following this: https://zmk.dev/docs/features/pointing**
 
 ### **Level 1: Simple Features**
 
-- ✅ **Preset configurations** (Office, Gaming, 4K)
+- ✅ **Preset configurations** (Office, Gaming, High Sensitivity)
 - ✅ **Basic sensitivity** adjustment
 - ✅ **3 curve types** (Linear, Mild, Strong)
 - ✅ **Plug-and-play** setup
@@ -55,9 +55,7 @@ input device by following this: https://zmk.dev/docs/features/pointing**
 ### **Level 3: Advanced Features**
 
 - ✅ All Level 1 & 2 features
-- ✅ **12+ detailed parameters**
-- ✅ **DPI adjustment** and scaling
-- ✅ **Aspect ratio control** (X/Y axis independent)
+- ✅ **8+ detailed parameters**
 - ✅ **Multiple acceleration curves** with mathematical precision:
   - **Linear curve (1)**: `f(t) = t` - Constant acceleration rate
   - **Exponential curves (2-5)**: Natural, smooth acceleration feel
@@ -71,7 +69,6 @@ input device by following this: https://zmk.dev/docs/features/pointing**
     - Quartic (12): `f(t) = t⁴` - Very steep acceleration
     - Quintic (13): `f(t) = t⁵` - Extremely steep acceleration
 - ✅ **Fractional movement tracking** for pixel-perfect precision
-- ✅ **4K/5K display auto-scaling**
 - ✅ Compatible with any relative input device (mouse, trackball, touchpad)
 
 ## Installation & Usage
@@ -139,9 +136,9 @@ Add the acceleration configuration to your device overlay. This configuration sh
 
 ```ini
 # In your prj.conf, choose a preset:
-CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y     # Gaming preset
-# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE=y   # Office preset
-# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_4K=y       # 4K display preset
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y       # Gaming preset
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE=y     # Office preset
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS=y  # High sensitivity preset
 ```
 
 ```devicetree
@@ -166,6 +163,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     sensitivity = <1300>;     // 1.3x base sensitivity
     max-factor = <2800>;      // 2.8x maximum acceleration
     curve-type = <1>;         // 0=Linear, 1=Mild, 2=Strong
+    sensor-dpi = <800>;       // 800 DPI sensor (optional, defaults to 800)
 };
 ```
 
@@ -181,6 +179,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     y-boost = <1300>;             // 1.3x Y-axis boost for widescreen
     speed-threshold = <600>;      // Start acceleration at 600 counts/sec
     speed-max = <3500>;           // Max acceleration at 3500 counts/sec
+    sensor-dpi = <800>;           // 800 DPI sensor (optional, defaults to 800)
 };
 ```
 
@@ -198,13 +197,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     speed-threshold = <500>;      // Acceleration starts at 500 counts/sec
     speed-max = <4000>;           // Max acceleration at 4000 counts/sec
     acceleration-exponent = <2>;  // Mild exponential curve
-
-    // Aspect ratio and DPI settings
-    x-aspect-scale = <1000>;      // 1.0x X-axis scaling
-    y-aspect-scale = <1500>;      // 1.5x Y-axis scaling
-    sensor-dpi = <1600>;          // 1600 DPI sensor
-    target-dpi = <1600>;          // Target 1600 DPI
-    dpi-multiplier = <1500>;      // 1.5x DPI multiplier for high-res
+    sensor-dpi = <800>;           // 800 DPI sensor (optional, defaults to 800)
 };
 ```
 
@@ -280,6 +273,15 @@ The acceleration processor provides several settings to customize how your point
     - 1 = Linear `t` (constant acceleration rate)
   - Example: `acceleration-exponent = <3>` for moderate exponential acceleration
 
+### Hardware Settings
+
+- `sensor-dpi`: (Default: 800)
+  - DPI/CPI setting of your mouse sensor
+  - Used for automatic sensitivity scaling
+  - Common values: 400, 800, 1200, 1600, 3200 DPI
+  - Higher DPI sensors will have reduced sensitivity to maintain consistent feel
+  - Example: `sensor-dpi = <1600>` for a 1600 DPI sensor
+
 ### Advanced Options
 
 - `track-remainders`: (Default: disabled)
@@ -333,6 +335,7 @@ The configurations under are just starting points - every person's perfect point
     speed-max = <6000>;
     acceleration-exponent = <2>; // Mild exponential curve
     track-remainders;         // Track fractional movements
+    sensor-dpi = <800>;       // 800 DPI sensor
 };
 ```
 
@@ -345,9 +348,10 @@ The configurations under are just starting points - every person's perfect point
     min-factor = <900>;        // 0.9x minimum
     max-factor = <2000>;       // 2.0x maximum
     speed-threshold = <1500>;  // Start accelerating later
-    speed-max = <5000>;         // 6000 counts/sec for max accel
+    speed-max = <5000>;         // 5000 counts/sec for max accel
     acceleration-exponent = <1>; // Linear acceleration
     track-remainders;          // Track fractional movements
+    sensor-dpi = <800>;       // 800 DPI sensor
 };
 ```
 
@@ -363,6 +367,7 @@ The configurations under are just starting points - every person's perfect point
     speed-max = <6000>;          // 6000 counts/sec for max accel
     acceleration-exponent = <3>; // Cubic acceleration curve
     track-remainders;          // Track fractional movements
+    sensor-dpi = <800>;       // 800 DPI sensor
 };
 ```
 

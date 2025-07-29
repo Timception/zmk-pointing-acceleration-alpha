@@ -100,12 +100,9 @@ struct accel_config {
     // Advanced level settings (level 3 only)
     uint16_t min_factor;
     uint8_t acceleration_exponent;
-    uint16_t y_aspect_scale;
-    uint16_t x_aspect_scale;
+    
+    // DPI setting (available for all levels when using custom configuration)
     uint16_t sensor_dpi;
-    uint16_t dpi_multiplier;
-    uint16_t target_dpi;
-    bool auto_scale_4k;
 };
 
 /**

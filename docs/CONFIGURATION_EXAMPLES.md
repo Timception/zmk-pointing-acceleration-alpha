@@ -33,6 +33,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     sensitivity = <1300>;     // 1.3x base sensitivity
     max-factor = <2800>;      // 2.8x maximum acceleration
     curve-type = <1>;         // Mild curve
+    sensor-dpi = <800>;       // 800 DPI sensor (optional)
 };
 ```
 
@@ -53,6 +54,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y
     y-boost = <1300>;             // 1.3x Y-axis boost
     speed-threshold = <600>;      // Start acceleration at 600 counts/sec
     speed-max = <3500>;           // Max acceleration at 3500 counts/sec
+    sensor-dpi = <800>;           // 800 DPI sensor (optional)
 };
 ```
 
@@ -74,12 +76,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y
     speed-threshold = <500>;      // Start at 500 counts/sec
     speed-max = <4000>;           // Max at 4000 counts/sec
     acceleration-exponent = <2>;  // Mild exponential curve
-
-    x-aspect-scale = <1000>;      // 1.0x X-axis scaling
-    y-aspect-scale = <1500>;      // 1.5x Y-axis scaling
-    sensor-dpi = <1600>;          // 1600 DPI sensor
-    target-dpi = <1600>;          // Target 1600 DPI
-    dpi-multiplier = <1500>;      // 1.5x DPI multiplier
+    sensor-dpi = <800>;           // 800 DPI sensor (optional)
 };
 ```
 

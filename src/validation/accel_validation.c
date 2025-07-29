@@ -16,6 +16,12 @@ static int validate_common_config(const struct accel_config *cfg) {
                 cfg->max_factor, MAX_SAFE_FACTOR);
         return -EINVAL;
     }
+    
+    if (!IS_VALID_RANGE(cfg->sensor_dpi, 400, 8000)) {
+        LOG_ERR("Invalid sensor_dpi: %u (range: 400-8000)", cfg->sensor_dpi);
+        return -EINVAL;
+    }
+    
     return 0;
 }
 
@@ -65,27 +71,9 @@ static int validate_level3_config(const struct accel_config *cfg) {
         return -EINVAL;
     }
     
-    if (cfg->sensor_dpi == 0 || cfg->target_dpi == 0) {
-        LOG_ERR("Level 3: DPI values cannot be zero (sensor=%u, target=%u)",
-                cfg->sensor_dpi, cfg->target_dpi);
-        return -EINVAL;
-    }
-    
     if (!IS_VALID_RANGE(cfg->acceleration_exponent, 1, 13)) {
         LOG_ERR("Level 3: Invalid acceleration_exponent: %u (range: 1-13)", 
                 cfg->acceleration_exponent);
-        return -EINVAL;
-    }
-    
-    if (!IS_VALID_RANGE(cfg->y_aspect_scale, 500, 3000)) {
-        LOG_ERR("Level 3: Invalid y_aspect_scale: %u (range: 500-3000)", 
-                cfg->y_aspect_scale);
-        return -EINVAL;
-    }
-    
-    if (!IS_VALID_RANGE(cfg->x_aspect_scale, 500, 3000)) {
-        LOG_ERR("Level 3: Invalid x_aspect_scale: %u (range: 500-3000)", 
-                cfg->x_aspect_scale);
         return -EINVAL;
     }
     

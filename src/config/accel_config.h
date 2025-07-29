@@ -25,7 +25,7 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst);
 /**
  * @brief Apply preset configuration
  * @param cfg Configuration structure to modify
- * @param preset_name Preset name ("office", "gaming", "4k")
+ * @param preset_name Preset name ("office", "gaming", "high_sens")
  * @return 0 on success, negative error code on failure
  */
 int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name);

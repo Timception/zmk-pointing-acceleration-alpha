@@ -22,8 +22,12 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     // If Simple level is not enabled, return minimal processing
     return (int32_t)ACCEL_CLAMP(((int64_t)input_value * 1200) / 1000, INT16_MIN, INT16_MAX);
 #else
-    // Apply base sensitivity with overflow protection
-    int64_t result = ((int64_t)input_value * cfg->sensitivity) / 1000;
+    // Apply DPI-adjusted sensitivity with overflow protection
+    // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
+    uint32_t dpi_adjusted_sensitivity = (cfg->sensitivity * 800) / cfg->sensor_dpi;
+    dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
+    
+    int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
     
     // Apply simple curve based on input magnitude
     int32_t abs_input = abs(input_value);
@@ -65,8 +69,12 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // Use enhanced speed calculation
     uint32_t speed = accel_calculate_enhanced_speed(&data->timing, input_value);
     
-    // Base sensitivity with overflow protection
-    int64_t result = ((int64_t)input_value * cfg->sensitivity) / 1000;
+    // Apply DPI-adjusted sensitivity with overflow protection
+    // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
+    uint32_t dpi_adjusted_sensitivity = (cfg->sensitivity * 800) / cfg->sensor_dpi;
+    dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
+    
+    int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
     
     // Speed-based acceleration
     if (speed > cfg->speed_threshold) {
@@ -161,60 +169,34 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
         }
     }
 
-    // DPI adjustment factor with overflow protection
-    uint32_t dpi_factor = ((uint32_t)cfg->target_dpi * cfg->dpi_multiplier) / cfg->sensor_dpi;
+    // Apply DPI adjustment to the acceleration factor
+    // Standard reference DPI is 800, adjust factor based on actual sensor DPI
+    uint32_t dpi_adjusted_factor = (factor * 800) / cfg->sensor_dpi;
+    dpi_adjusted_factor = ACCEL_CLAMP(dpi_adjusted_factor, cfg->min_factor, cfg->max_factor);
     
-    // Auto-scale for high-resolution displays
-    if (cfg->auto_scale_4k && dpi_factor < 1000) {
-        dpi_factor = (dpi_factor * 1500) / 1000;
-    }
-    dpi_factor = ACCEL_CLAMP(dpi_factor, 100, 5000);
-    
-    // Aspect ratio adjustment (code 0x00 is X-axis, 0x01 is Y-axis)
-    uint16_t aspect_scale = (code == 0x00) ? cfg->x_aspect_scale : cfg->y_aspect_scale;
-    
-    // Additional Y-axis acceleration boost with overflow protection
-    if (code == 0x01 && factor > cfg->min_factor) {
-        uint16_t y_boost = ((factor - cfg->min_factor) * 200) / (cfg->max_factor - cfg->min_factor);
-        y_boost = ACCEL_CLAMP(y_boost, 0, 500);
-        aspect_scale = (aspect_scale * (1000 + y_boost)) / 1000;
-        aspect_scale = ACCEL_CLAMP(aspect_scale, 500, 3000);
-    }
-    
-    // Precise calculation with overflow protection
-    int64_t precise_value = ((int64_t)input_value * factor * dpi_factor * aspect_scale);
-    int32_t accelerated_value = (int32_t)(precise_value / (1000LL * 1000LL * 1000LL));
+    // Simple calculation with overflow protection
+    int64_t precise_value = ((int64_t)input_value * dpi_adjusted_factor);
+    int32_t accelerated_value = (int32_t)(precise_value / 1000LL);
     
     // Clamp to prevent extreme values
     accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
     
-    // Thread-safe remainder processing
+    // Thread-safe remainder processing (simplified)
     if (cfg->track_remainders) {
-        // Use mutex for complex remainder operations
-        if (k_mutex_lock(&data->mutex, K_MSEC(1)) == 0) {
-            uint8_t remainder_idx = (code == 0x00) ? 0 : 1;
-            int32_t remainder = (int32_t)((precise_value % (1000LL * 1000LL * 1000LL)) / (1000LL * 1000LL));
-            
-            remainder = ACCEL_CLAMP(remainder, -10000, 10000);
-            
-            int32_t current_remainder = atomic_get(&data->remainders[remainder_idx]);
-            int32_t new_remainder = current_remainder + remainder;
-            new_remainder = ACCEL_CLAMP(new_remainder, INT16_MIN, INT16_MAX);
-            
-            atomic_set(&data->remainders[remainder_idx], new_remainder);
-            
-            if (abs(new_remainder) >= 1000) {
-                int32_t carry = new_remainder / 1000;
-                carry = ACCEL_CLAMP(carry, -10, 10);
-                
-                accelerated_value += carry;
-                accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
-                
-                atomic_set(&data->remainders[remainder_idx], new_remainder - carry * 1000);
-            }
-            
-            k_mutex_unlock(&data->mutex);
+        uint8_t remainder_idx = (code == 0x00) ? 0 : 1;
+        int32_t remainder = (int32_t)(precise_value % 1000LL);
+        
+        int32_t current_remainder = atomic_get(&data->remainders[remainder_idx]);
+        int32_t new_remainder = current_remainder + remainder;
+        
+        if (abs(new_remainder) >= 1000) {
+            int32_t carry = new_remainder / 1000;
+            accelerated_value += carry;
+            accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
+            new_remainder = new_remainder % 1000;
         }
+        
+        atomic_set(&data->remainders[remainder_idx], new_remainder);
     }
     
     // Minimum movement guarantee
@@ -230,8 +212,11 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
             uint16_t smooth_factor = last_factor + ((factor > last_factor) ? 250 : -250);
             smooth_factor = ACCEL_CLAMP(smooth_factor, cfg->min_factor, cfg->max_factor);
             
-            int64_t smooth_value = ((int64_t)input_value * smooth_factor * dpi_factor * aspect_scale);
-            int32_t smooth_accelerated = (int32_t)(smooth_value / (1000LL * 1000LL * 1000LL));
+            uint32_t dpi_adjusted_smooth_factor = (smooth_factor * 800) / cfg->sensor_dpi;
+            dpi_adjusted_smooth_factor = ACCEL_CLAMP(dpi_adjusted_smooth_factor, cfg->min_factor, cfg->max_factor);
+            
+            int64_t smooth_value = ((int64_t)input_value * dpi_adjusted_smooth_factor);
+            int32_t smooth_accelerated = (int32_t)(smooth_value / 1000LL);
             smooth_accelerated = ACCEL_CLAMP(smooth_accelerated, INT16_MIN, INT16_MAX);
             
             if (abs(smooth_accelerated - accelerated_value) > abs(accelerated_value) / 4) {
