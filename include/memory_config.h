@@ -21,6 +21,5 @@
 // デバッグ機能の条件付き無効化
 #ifndef CONFIG_DEBUG
     #define LOG_DBG(...)  // デバッグレベルは無効化
-    // LOG_INF は残す（デバッグ時に必要）
     #define ASSERT(...)
 #endif
