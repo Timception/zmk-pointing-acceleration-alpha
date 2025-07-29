@@ -6,6 +6,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <zephyr/logging/log.h>
+#include <zephyr/input/input.h>
 #include <stdlib.h>
 #include <drivers/input_processor_accel.h>
 
@@ -17,6 +18,10 @@ LOG_MODULE_DECLARE(input_processor_accel_main);
 
 // Simple acceleration: Just apply sensitivity and basic curve with safety
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code) {
+#if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)
+    // If Simple level is not enabled, return minimal processing
+    return (int32_t)ACCEL_CLAMP(((int64_t)input_value * 1200) / 1000, INT16_MIN, INT16_MAX);
+#else
     // Apply base sensitivity with overflow protection
     int64_t result = ((int64_t)input_value * cfg->sensitivity) / 1000;
     
@@ -47,11 +52,16 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     
     // Clamp result to safe range
     return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
+#endif
 }
 
 // Standard acceleration: Speed-based with Y-axis boost and enhanced timing
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code) {
+#if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)
+    // If Standard level is not enabled, fallback to simple calculation
+    return accel_simple_calculate(cfg, input_value, code);
+#else
     // Use enhanced speed calculation
     uint32_t speed = accel_calculate_enhanced_speed(&data->timing, input_value);
     
@@ -90,18 +100,23 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         result = (result * factor) / 1000;
     }
     
-    // Y-axis boost with overflow protection
-    if (code == INPUT_REL_Y) {
+    // Y-axis boost with overflow protection (code 0x01 is Y-axis)
+    if (code == 0x01) {
         result = (result * cfg->y_boost) / 1000;
     }
     
     // Clamp result to safe range
     return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
+#endif
 }
 
 // Advanced acceleration: Full-featured with enhanced safety and timing
 int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code) {
+#if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED)
+    // If Advanced level is not enabled, fallback to standard calculation
+    return accel_standard_calculate(cfg, data, input_value, code);
+#else
     // Use enhanced speed calculation
     uint32_t speed = accel_calculate_enhanced_speed(&data->timing, input_value);
     
@@ -155,11 +170,11 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
     }
     dpi_factor = ACCEL_CLAMP(dpi_factor, 100, 5000);
     
-    // Aspect ratio adjustment
-    uint16_t aspect_scale = (code == INPUT_REL_X) ? cfg->x_aspect_scale : cfg->y_aspect_scale;
+    // Aspect ratio adjustment (code 0x00 is X-axis, 0x01 is Y-axis)
+    uint16_t aspect_scale = (code == 0x00) ? cfg->x_aspect_scale : cfg->y_aspect_scale;
     
     // Additional Y-axis acceleration boost with overflow protection
-    if (code == INPUT_REL_Y && factor > cfg->min_factor) {
+    if (code == 0x01 && factor > cfg->min_factor) {
         uint16_t y_boost = ((factor - cfg->min_factor) * 200) / (cfg->max_factor - cfg->min_factor);
         y_boost = ACCEL_CLAMP(y_boost, 0, 500);
         aspect_scale = (aspect_scale * (1000 + y_boost)) / 1000;
@@ -177,7 +192,7 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
     if (cfg->track_remainders) {
         // Use mutex for complex remainder operations
         if (k_mutex_lock(&data->mutex, K_MSEC(1)) == 0) {
-            uint8_t remainder_idx = (code == INPUT_REL_X) ? 0 : 1;
+            uint8_t remainder_idx = (code == 0x00) ? 0 : 1;
             int32_t remainder = (int32_t)((precise_value % (1000LL * 1000LL * 1000LL)) / (1000LL * 1000LL));
             
             remainder = ACCEL_CLAMP(remainder, -10000, 10000);
@@ -230,4 +245,5 @@ int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_da
     atomic_set(&data->last_factor, factor);
     
     return accelerated_value;
+#endif
 }

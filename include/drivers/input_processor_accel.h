@@ -13,6 +13,11 @@
 #include <zephyr/sys/util.h>
 #include <drivers/input_processor.h>
 
+// Standard relative input event codes (following Linux input subsystem)
+// These are already included via drivers/input_processor.h -> zephyr/dt-bindings/input/input-event-codes.h
+#define INPUT_REL_X 0x00
+#define INPUT_REL_Y 0x01
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,6 +44,11 @@ extern "C" {
 // Validation macros (use custom names to avoid conflicts)
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 #define IS_VALID_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
+
+// Ensure CLAMP macro is available for backward compatibility
+#ifndef CLAMP
+#define CLAMP(val, min, max) ACCEL_CLAMP(val, min, max)
+#endif
 
 // Thread safety: Use atomic operations for shared data (macros removed - use atomic_* functions directly)
 
