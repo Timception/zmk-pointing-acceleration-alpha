@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <drivers/input_processor_accel.h>
 
-LOG_MODULE_DECLARE(input_processor_accel);
+LOG_MODULE_DECLARE(input_processor_accel_main);
 
 // =============================================================================
 // LEVEL-SPECIFIC CALCULATION FUNCTIONS
