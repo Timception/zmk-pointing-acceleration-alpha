@@ -5,7 +5,7 @@
 #include <string.h>
 #include "../config/accel_config.h"
 
-LOG_MODULE_DECLARE(input_processor_accel);
+LOG_MODULE_DECLARE(input_processor_accel_main);
 
 // =============================================================================
 // PRESET DEFINITIONS
@@ -32,7 +32,7 @@ static const preset_config_t presets[] = {
         .curve_type = 2  // Strong
     },
     {
-        .name = "4k",
+        .name = "high_sens",
         .sensitivity = 1800,
         .max_factor = 4000,
         .curve_type = 1  // Mild
@@ -84,7 +84,7 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
     accel_config_apply_preset(cfg, "office");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING)
     accel_config_apply_preset(cfg, "gaming");
-    #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_4K)
-    accel_config_apply_preset(cfg, "4k");
+    #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS)
+    accel_config_apply_preset(cfg, "high_sens");
     #endif
 }

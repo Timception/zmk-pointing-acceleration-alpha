@@ -1,12 +1,16 @@
 // accel_config.c - Unified configuration management
 // Centralizes all configuration logic and reduces complexity
+//
+// Copyright (c) 2024 The ZMK Contributors
+// Modifications (c) 2025 NUOVOTAKA
+// SPDX-License-Identifier: MIT
 
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree.h>
 #include <string.h>
 #include "accel_config.h"
 
-LOG_MODULE_DECLARE(input_processor_accel);
+LOG_MODULE_DECLARE(input_processor_accel_main);
 
 // =============================================================================
 // DEFAULT CONFIGURATIONS
@@ -17,18 +21,13 @@ static const struct accel_config level1_defaults = {
     .sensitivity = 1200,
     .max_factor = 2500,
     .curve_type = 1,
-    // Unused fields set to safe defaults
-    .y_boost = 1000,
+    // Y-axis boost now enabled from level 1
+    .y_boost = 1200,
     .speed_threshold = 0,
     .speed_max = 1000,
     .min_factor = 1000,
     .acceleration_exponent = 2,
-    .y_aspect_scale = 1000,
-    .x_aspect_scale = 1000,
-    .sensor_dpi = 1600,
-    .dpi_multiplier = 1000,
-    .target_dpi = 1600,
-    .auto_scale_4k = false
+    .sensor_dpi = 800
 };
 
 static const struct accel_config level2_defaults = {
@@ -42,12 +41,7 @@ static const struct accel_config level2_defaults = {
     // Advanced fields set to safe defaults
     .min_factor = 1000,
     .acceleration_exponent = 2,
-    .y_aspect_scale = 1000,
-    .x_aspect_scale = 1000,
-    .sensor_dpi = 1600,
-    .dpi_multiplier = 1000,
-    .target_dpi = 1600,
-    .auto_scale_4k = false
+    .sensor_dpi = 800
 };
 
 static const struct accel_config level3_defaults = {
@@ -60,12 +54,7 @@ static const struct accel_config level3_defaults = {
     .speed_max = 4000,
     .min_factor = 1000,
     .acceleration_exponent = 2,
-    .y_aspect_scale = 1500,
-    .x_aspect_scale = 1000,
-    .sensor_dpi = 1600,
-    .dpi_multiplier = 1500,
-    .target_dpi = 1600,
-    .auto_scale_4k = true
+    .sensor_dpi = 800
 };
 
 // =============================================================================
@@ -105,6 +94,12 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
         cfg->curve_type = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, curve_type, cfg->curve_type),
             0, 2);
+        cfg->y_boost = ACCEL_CLAMP(
+            DT_INST_PROP_OR(inst, y_boost, cfg->y_boost),
+            500, 3000);
+        cfg->sensor_dpi = ACCEL_CLAMP(
+            DT_INST_PROP_OR(inst, sensor_dpi, cfg->sensor_dpi),
+            400, 8000);
     } else if (level == 2) {
         cfg->sensitivity = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, sensitivity, cfg->sensitivity),
@@ -119,8 +114,13 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
             DT_INST_PROP_OR(inst, y_boost, cfg->y_boost),
             500, 3000);
         cfg->speed_threshold = DT_INST_PROP_OR(inst, speed_threshold, cfg->speed_threshold);
-        cfg->speed_max = MAX(DT_INST_PROP_OR(inst, speed_max, cfg->speed_max),
-                            cfg->speed_threshold + 100);
+        cfg->speed_max = MAX(ACCEL_CLAMP(
+            DT_INST_PROP_OR(inst, speed_max, cfg->speed_max),
+            cfg->speed_threshold + 100, MAX_REASONABLE_SPEED),
+            cfg->speed_threshold + 100);
+        cfg->sensor_dpi = ACCEL_CLAMP(
+            DT_INST_PROP_OR(inst, sensor_dpi, cfg->sensor_dpi),
+            400, 8000);
     } else { // level == 3
         cfg->min_factor = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, min_factor, cfg->min_factor),
@@ -134,20 +134,8 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
         cfg->acceleration_exponent = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, acceleration_exponent, cfg->acceleration_exponent),
             1, 13);
-        cfg->y_aspect_scale = ACCEL_CLAMP(
-            DT_INST_PROP_OR(inst, y_aspect_scale, cfg->y_aspect_scale),
-            500, 3000);
-        cfg->x_aspect_scale = ACCEL_CLAMP(
-            DT_INST_PROP_OR(inst, x_aspect_scale, cfg->x_aspect_scale),
-            500, 3000);
         cfg->sensor_dpi = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, sensor_dpi, cfg->sensor_dpi),
-            400, 8000);
-        cfg->dpi_multiplier = ACCEL_CLAMP(
-            DT_INST_PROP_OR(inst, dpi_multiplier, cfg->dpi_multiplier),
-            500, 3000);
-        cfg->target_dpi = ACCEL_CLAMP(
-            DT_INST_PROP_OR(inst, target_dpi, cfg->target_dpi),
             400, 8000);
     }
 

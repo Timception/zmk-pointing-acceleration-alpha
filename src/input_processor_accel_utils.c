@@ -5,11 +5,9 @@
 #include <stdlib.h>
 #include <drivers/input_processor_accel.h>
 
-LOG_MODULE_DECLARE(input_processor_accel);
+LOG_MODULE_DECLARE(input_processor_accel_main);
 
-// =============================================================================
-// NOTE: Validation functions moved to src/validation/accel_validation.c
-// =============================================================================
+
 
 // =============================================================================
 // MATHEMATICAL UTILITY FUNCTIONS

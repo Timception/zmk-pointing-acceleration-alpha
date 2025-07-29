@@ -6,6 +6,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <zephyr/device.h>
 #include <zephyr/input/input.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -46,3 +50,7 @@ struct zmk_input_processor_driver_api {
                         uint32_t param2,
                         struct zmk_input_processor_state *state);
 };
+
+#ifdef __cplusplus
+}
+#endif

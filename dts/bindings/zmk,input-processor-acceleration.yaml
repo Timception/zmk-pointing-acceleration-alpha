@@ -101,38 +101,10 @@ properties:
       12 = Quartic polynomial (f(t) = t^4)
       13 = Quintic polynomial (f(t) = t^5)
 
-  x-aspect-scale:
-    type: int
-    default: 1000
-    description: |
-      [LEVEL 3] X-axis aspect ratio scaling factor (scaled by 1000).
-      1000 = 1.0x, adjust for display aspect ratio.
-
-  y-aspect-scale:
-    type: int
-    default: 1500
-    description: |
-      [LEVEL 3] Y-axis aspect ratio scaling factor (scaled by 1000).
-      1500 = 1.5x, adjust for display aspect ratio and preference.
-
   sensor-dpi:
     type: int
-    default: 1600
+    default: 800
     description: |
-      [LEVEL 3] Mouse sensor DPI/CPI setting.
-      Used for automatic scaling adjustment. Higher DPI sensors 
-      will have reduced acceleration to prevent oversensitivity.
-
-  target-dpi:
-    type: int
-    default: 1600
-    description: |
-      [LEVEL 3] Target DPI for pointer movement scaling.
-      Used to adjust acceleration for desired on-screen sensitivity.
-
-  dpi-multiplier:
-    type: int
-    default: 1500
-    description: |
-      [LEVEL 3] DPI scaling multiplier (scaled by 1000).
-      1500 = 1.5x, fine-tune pointer sensitivity for high-res displays.
+      [ALL LEVELS] Mouse sensor DPI/CPI setting.
+      Used for automatic sensitivity scaling. Common values: 400, 800, 1200, 1600, 3200.
+      Higher DPI sensors will have reduced sensitivity to maintain consistent feel.

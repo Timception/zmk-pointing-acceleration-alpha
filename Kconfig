@@ -27,7 +27,7 @@ choice INPUT_PROCESSOR_ACCEL_LEVEL
       Choose the complexity level for mouse acceleration configuration:
       - Simple: 3 basic settings with presets (recommended for most users)
       - Standard: 6 settings with speed-based acceleration and Y-axis boost
-      - Advanced: 12+ settings with full DPI control and curve customization
+      - Advanced: 8+ settings with advanced curve customization
 
 config INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
     bool "Simple (3 settings + presets)"
@@ -42,10 +42,9 @@ config INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
       and configurable speed thresholds for balanced control.
 
 config INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
-    bool "Advanced (12+ settings)"
+    bool "Advanced (8+ settings)"
     help
-      Advanced configuration with full DPI control, aspect ratio adjustment,
-      multiple curve types, and precision remainder tracking.
+      Advanced configuration with multiple curve types and precision remainder tracking.
 
 endchoice
 
@@ -82,10 +81,10 @@ config INPUT_PROCESSOR_ACCEL_PRESET_GAMING
       Aggressive acceleration suitable for gaming and fast movements.
       Sensitivity: 1.5x, Max acceleration: 3.5x, Strong curve.
 
-config INPUT_PROCESSOR_ACCEL_PRESET_4K
-    bool "4K Display (high sensitivity)"
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS
+    bool "High Sensitivity (enhanced responsiveness)"
     help
-      High sensitivity configuration for 4K and high-resolution displays.
+      High sensitivity configuration for enhanced responsiveness.
       Sensitivity: 1.8x, Max acceleration: 4.0x, Mild curve.
 
 endchoice
@@ -117,6 +116,15 @@ config INPUT_PROCESSOR_ACCEL_CURVE_TYPE
       0 = Linear (gradual acceleration)
       1 = Mild (smooth acceleration) [DEFAULT]
       2 = Strong (aggressive acceleration)
+
+config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
+    int "Mouse sensor DPI/CPI setting"
+    default 800
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
+    range 400 8000
+    help
+      DPI/CPI setting of the mouse sensor. Used for sensitivity scaling.
+      Standard values: 400, 800, 1200, 1600, 3200 DPI.
 
 endif # INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
 
@@ -170,6 +178,14 @@ config INPUT_PROCESSOR_ACCEL_SPEED_MAX
     help
       Speed (counts per second) at which maximum acceleration factor is reached.
 
+config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
+    int "Mouse sensor DPI/CPI setting"
+    default 800
+    range 400 8000
+    help
+      DPI/CPI setting of the mouse sensor. Used for sensitivity scaling.
+      Standard values: 400, 800, 1200, 1600, 3200 DPI.
+
 endif # INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
 
 # =============================================================================
@@ -177,22 +193,6 @@ endif # INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
 # =============================================================================
 
 if INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
-
-config INPUT_PROCESSOR_ACCEL_Y_ASPECT_SCALE
-    int "Y axis aspect ratio scale (scaled by 1000)"
-    default 1500
-    range 500 3000
-    help
-      Scale factor for Y axis movement to adjust for screen aspect ratio.
-      1000 = 1.0x, 1500 = 1.5x, etc.
-
-config INPUT_PROCESSOR_ACCEL_X_ASPECT_SCALE
-    int "X axis aspect ratio scale (scaled by 1000)"
-    default 1000
-    range 500 3000
-    help
-      Scale factor for X axis movement to adjust for screen aspect ratio.
-      1000 = 1.0x (no scaling).
 
 config INPUT_PROCESSOR_ACCEL_MIN_FACTOR
     int "Minimum acceleration factor (scaled by 1000)"
@@ -206,7 +206,7 @@ config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
     default 4000
     range 1000 8000
     help
-      Maximum acceleration factor. 4000 = 4.0x acceleration for high-res displays.
+      Maximum acceleration factor. 4000 = 4.0x acceleration.
 
 config INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD
     int "Speed threshold for acceleration start"
@@ -240,30 +240,10 @@ config INPUT_PROCESSOR_ACCEL_EXPONENT
 
 config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
     int "Mouse sensor DPI/CPI setting"
-    default 1600
+    default 800
     range 400 8000
     help
-      DPI/CPI setting of the mouse sensor. Used for automatic scaling adjustment.
-      Higher DPI sensors will have reduced acceleration to prevent oversensitivity.
-
-config INPUT_PROCESSOR_ACCEL_DPI_MULTIPLIER
-    int "DPI scaling multiplier (scaled by 1000)"
-    default 1500
-    range 500 3000
-    help
-      DPI scaling multiplier for fine-tuning sensitivity. 1500 = 1.5x for high-res displays.
-
-config INPUT_PROCESSOR_ACCEL_TARGET_DPI
-    int "Target DPI for scaling reference"
-    default 1600
-    range 400 8000
-    help
-      Target DPI for pointer movement scaling. Used to adjust acceleration for desired sensitivity.
-
-config INPUT_PROCESSOR_ACCEL_AUTO_SCALE_4K
-    bool "Enable automatic 4K display scaling"
-    default y
-    help
-      Automatically apply additional scaling for high-resolution displays (4K/5K/8K).
+      DPI/CPI setting of the mouse sensor. Used for sensitivity scaling.
+      Standard values: 400, 800, 1200, 1600, 3200 DPI.
 
 endif # INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
