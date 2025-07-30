@@ -24,7 +24,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
 #else
     // Apply DPI-adjusted sensitivity with overflow protection
     // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
-    uint32_t dpi_adjusted_sensitivity = (cfg->sensitivity * 800) / cfg->sensor_dpi;
+    uint32_t dpi_adjusted_sensitivity = cfg->sensor_dpi > 0 ? 
+        (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
     int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
@@ -71,7 +72,8 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     // Apply DPI-adjusted sensitivity with overflow protection
     // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
-    uint32_t dpi_adjusted_sensitivity = (cfg->sensitivity * 800) / cfg->sensor_dpi;
+    uint32_t dpi_adjusted_sensitivity = cfg->sensor_dpi > 0 ? 
+        (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
     int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
@@ -83,8 +85,11 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
             factor = cfg->max_factor;
         } else {
             uint32_t speed_range = cfg->speed_max - cfg->speed_threshold;
-            uint32_t speed_offset = speed - cfg->speed_threshold;
-            uint32_t t = (speed_offset * 1000) / speed_range;
+            if (speed_range == 0) {
+                factor = cfg->max_factor; // Fallback if range is zero
+            } else {
+                uint32_t speed_offset = speed - cfg->speed_threshold;
+                uint32_t t = (speed_offset * 1000) / speed_range;
             
             // Apply acceleration curve based on exponent with overflow protection
             uint32_t curve;
@@ -137,8 +142,9 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                     break;
             }
             
-            curve = ACCEL_CLAMP(curve, 0, 1000);
-            factor = cfg->min_factor + (((cfg->max_factor - cfg->min_factor) * curve) / 1000);
+                curve = ACCEL_CLAMP(curve, 0, 1000);
+                factor = cfg->min_factor + (((cfg->max_factor - cfg->min_factor) * curve) / 1000);
+            }
         }
         
         factor = ACCEL_CLAMP(factor, cfg->min_factor, cfg->max_factor);
@@ -154,8 +160,8 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     int32_t accelerated_value = (int32_t)(result / 1000LL);
     
     // Thread-safe remainder processing for higher precision
-    if (cfg->track_remainders) {
-        uint8_t remainder_idx = (code == 0x00) ? 0 : 1; // X=0, Y=1
+    if (cfg->track_remainders && (code == INPUT_REL_X || code == INPUT_REL_Y)) {
+        uint8_t remainder_idx = (code == INPUT_REL_X) ? 0 : 1; // X=0, Y=1
         int32_t remainder = (int32_t)(result % 1000LL);
         
         int32_t current_remainder = atomic_get(&data->remainders[remainder_idx]);
