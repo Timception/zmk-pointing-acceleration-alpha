@@ -55,30 +55,22 @@ static int validate_level2_config(const struct accel_config *cfg) {
         return -EINVAL;
     }
     
-    return 0;
-}
-
-static int validate_level3_config(const struct accel_config *cfg) {
     if (cfg->min_factor > cfg->max_factor) {
-        LOG_ERR("Level 3: min_factor (%u) must be <= max_factor (%u)", 
+        LOG_ERR("Level 2: min_factor (%u) must be <= max_factor (%u)", 
                 cfg->min_factor, cfg->max_factor);
         return -EINVAL;
     }
     
-    if (cfg->speed_threshold >= cfg->speed_max) {
-        LOG_ERR("Level 3: speed_threshold (%u) must be < speed_max (%u)", 
-                cfg->speed_threshold, cfg->speed_max);
-        return -EINVAL;
-    }
-    
-    if (!IS_VALID_RANGE(cfg->acceleration_exponent, 1, 13)) {
-        LOG_ERR("Level 3: Invalid acceleration_exponent: %u (range: 1-13)", 
+    if (!IS_VALID_RANGE(cfg->acceleration_exponent, 1, 5)) {
+        LOG_ERR("Level 2: Invalid acceleration_exponent: %u (range: 1-5)", 
                 cfg->acceleration_exponent);
         return -EINVAL;
     }
     
     return 0;
 }
+
+
 
 int accel_validate_config(const struct accel_config *cfg) {
     if (!cfg) {
@@ -97,9 +89,6 @@ int accel_validate_config(const struct accel_config *cfg) {
             break;
         case 2:
             ret = validate_level2_config(cfg);
-            break;
-        case 3:
-            ret = validate_level3_config(cfg);
             break;
         default:
             LOG_ERR("Invalid configuration level: %u", cfg->level);

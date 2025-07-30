@@ -162,9 +162,6 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             case 2:
                 accelerated_value = accel_standard_calculate(cfg, data, input_value, event->code);
                 break;
-            case 3:
-                accelerated_value = accel_advanced_calculate(cfg, data, input_value, event->code);
-                break;
             default:
                 LOG_ERR("Invalid configuration level: %u", cfg->level);
                 accelerated_value = input_value; // Fallback to no acceleration

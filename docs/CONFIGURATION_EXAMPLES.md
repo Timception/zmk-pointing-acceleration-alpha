@@ -48,34 +48,15 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
+    track-remainders;             // Enable precision tracking
     sensitivity = <1200>;         // 1.2x base sensitivity
     max-factor = <3000>;          // 3.0x maximum acceleration
-    curve-type = <1>;             // Mild curve
+    curve-type = <1>;             // Basic mild curve
     y-boost = <1300>;             // 1.3x Y-axis boost
     speed-threshold = <600>;      // Start acceleration at 600 counts/sec
     speed-max = <3500>;           // Max acceleration at 3500 counts/sec
-    sensor-dpi = <800>;           // 800 DPI sensor (optional)
-};
-```
-
-## Level 3: Advanced Configuration
-
-```ini
-# In prj.conf
-CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y
-```
-
-```devicetree
-&pointer_accel {
-    input-type = <INPUT_EV_REL>;
-    codes = <INPUT_REL_X INPUT_REL_Y>;
-    track-remainders;             // Enable precision tracking
-
-    min-factor = <1000>;          // 1.0x minimum
-    max-factor = <4000>;          // 4.0x maximum acceleration
-    speed-threshold = <500>;      // Start at 500 counts/sec
-    speed-max = <4000>;           // Max at 4000 counts/sec
-    acceleration-exponent = <2>;  // Mild exponential curve
+    min-factor = <1000>;          // 1.0x minimum (no deceleration)
+    acceleration-exponent = <2>;  // Advanced exponential curve (1-5)
     sensor-dpi = <800>;           // 800 DPI sensor (optional)
 };
 ```
@@ -96,6 +77,13 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y
 
 ### Jerky Movement
 
-- Enable `track-remainders` (Level 3)
 - Reduce `max-factor`
 - Use mild curve (`curve-type = <1>`)
+- Use linear exponential curve (`acceleration-exponent = <1>`) in Level 2
+- Enable `track-remainders` for smoother movement
+
+### Small Movements Lost
+
+- Enable `track-remainders` to accumulate fractional movements
+- Reduce `min-factor` to preserve small movements
+- Lower `speed-threshold` to start acceleration earlier

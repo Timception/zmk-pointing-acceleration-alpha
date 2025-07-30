@@ -85,7 +85,7 @@ struct accel_config {
     const uint16_t *codes;
     uint32_t codes_count;
     bool track_remainders;
-    uint8_t level;  // Configuration level (1, 2, or 3)
+    uint8_t level;  // Configuration level (1 or 2)
     
     // Core settings (used by all levels)
     uint16_t sensitivity;
@@ -96,10 +96,10 @@ struct accel_config {
     uint16_t y_boost;
     uint32_t speed_threshold;
     uint32_t speed_max;
-    
-    // Advanced level settings (level 3 only)
     uint16_t min_factor;
     uint8_t acceleration_exponent;
+    
+
     
     // DPI setting (available for all levels when using custom configuration)
     uint16_t sensor_dpi;
@@ -187,8 +187,6 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 // Level-specific calculation functions (always available)
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code);
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
-                                int32_t input_value, uint16_t code);
-int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code);
 
 #ifdef __cplusplus

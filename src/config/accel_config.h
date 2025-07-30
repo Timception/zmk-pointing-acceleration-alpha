@@ -16,7 +16,7 @@ extern "C" {
 /**
  * @brief Initialize configuration with defaults based on level
  * @param cfg Configuration structure to initialize
- * @param level Configuration level (1, 2, or 3)
+ * @param level Configuration level (1 or 2)
  * @param inst Device tree instance number
  * @return 0 on success, negative error code on failure
  */
@@ -32,7 +32,7 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
 
 /**
  * @brief Get default configuration for specified level
- * @param level Configuration level (1, 2, or 3)
+ * @param level Configuration level (1 or 2)
  * @return Pointer to default configuration structure
  */
 const struct accel_config *accel_config_get_defaults(uint8_t level);
