@@ -28,31 +28,46 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
-    int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
+    // Use 64-bit arithmetic to prevent overflow during multiplication
+    int64_t result = ((int64_t)input_value * (int64_t)dpi_adjusted_sensitivity) / 1000LL;
+    
+    // Early overflow check
+    if (result > INT32_MAX) result = INT32_MAX;
+    if (result < INT32_MIN) result = INT32_MIN;
     
     // Apply simple curve based on input magnitude
     int32_t abs_input = abs(input_value);
-    if (abs_input > 1) {
+    if (abs_input > 1 && abs_input <= MAX_SAFE_INPUT_VALUE) {
         uint32_t curve_factor = 1000;
         
         switch (cfg->curve_type) {
-            case 0: // Linear
-                curve_factor = 1000 + ACCEL_CLAMP(abs_input * 100, 0, cfg->max_factor - 1000);
+            case 0: // Linear - safe multiplication
+                {
+                    uint32_t linear_add = (uint32_t)abs_input * 100;
+                    if (linear_add > cfg->max_factor - 1000) {
+                        linear_add = cfg->max_factor - 1000;
+                    }
+                    curve_factor = 1000 + linear_add;
+                }
                 break;
-            case 1: // Mild
+            case 1: // Mild - safe quadratic
                 curve_factor = accel_safe_quadratic_curve(abs_input, 10);
                 break;
-            case 2: // Strong
+            case 2: // Strong - safe quadratic
                 curve_factor = accel_safe_quadratic_curve(abs_input, 20);
                 break;
             default:
-                LOG_WRN("Invalid curve_type: %u, using linear", cfg->curve_type);
-                curve_factor = 1000 + ACCEL_CLAMP(abs_input * 100, 0, cfg->max_factor - 1000);
+                curve_factor = 1000 + ACCEL_CLAMP((uint32_t)abs_input * 100, 0, cfg->max_factor - 1000);
                 break;
         }
         
         curve_factor = ACCEL_CLAMP(curve_factor, 1000, cfg->max_factor);
-        result = (result * curve_factor) / 1000;
+        
+        // Safe multiplication with overflow check
+        int64_t temp_result = (result * (int64_t)curve_factor) / 1000LL;
+        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+        result = temp_result;
     }
     
     // Clamp result to safe range
@@ -91,31 +106,50 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                 uint32_t speed_offset = speed - cfg->speed_threshold;
                 uint32_t t = (speed_offset * 1000) / speed_range;
             
-                // Efficient exponential curve approximation for MCU
+                // Overflow-safe exponential curve approximation for MCU
                 uint32_t curve;
-                t = (t > 1000) ? 1000 : t; // Clamp to prevent overflow
+                t = (t > 1000) ? 1000 : t; // Clamp input to prevent overflow
                 
                 switch (cfg->acceleration_exponent) {
                     case 1: // Linear
                         curve = t;
                         break;
-                    case 2: // Mild exponential (e^(2t) - 1 approximation)
-                        curve = t + (t * t) / 2000;
+                    case 2: // Mild exponential - safe calculation
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            curve = t + (uint32_t)(t_squared / 2000ULL);
+                        }
                         break;
-                    case 3: // Moderate exponential
-                        curve = t + (t * t) / 1000 + (t * t * t) / 3000000;
+                    case 3: // Moderate exponential - safe calculation
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            uint64_t t_cubed = t_squared * t;
+                            curve = t + (uint32_t)(t_squared / 1000ULL) + (uint32_t)(t_cubed / 3000000ULL);
+                        }
                         break;
-                    case 4: // Strong exponential
-                        curve = t + (t * t) / 800 + (t * t * t) / 2000000;
+                    case 4: // Strong exponential - safe calculation
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            uint64_t t_cubed = t_squared * t;
+                            curve = t + (uint32_t)(t_squared / 800ULL) + (uint32_t)(t_cubed / 2000000ULL);
+                        }
                         break;
-                    case 5: // Aggressive exponential
-                        curve = t + (t * t) / 600 + (t * t * t) / 1500000;
+                    case 5: // Aggressive exponential - safe calculation
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            uint64_t t_cubed = t_squared * t;
+                            curve = t + (uint32_t)(t_squared / 600ULL) + (uint32_t)(t_cubed / 1500000ULL);
+                        }
                         break;
                     default:
-                        curve = (t * t) / 1000; // Fallback quadratic
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            curve = (uint32_t)(t_squared / 1000ULL); // Fallback quadratic
+                        }
                         break;
                 }
                 
+                // Final clamp to prevent overflow
                 curve = (curve > 1000) ? 1000 : curve;
             
                 curve = ACCEL_CLAMP(curve, 0, 1000);
@@ -124,12 +158,20 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         }
         
         factor = ACCEL_CLAMP(factor, cfg->min_factor, cfg->max_factor);
-        result = (result * factor) / 1000;
+        
+        // Safe multiplication with overflow check
+        int64_t temp_result = (result * (int64_t)factor) / 1000LL;
+        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+        result = temp_result;
     }
     
     // Y-axis boost with overflow protection (code 0x01 is Y-axis)
     if (code == 0x01) {
-        result = (result * cfg->y_boost) / 1000;
+        int64_t temp_result = (result * (int64_t)cfg->y_boost) / 1000LL;
+        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+        result = temp_result;
     }
     
     // Calculate final accelerated value
@@ -146,7 +188,13 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         
         if (abs(new_remainder) >= 1000) {
             int32_t carry = new_remainder / 1000;
-            accelerated_value += carry;
+            
+            // Overflow-safe addition
+            int64_t temp_value = (int64_t)accelerated_value + carry;
+            if (temp_value > INT16_MAX) temp_value = INT16_MAX;
+            if (temp_value < INT16_MIN) temp_value = INT16_MIN;
+            accelerated_value = (int32_t)temp_value;
+            
             new_remainder = new_remainder % 1000;
         }
         

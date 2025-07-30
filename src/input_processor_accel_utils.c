@@ -77,53 +77,35 @@ uint32_t accel_calculate_smoothed_speed(struct timing_data *timing, uint32_t cur
     return smoothed_speed;
 }
 
+// Simplified speed calculation for MCU efficiency
 uint32_t accel_calculate_enhanced_speed(struct timing_data *timing, int32_t input_value) {
-    int64_t current_time_us = accel_get_precise_time_us();
-    int64_t last_time_us = atomic_get(&timing->last_time_us);
+    uint32_t current_time_ms = k_uptime_get_32();
+    uint32_t last_time_ms = atomic_get(&timing->last_time_us); // Reuse as ms storage
     
-    // Calculate time delta in microseconds
-    int64_t time_delta_us = current_time_us - last_time_us;
+    uint32_t time_delta_ms = current_time_ms - last_time_ms;
     
-    // Handle edge cases
-    if (time_delta_us <= 0) {
-        // Same timestamp or clock went backwards - use minimum delta
-        time_delta_us = MIN_TIME_DELTA_US;
-    } else if (time_delta_us > (MAX_TIME_DELTA_MS * 1000)) {
-        // Too long since last event - limit to prevent unrealistic speeds
-        time_delta_us = MAX_TIME_DELTA_MS * 1000;
-    }
-    
-    // Calculate instantaneous speed: (counts * 1,000,000) / time_delta_us = counts/second
+    // Simple speed calculation: input magnitude per time
     uint32_t abs_input = abs(input_value);
-    uint32_t instant_speed;
+    uint32_t speed;
     
-    if (time_delta_us >= MIN_TIME_DELTA_US) {
-        // Normal calculation
-        instant_speed = (uint32_t)((uint64_t)abs_input * SPEED_SCALE_FACTOR / time_delta_us);
+    if (time_delta_ms > 0 && time_delta_ms < 500) {
+        // Normal case: speed = counts per second
+        speed = (abs_input * 1000) / time_delta_ms;
     } else {
-        // Very short time delta - use previous stable speed or estimate
-        uint32_t prev_stable = atomic_get(&timing->stable_speed);
-        instant_speed = prev_stable > 0 ? prev_stable : (abs_input * 10000); // Rough estimate
+        // Edge case: use previous speed or estimate
+        speed = atomic_get(&timing->stable_speed);
+        if (speed == 0) {
+            speed = abs_input * 100; // Simple estimate
+        }
     }
     
-    // Clamp to reasonable range
-    instant_speed = ACCEL_CLAMP(instant_speed, 0, MAX_REASONABLE_SPEED);
+    // Simple smoothing: 75% old + 25% new
+    uint32_t old_speed = atomic_get(&timing->stable_speed);
+    speed = (old_speed * 3 + speed) / 4;
     
-    // Update timestamp
-    atomic_set(&timing->last_time_us, current_time_us);
+    // Update state
+    atomic_set(&timing->last_time_us, current_time_ms);
+    atomic_set(&timing->stable_speed, speed);
     
-    // Calculate smoothed speed
-    uint32_t smoothed_speed = accel_calculate_smoothed_speed(timing, instant_speed);
-    
-    // Increment event counter for statistics
-    atomic_inc(&timing->event_count);
-    
-    // Log detailed timing information for debugging (only occasionally)
-    uint32_t event_count = atomic_get(&timing->event_count);
-    if ((event_count % 100) == 0) {
-        LOG_DBG("Speed calc: input=%d, delta_us=%lld, instant=%u, smoothed=%u", 
-                input_value, time_delta_us, instant_speed, smoothed_speed);
-    }
-    
-    return smoothed_speed;
+    return speed;
 }

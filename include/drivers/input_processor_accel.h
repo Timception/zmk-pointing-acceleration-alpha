@@ -45,6 +45,21 @@ extern "C" {
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 #define IS_VALID_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
+// Overflow-safe multiplication macros for MCU
+#define ACCEL_SAFE_MUL32(a, b, result) do { \
+    int64_t temp = (int64_t)(a) * (int64_t)(b); \
+    if (temp > INT32_MAX) temp = INT32_MAX; \
+    if (temp < INT32_MIN) temp = INT32_MIN; \
+    (result) = (int32_t)temp; \
+} while(0)
+
+#define ACCEL_SAFE_MUL16(a, b, result) do { \
+    int32_t temp = (int32_t)(a) * (int32_t)(b); \
+    if (temp > INT16_MAX) temp = INT16_MAX; \
+    if (temp < INT16_MIN) temp = INT16_MIN; \
+    (result) = (int16_t)temp; \
+} while(0)
+
 // Ensure CLAMP macro is available for backward compatibility
 #ifndef CLAMP
 #define CLAMP(val, min, max) ACCEL_CLAMP(val, min, max)
@@ -66,14 +81,11 @@ struct speed_sample {
 };
 
 /**
- * @brief Enhanced timing data structure
+ * @brief Simplified timing data structure for MCU efficiency
  */
 struct timing_data {
-    atomic_t last_time_us;                          // Last event time in microseconds
-    struct speed_sample speed_history[SPEED_HISTORY_SIZE]; // Speed history for smoothing
-    atomic_t history_index;                         // Current history index
-    atomic_t stable_speed;                          // Smoothed stable speed
-    atomic_t event_count;                           // Total event count for statistics
+    atomic_t last_time_us;                          // Last event time (reused as ms)
+    atomic_t stable_speed;                          // Simple smoothed speed
 };
 
 /**
@@ -138,7 +150,14 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg);
  * @return Clamped safe input value
  */
 static inline int32_t accel_clamp_input_value(int32_t input_value) {
-    return CLAMP(input_value, -MAX_SAFE_INPUT_VALUE, MAX_SAFE_INPUT_VALUE);
+    // Additional safety check for extreme values
+    if (input_value > MAX_SAFE_INPUT_VALUE) {
+        return MAX_SAFE_INPUT_VALUE;
+    }
+    if (input_value < -MAX_SAFE_INPUT_VALUE) {
+        return -MAX_SAFE_INPUT_VALUE;
+    }
+    return input_value;
 }
 
 /**
