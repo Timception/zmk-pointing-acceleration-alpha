@@ -31,7 +31,7 @@ extern "C" {
 // Enhanced time measurement constants
 #define MIN_TIME_DELTA_US       100     // Minimum time delta in microseconds (0.1ms)
 #define MAX_TIME_DELTA_MS       500     // Maximum time delta in milliseconds
-#define SPEED_HISTORY_SIZE      8       // Number of speed samples for smoothing
+#define SPEED_HISTORY_SIZE      4       // Reduced for MCU efficiency
 #define SPEED_SCALE_FACTOR      1000000 // Scale factor for microsecond-based speed calculation
 
 // Input value limits to prevent overflow

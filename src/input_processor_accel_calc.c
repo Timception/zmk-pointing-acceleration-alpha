@@ -91,56 +91,32 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                 uint32_t speed_offset = speed - cfg->speed_threshold;
                 uint32_t t = (speed_offset * 1000) / speed_range;
             
-            // Apply acceleration curve based on exponent with overflow protection
-            uint32_t curve;
-            switch (cfg->acceleration_exponent) {
-                case 1:
-                    curve = t;
-                    break;
-                case 2:
-                    {
-                        t = ACCEL_CLAMP(t, 0, 500); // Prevent overflow
-                        uint32_t x = (t * 2000) / 1000;
-                        uint32_t x2 = (x * x) / 1000;
-                        uint32_t x3 = (x2 * x) / 1000;
-                        curve = x + (x2 / 2) + (x3 / 6);
-                        curve = ACCEL_CLAMP(curve, 0, 1000);
-                    }
-                    break;
-                case 3:
-                    {
-                        t = ACCEL_CLAMP(t, 0, 400); // Prevent overflow
-                        uint32_t x = (t * 3000) / 1000;
-                        uint32_t x2 = (x * x) / 1000;
-                        uint32_t x3 = (x2 * x) / 1000;
-                        curve = x + (x2 / 2) + (x3 / 6);
-                        curve = ACCEL_CLAMP(curve, 0, 1000);
-                    }
-                    break;
-                case 4:
-                    {
-                        t = ACCEL_CLAMP(t, 0, 350); // Prevent overflow
-                        uint32_t x = (t * 4000) / 1000;
-                        uint32_t x2 = (x * x) / 1000;
-                        uint32_t x3 = (x2 * x) / 1000;
-                        curve = x + (x2 / 2) + (x3 / 6);
-                        curve = ACCEL_CLAMP(curve, 0, 1000);
-                    }
-                    break;
-                case 5:
-                    {
-                        t = ACCEL_CLAMP(t, 0, 300); // Prevent overflow
-                        uint32_t x = (t * 5000) / 1000;
-                        uint32_t x2 = (x * x) / 1000;
-                        uint32_t x3 = (x2 * x) / 1000;
-                        curve = x + (x2 / 2) + (x3 / 6);
-                        curve = ACCEL_CLAMP(curve, 0, 1000);
-                    }
-                    break;
-                default:
-                    curve = (t * t) / 1000;
-                    break;
-            }
+                // Efficient exponential curve approximation for MCU
+                uint32_t curve;
+                t = (t > 1000) ? 1000 : t; // Clamp to prevent overflow
+                
+                switch (cfg->acceleration_exponent) {
+                    case 1: // Linear
+                        curve = t;
+                        break;
+                    case 2: // Mild exponential (e^(2t) - 1 approximation)
+                        curve = t + (t * t) / 2000;
+                        break;
+                    case 3: // Moderate exponential
+                        curve = t + (t * t) / 1000 + (t * t * t) / 3000000;
+                        break;
+                    case 4: // Strong exponential
+                        curve = t + (t * t) / 800 + (t * t * t) / 2000000;
+                        break;
+                    case 5: // Aggressive exponential
+                        curve = t + (t * t) / 600 + (t * t * t) / 1500000;
+                        break;
+                    default:
+                        curve = (t * t) / 1000; // Fallback quadratic
+                        break;
+                }
+                
+                curve = (curve > 1000) ? 1000 : curve;
             
                 curve = ACCEL_CLAMP(curve, 0, 1000);
                 factor = cfg->min_factor + (((cfg->max_factor - cfg->min_factor) * curve) / 1000);
@@ -159,9 +135,10 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // Calculate final accelerated value
     int32_t accelerated_value = (int32_t)(result / 1000LL);
     
-    // Thread-safe remainder processing for higher precision
+    // Optional remainder processing (can be disabled for MCU efficiency)
+#ifdef CONFIG_INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS
     if (cfg->track_remainders && (code == INPUT_REL_X || code == INPUT_REL_Y)) {
-        uint8_t remainder_idx = (code == INPUT_REL_X) ? 0 : 1; // X=0, Y=1
+        uint8_t remainder_idx = (code == INPUT_REL_X) ? 0 : 1;
         int32_t remainder = (int32_t)(result % 1000LL);
         
         int32_t current_remainder = atomic_get(&data->remainders[remainder_idx]);
@@ -170,12 +147,12 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         if (abs(new_remainder) >= 1000) {
             int32_t carry = new_remainder / 1000;
             accelerated_value += carry;
-            accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
             new_remainder = new_remainder % 1000;
         }
         
         atomic_set(&data->remainders[remainder_idx], new_remainder);
     }
+#endif
     
     // Minimum movement guarantee
     if (input_value != 0 && accelerated_value == 0) {
