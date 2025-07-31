@@ -10,7 +10,7 @@
 #include <string.h>
 #include "accel_config.h"
 
-LOG_MODULE_DECLARE(input_processor_accel_main);
+LOG_MODULE_DECLARE(input_processor_accel);
 
 // =============================================================================
 // DEFAULT CONFIGURATIONS
