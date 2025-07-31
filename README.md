@@ -189,8 +189,6 @@ Add the acceleration processor to your input device's processor chain:
 
 ## Configuration Options
 
-**Visualisation of these settings here: https://pointing.streamlit.app/**
-
 The acceleration processor provides several settings to customize how your pointing device behaves. Here's a detailed explanation of each option:
 
 ### Basic Settings
