@@ -4,7 +4,7 @@
 #include <zephyr/logging/log.h>
 #include <drivers/input_processor_accel.h>
 
-LOG_MODULE_DECLARE(input_processor_accel_main);
+LOG_MODULE_DECLARE(input_processor_accel);
 
 // =============================================================================
 // MINIMAL VALIDATION FUNCTIONS
