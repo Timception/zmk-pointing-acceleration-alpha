@@ -26,12 +26,12 @@ extern "C" {
 // CONSTANTS AND CONFIGURATION
 // =============================================================================
 
-#define ACCEL_MAX_CODES 4
+// Removed - no longer using arrays indexed by code
 
 // Enhanced time measurement constants
 #define MIN_TIME_DELTA_US       100     // Minimum time delta in microseconds (0.1ms)
 #define MAX_TIME_DELTA_MS       500     // Maximum time delta in milliseconds
-#define SPEED_HISTORY_SIZE      8       // Number of speed samples for smoothing
+// Removed - no longer using speed history
 #define SPEED_SCALE_FACTOR      1000000 // Scale factor for microsecond-based speed calculation
 
 // Input value limits to prevent overflow
@@ -45,6 +45,21 @@ extern "C" {
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 #define IS_VALID_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
+// Overflow-safe multiplication macros for MCU
+#define ACCEL_SAFE_MUL32(a, b, result) do { \
+    int64_t temp = (int64_t)(a) * (int64_t)(b); \
+    if (temp > INT32_MAX) temp = INT32_MAX; \
+    if (temp < INT32_MIN) temp = INT32_MIN; \
+    (result) = (int32_t)temp; \
+} while(0)
+
+#define ACCEL_SAFE_MUL16(a, b, result) do { \
+    int32_t temp = (int32_t)(a) * (int32_t)(b); \
+    if (temp > INT16_MAX) temp = INT16_MAX; \
+    if (temp < INT16_MIN) temp = INT16_MIN; \
+    (result) = (int16_t)temp; \
+} while(0)
+
 // Ensure CLAMP macro is available for backward compatibility
 #ifndef CLAMP
 #define CLAMP(val, min, max) ACCEL_CLAMP(val, min, max)
@@ -56,24 +71,25 @@ extern "C" {
 // DATA STRUCTURES
 // =============================================================================
 
-/**
- * @brief Speed history entry for smoothing calculations
- */
-struct speed_sample {
-    uint32_t speed;         // Speed in counts per second
-    int64_t timestamp_us;   // Timestamp in microseconds
-    bool valid;             // Whether this sample is valid
-};
+// Removed - no longer needed for simplified implementation
 
 /**
- * @brief Enhanced timing data structure
+ * @brief Minimal acceleration data structure for MCU efficiency
+ * Total size: ~20 bytes (reduced from ~40 bytes)
  */
-struct timing_data {
-    atomic_t last_time_us;                          // Last event time in microseconds
-    struct speed_sample speed_history[SPEED_HISTORY_SIZE]; // Speed history for smoothing
-    atomic_t history_index;                         // Current history index
-    atomic_t stable_speed;                          // Smoothed stable speed
-    atomic_t event_count;                           // Total event count for statistics
+struct accel_data {
+    // Combined timing and speed data (8 bytes)
+    atomic_t last_time_ms;                          // Last event time in milliseconds
+    atomic_t stable_speed;                          // Simple smoothed speed
+    
+    // Remainder tracking for X/Y only (8 bytes)
+    atomic_t remainder_x;                           // X-axis remainder
+    atomic_t remainder_y;                           // Y-axis remainder
+    
+    // Last acceleration factor (4 bytes)
+    atomic_t last_factor;                           // Last applied factor
+    
+    // No mutex - using atomic operations only for thread safety
 };
 
 /**
@@ -85,7 +101,7 @@ struct accel_config {
     const uint16_t *codes;
     uint32_t codes_count;
     bool track_remainders;
-    uint8_t level;  // Configuration level (1, 2, or 3)
+    uint8_t level;  // Configuration level (1 or 2)
     
     // Core settings (used by all levels)
     uint16_t sensitivity;
@@ -96,23 +112,11 @@ struct accel_config {
     uint16_t y_boost;
     uint32_t speed_threshold;
     uint32_t speed_max;
-    
-    // Advanced level settings (level 3 only)
     uint16_t min_factor;
     uint8_t acceleration_exponent;
     
     // DPI setting (available for all levels when using custom configuration)
     uint16_t sensor_dpi;
-};
-
-/**
- * @brief Thread-safe acceleration data structure
- */
-struct accel_data {
-    struct timing_data timing;                      // Enhanced timing data
-    atomic_t remainders[ACCEL_MAX_CODES];          // Thread-safe remainders
-    atomic_t last_factor;                          // Thread-safe last factor
-    struct k_mutex mutex;                          // Mutex for complex operations
 };
 
 // =============================================================================
@@ -138,7 +142,14 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg);
  * @return Clamped safe input value
  */
 static inline int32_t accel_clamp_input_value(int32_t input_value) {
-    return CLAMP(input_value, -MAX_SAFE_INPUT_VALUE, MAX_SAFE_INPUT_VALUE);
+    // Additional safety check for extreme values
+    if (input_value > MAX_SAFE_INPUT_VALUE) {
+        return MAX_SAFE_INPUT_VALUE;
+    }
+    if (input_value < -MAX_SAFE_INPUT_VALUE) {
+        return -MAX_SAFE_INPUT_VALUE;
+    }
+    return input_value;
 }
 
 /**
@@ -163,23 +174,32 @@ static inline int64_t accel_get_precise_time_us(void) {
 #endif
 }
 
-/**
- * @brief Calculate smoothed speed from history
- * @param timing Timing data structure
- * @param current_speed Current calculated speed
- * @return Smoothed speed value
- */
-uint32_t accel_calculate_smoothed_speed(struct timing_data *timing, uint32_t current_speed);
+// Removed - integrated into enhanced speed calculation
 
 /**
- * @brief Enhanced speed calculation with improved precision
- * @param timing Timing data structure
+ * @brief Simplified speed calculation for MCU efficiency
+ * @param data Acceleration data structure
  * @param input_value Current input value
  * @return Calculated and smoothed speed
  */
-uint32_t accel_calculate_enhanced_speed(struct timing_data *timing, int32_t input_value);
+uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value);
 
-// Main event handler
+/**
+ * @brief Main event handler for acceleration processing
+ * @param dev Device instance
+ * @param event Input event to process
+ * @param param1 Additional parameter (unused)
+ * @param param2 Additional parameter (unused)
+ * @param state Input processor state (unused)
+ * @return 0: ZMK_INPUT_PROC_CONTINUE to continue processing, 
+ *         1: ZMK_INPUT_PROC_STOP to stop on critical errors or invalid configuration
+ * 
+ * Returns ZMK_INPUT_PROC_STOP in the following cases:
+ * - Critical parameter validation failure
+ * - Invalid configuration level
+ * - Abnormally large input values (hardware malfunction)
+ * - Calculation errors resulting in unsafe values
+ */
 int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
                       struct zmk_input_processor_state *state);
@@ -187,8 +207,6 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 // Level-specific calculation functions (always available)
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code);
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
-                                int32_t input_value, uint16_t code);
-int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code);
 
 #ifdef __cplusplus

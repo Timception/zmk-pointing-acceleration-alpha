@@ -38,24 +38,12 @@ static const struct accel_config level2_defaults = {
     .y_boost = 1200,
     .speed_threshold = 500,
     .speed_max = 3500,
-    // Advanced fields set to safe defaults
     .min_factor = 1000,
     .acceleration_exponent = 2,
     .sensor_dpi = 800
 };
 
-static const struct accel_config level3_defaults = {
-    .level = 3,
-    .sensitivity = 1000,  // Not used in level 3, but set for safety
-    .max_factor = 4000,
-    .curve_type = 0,      // Not used in level 3
-    .y_boost = 1000,      // Not used in level 3
-    .speed_threshold = 500,
-    .speed_max = 4000,
-    .min_factor = 1000,
-    .acceleration_exponent = 2,
-    .sensor_dpi = 800
-};
+
 
 // =============================================================================
 // CONFIGURATION FUNCTIONS
@@ -65,7 +53,6 @@ const struct accel_config *accel_config_get_defaults(uint8_t level) {
     switch (level) {
         case 1: return &level1_defaults;
         case 2: return &level2_defaults;
-        case 3: return &level3_defaults;
         default:
             LOG_ERR("Invalid configuration level: %u", level);
             return &level1_defaults;
@@ -118,22 +105,12 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
             DT_INST_PROP_OR(inst, speed_max, cfg->speed_max),
             cfg->speed_threshold + 100, MAX_REASONABLE_SPEED),
             cfg->speed_threshold + 100);
-        cfg->sensor_dpi = ACCEL_CLAMP(
-            DT_INST_PROP_OR(inst, sensor_dpi, cfg->sensor_dpi),
-            400, 8000);
-    } else { // level == 3
         cfg->min_factor = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, min_factor, cfg->min_factor),
             200, 2000);
-        cfg->max_factor = MAX(ACCEL_CLAMP(
-            DT_INST_PROP_OR(inst, max_factor, cfg->max_factor),
-            1000, MAX_SAFE_FACTOR), cfg->min_factor);
-        cfg->speed_threshold = DT_INST_PROP_OR(inst, speed_threshold, cfg->speed_threshold);
-        cfg->speed_max = MAX(DT_INST_PROP_OR(inst, speed_max, cfg->speed_max),
-                            cfg->speed_threshold + 100);
         cfg->acceleration_exponent = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, acceleration_exponent, cfg->acceleration_exponent),
-            1, 13);
+            1, 5);
         cfg->sensor_dpi = ACCEL_CLAMP(
             DT_INST_PROP_OR(inst, sensor_dpi, cfg->sensor_dpi),
             400, 8000);

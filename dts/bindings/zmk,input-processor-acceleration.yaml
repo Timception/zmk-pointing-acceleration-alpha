@@ -75,31 +75,23 @@ properties:
       [LEVEL 2] Speed at which maximum acceleration is reached (counts per second).
       Movements faster than this use the maximum acceleration factor.
 
-  # =============================================================================
-  # LEVEL 3: ADVANCED PROPERTIES (Available when CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL=3)
-  # =============================================================================
-
   min-factor:
     type: int
     default: 1000
     description: |
-      [LEVEL 3] Minimum acceleration factor (scaled by 1000).
+      [LEVEL 2] Minimum acceleration factor (scaled by 1000).
       Values <1000 slow down movements at very low speeds.
 
   acceleration-exponent:
     type: int
     default: 2
     description: |
-      [LEVEL 3] Advanced acceleration curve type:
+      [LEVEL 2] Advanced acceleration curve type:
       1 = Linear curve (f(t) = t)
       2 = Mild exponential curve (f(t) = e^(2t) - 1) [DEFAULT]
       3 = Moderate exponential curve (f(t) = e^(3t) - 1)
       4 = Strong exponential curve (f(t) = e^(4t) - 1)
       5 = Aggressive exponential curve (f(t) = e^(5t) - 1)
-      10 = Quadratic polynomial (f(t) = t^2)
-      11 = Cubic polynomial (f(t) = t^3)
-      12 = Quartic polynomial (f(t) = t^4)
-      13 = Quintic polynomial (f(t) = t^5)
 
   sensor-dpi:
     type: int

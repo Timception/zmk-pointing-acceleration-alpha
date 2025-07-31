@@ -8,7 +8,7 @@ I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-poi
 
 # ZMK MULTI-LEVEL POINTING ACCELERATION
 
-This repository contains a **3-level** pointer acceleration implementation for pointing devices in ZMK, designed to accommodate users from beginners to advanced enthusiasts.
+This repository contains a **2-level** pointer acceleration implementation for pointing devices in ZMK, designed to accommodate users from beginners to advanced enthusiasts.
 
 The acceleration makes fine cursor control more precise at slow speeds while allowing faster cursor movement when moving quickly. It supports customizable acceleration curves and can be configured for different input devices.
 
@@ -20,17 +20,12 @@ The acceleration makes fine cursor control more precise at slow speeds while all
 - Perfect for getting started quickly
 - Includes presets: Office, Gaming, High Sensitivity
 
-### **Level 2: Standard** (Balanced features)
+### **Level 2: Standard** (Advanced features)
 
-- **6 configurable settings**
+- **7 configurable settings**
 - Speed-based acceleration with Y-axis boost
-- Great for users who want more control
-
-### **Level 3: Advanced** (Full customization)
-
-- **8+ detailed settings**
-- Advanced curve types and precision control
-- For enthusiasts who want complete control
+- Advanced exponential curves (1-5)
+- Perfect for users who want full control
 
 **Device Compatibility Note:** This module has been tested with Cirque trackpads and should work with other pointing devices (trackballs, trackpoints, other trackpads). Use with non-Cirque devices at your own risk.
 
@@ -51,25 +46,14 @@ input device by following this: https://zmk.dev/docs/features/pointing**
 - ✅ All Level 1 features
 - ✅ **Speed-based acceleration** with configurable thresholds
 - ✅ **Y-axis boost** for widescreen displays
-- ✅ **6 configurable parameters**
-
-### **Level 3: Advanced Features**
-
-- ✅ All Level 1 & 2 features
-- ✅ **8+ detailed parameters**
-- ✅ **Multiple acceleration curves** with mathematical precision:
+- ✅ **Advanced exponential curves** with mathematical precision:
   - **Linear curve (1)**: `f(t) = t` - Constant acceleration rate
   - **Exponential curves (2-5)**: Natural, smooth acceleration feel
     - Mild exponential (2): `f(t) = e^(2t) - 1` - Balanced for general use
     - Moderate exponential (3): `f(t) = e^(3t) - 1` - More responsive
     - Strong exponential (4): `f(t) = e^(4t) - 1` - Aggressive acceleration
     - Aggressive exponential (5): `f(t) = e^(5t) - 1` - Maximum responsiveness
-  - **Polynomial curves (10-13)**: Predictable mathematical progression
-    - Quadratic (10): `f(t) = t²` - Classic smooth curve
-    - Cubic (11): `f(t) = t³` - Steeper acceleration
-    - Quartic (12): `f(t) = t⁴` - Very steep acceleration
-    - Quintic (13): `f(t) = t⁵` - Extremely steep acceleration
-- ✅ **Fractional movement tracking** for pixel-perfect precision
+- ✅ **7 configurable parameters** for complete customization
 - ✅ Compatible with any relative input device (mouse, trackball, touchpad)
 
 ## Installation & Usage
@@ -121,10 +105,9 @@ Add the necessary includes to your device overlay file (e.g. `yourkeyboard_left.
 Choose your configuration level in your `prj.conf` file:
 
 ```ini
-# Choose your level (1, 2, or 3)
+# Choose your level (1 or 2)
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y      # Level 1: Simple
 # CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y  # Level 2: Standard
-# CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y  # Level 3: Advanced
 ```
 
 ### Configure Acceleration
@@ -176,28 +159,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     codes = <INPUT_REL_X INPUT_REL_Y>;
     sensitivity = <1200>;         // 1.2x base sensitivity
     max-factor = <3000>;          // 3.0x maximum acceleration
-    curve-type = <1>;             // Mild curve
+    curve-type = <1>;             // Basic curve (0=Linear, 1=Mild, 2=Strong)
     y-boost = <1300>;             // 1.3x Y-axis boost for widescreen
     speed-threshold = <600>;      // Start acceleration at 600 counts/sec
     speed-max = <3500>;           // Max acceleration at 3500 counts/sec
-    sensor-dpi = <800>;           // 800 DPI sensor (optional, defaults to 800)
-};
-```
-
-#### **Level 3: Advanced Configuration**
-
-```devicetree
-&pointer_accel {
-    input-type = <INPUT_EV_REL>;
-    codes = <INPUT_REL_X INPUT_REL_Y>;
-    track-remainders;             // Enable precision tracking (boolean property)
-
-    // Advanced acceleration settings
     min-factor = <1000>;          // 1.0x minimum (no deceleration)
-    max-factor = <4000>;          // 4.0x maximum acceleration
-    speed-threshold = <500>;      // Acceleration starts at 500 counts/sec
-    speed-max = <4000>;           // Max acceleration at 4000 counts/sec
-    acceleration-exponent = <2>;  // Mild exponential curve
+    acceleration-exponent = <2>;  // Advanced exponential curve (1-5)
     sensor-dpi = <800>;           // 800 DPI sensor (optional, defaults to 800)
 };
 ```
@@ -228,13 +195,6 @@ The acceleration processor provides several settings to customize how your point
 
 ### Basic Settings
 
-- `min-factor`: (Default: 1000)
-
-  - Controls how slow movements are handled
-  - Values below 1000 will make slow movements even slower for precision
-  - Values are in thousandths (e.g., 800 = 0.8x speed)
-  - Example: `min-factor = <800>` makes slow movements 20% slower
-
 - `max-factor`: (Default: 3500)
   - Controls maximum acceleration at high speeds
   - Values are in thousandths (e.g., 3500 = 3.5x speed)
@@ -246,7 +206,7 @@ The acceleration processor provides several settings to customize how your point
 
   - Speed at which acceleration starts
   - Measured in counts per second
-  - Below this speed, min-factor is applied
+  - Below this speed, base sensitivity is applied
   - Above this speed, acceleration begins
   - Example: `speed-threshold = <1200>` means acceleration starts at moderate speeds
 
@@ -258,20 +218,21 @@ The acceleration processor provides several settings to customize how your point
 
 ### Acceleration Behavior
 
-- `acceleration-exponent`: (Default: 2)
-  - Controls the mathematical curve type for acceleration
-  - **Exponential curves (recommended for natural feel):**
+- `min-factor`: (Default: 1000) **[Level 2 Standard only]**
+
+  - Controls how slow movements are handled
+  - Values below 1000 will make slow movements even slower for precision
+  - Values are in thousandths (e.g., 800 = 0.8x speed)
+  - Example: `min-factor = <800>` makes slow movements 20% slower
+
+- `acceleration-exponent`: (Default: 2) **[Level 2 Standard only]**
+  - Controls the advanced mathematical curve type for acceleration
+  - **Available curves:**
+    - 1 = Linear `t` (constant acceleration rate)
     - 2 = Mild exponential `e^(2t) - 1` (default, balanced)
     - 3 = Moderate exponential `e^(3t) - 1` (more responsive)
     - 4 = Strong exponential `e^(4t) - 1` (aggressive)
-    - 5 = Aggressive exponential `e^(5t) - 1` (maximum)
-  - **Polynomial curves (predictable progression):**
-    - 10 = Quadratic `t²` (classic smooth curve)
-    - 11 = Cubic `t³` (steeper acceleration)
-    - 12 = Quartic `t⁴` (very steep)
-    - 13 = Quintic `t⁵` (extremely steep)
-  - **Linear curve:**
-    - 1 = Linear `t` (constant acceleration rate)
+    - 5 = Aggressive exponential `e^(5t) - 1` (maximum responsiveness)
   - Example: `acceleration-exponent = <3>` for moderate exponential acceleration
 
 ### Hardware Settings
@@ -285,10 +246,12 @@ The acceleration processor provides several settings to customize how your point
 
 ### Advanced Options
 
-- `track-remainders`: (Default: disabled)
-  - Enables tracking of fractional movements
-  - Improves precision by accumulating small movements
-  - Enable with `track-remainders;` in your config
+- `track-remainders`: (Default: disabled) **[Level 2 Standard only]**
+  - Enables tracking of fractional movements for higher precision
+  - Accumulates small movements that would otherwise be lost due to rounding
+  - Improves precision by carrying over fractional parts to subsequent movements
+  - Enable with `track-remainders;` in your config (boolean property)
+  - Particularly useful for low DPI sensors or high acceleration factors
 
 ### Visual Examples
 
@@ -324,65 +287,70 @@ The configurations under are just starting points - every person's perfect point
 
 > **Remember**: These examples were primarily tested with Cirque trackpads. If you're using other pointing devices (like trackballs or trackpoints), your mileage may vary - and that's why sharing your experience is so valuable
 
-### General Use:
+### General Use (Level 2 Standard):
 
 ```devicetree
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
-    min-factor = <800>;        // Slight slowdown for precision
+    track-remainders;          // Enable precision tracking
+    sensitivity = <1200>;      // 1.2x base sensitivity
     max-factor = <3000>;       // Good acceleration for large movements
+    curve-type = <1>;          // Basic mild curve
+    y-boost = <1200>;          // 1.2x Y-axis boost
     speed-threshold = <1200>;  // Balanced acceleration point
-    speed-max = <6000>;
+    speed-max = <6000>;        // Max acceleration at 6000 counts/sec
+    min-factor = <800>;        // 0.8x minimum for precision
     acceleration-exponent = <2>; // Mild exponential curve
-    track-remainders;         // Track fractional movements
-    sensor-dpi = <800>;       // 800 DPI sensor
+    sensor-dpi = <800>;        // 800 DPI sensor
 };
 ```
 
-### Light Acceleration
+### Light Acceleration (Level 2 Standard):
 
 ```devicetree
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
-    min-factor = <900>;        // 0.9x minimum
+    sensitivity = <1100>;      // 1.1x base sensitivity
     max-factor = <2000>;       // 2.0x maximum
+    curve-type = <0>;          // Linear basic curve
+    y-boost = <1100>;          // 1.1x Y-axis boost
     speed-threshold = <1500>;  // Start accelerating later
-    speed-max = <5000>;         // 5000 counts/sec for max accel
+    speed-max = <5000>;        // 5000 counts/sec for max accel
     acceleration-exponent = <1>; // Linear acceleration
-    track-remainders;          // Track fractional movements
-    sensor-dpi = <800>;       // 800 DPI sensor
+    sensor-dpi = <800>;        // 800 DPI sensor
 };
 ```
 
-### Heavy Acceleration
+### Heavy Acceleration (Level 2 Standard):
 
 ```devicetree
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
-    min-factor = <700>;        // 0.7x minimum
+    track-remainders;          // Enable precision tracking
+    sensitivity = <1000>;      // 1.0x base sensitivity
     max-factor = <4000>;       // 4.0x maximum
+    curve-type = <2>;          // Strong basic curve
+    y-boost = <1000>;          // 1.0x Y-axis boost
     speed-threshold = <1000>;  // Start accelerating earlier
-    speed-max = <6000>;          // 6000 counts/sec for max accel
-    acceleration-exponent = <3>; // Cubic acceleration curve
-    track-remainders;          // Track fractional movements
-    sensor-dpi = <800>;       // 800 DPI sensor
+    speed-max = <6000>;        // 6000 counts/sec for max accel
+    min-factor = <700>;        // 0.7x minimum for precision
+    acceleration-exponent = <4>; // Strong exponential curve
+    sensor-dpi = <800>;        // 800 DPI sensor
 };
 ```
 
-### Precision Mode
+### Precision Mode (Level 1 Simple):
 
 ```devicetree
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
-    min-factor = <500>;        // 0.5x for fine control
+    sensitivity = <800>;       // 0.8x for fine control
     max-factor = <1500>;       // 1.5x maximum
-    speed-threshold = <2000>;  // High threshold for stability
-    speed-max = <7000>;          // 6000 counts/sec for max accel
-    acceleration-exponent = <1>; // Linear response
-    track-remainders;          // Track fractional movements
+    curve-type = <0>;          // Linear curve
+    sensor-dpi = <800>;        // 800 DPI sensor
 };
 ```

@@ -3,8 +3,7 @@
 ## 1. Choose Your Level
 
 - **Level 1 (Simple)**: 3 basic settings + presets - recommended for most users
-- **Level 2 (Standard)**: 6 settings with speed-based acceleration
-- **Level 3 (Advanced)**: 12+ settings for complete customization
+- **Level 2 (Standard)**: 7 settings with speed-based acceleration and advanced curves
 
 ## 2. Basic Setup
 
@@ -34,7 +33,6 @@ manifest:
 # Choose ONE level
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y      # Level 1
 # CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y  # Level 2
-# CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED=y  # Level 3
 
 # For Level 1, choose a preset (optional)
 CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y

@@ -8,7 +8,7 @@ config ZMK_INPUT_PROCESSOR_ACCELERATION
     depends on INPUT
     help
         Enables multi-level velocity-based acceleration for relative pointer input events.
-        Choose from Simple, Standard, or Advanced configuration levels.
+        Choose from Simple or Standard configuration levels.
 
 config INPUT_PROCESSOR_ACCELERATION_INIT_PRIORITY
     int "Input processor acceleration initialization priority"
@@ -26,8 +26,7 @@ choice INPUT_PROCESSOR_ACCEL_LEVEL
     help
       Choose the complexity level for mouse acceleration configuration:
       - Simple: 3 basic settings with presets (recommended for most users)
-      - Standard: 6 settings with speed-based acceleration and Y-axis boost
-      - Advanced: 8+ settings with advanced curve customization
+      - Standard: 7 settings with speed-based acceleration, Y-axis boost, and advanced curves
 
 config INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
     bool "Simple (3 settings + presets)"
@@ -36,15 +35,10 @@ config INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
       and curve type. Includes preset configurations for common use cases.
 
 config INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
-    bool "Standard (6 settings)"
+    bool "Standard (7 settings)"
     help
       Standard configuration with speed-based acceleration, Y-axis boost,
-      and configurable speed thresholds for balanced control.
-
-config INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
-    bool "Advanced (8+ settings)"
-    help
-      Advanced configuration with multiple curve types and precision remainder tracking.
+      configurable speed thresholds, and advanced curve customization.
 
 endchoice
 
@@ -52,7 +46,6 @@ config INPUT_PROCESSOR_ACCEL_LEVEL
     int
     default 1 if INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
     default 2 if INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
-    default 3 if INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
 
 # =============================================================================
 # LEVEL 1: SIMPLE CONFIGURATION
@@ -178,54 +171,18 @@ config INPUT_PROCESSOR_ACCEL_SPEED_MAX
     help
       Speed (counts per second) at which maximum acceleration factor is reached.
 
-config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
-    int "Mouse sensor DPI/CPI setting"
-    default 800
-    range 400 8000
-    help
-      DPI/CPI setting of the mouse sensor. Used for sensitivity scaling.
-      Standard values: 400, 800, 1200, 1600, 3200 DPI.
-
-endif # INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
-
-# =============================================================================
-# LEVEL 3: ADVANCED CONFIGURATION
-# =============================================================================
-
-if INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
-
 config INPUT_PROCESSOR_ACCEL_MIN_FACTOR
     int "Minimum acceleration factor (scaled by 1000)"
     default 1000
     range 200 1500
     help
       Minimum acceleration factor. Values <1000 slow down movements at very low speeds.
-
-config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
-    int "Maximum acceleration factor (scaled by 1000)"
-    default 4000
-    range 1000 8000
-    help
-      Maximum acceleration factor. 4000 = 4.0x acceleration.
-
-config INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD
-    int "Speed threshold for acceleration start"
-    default 500
-    range 100 2000
-    help
-      Speed threshold below which no acceleration is applied.
-
-config INPUT_PROCESSOR_ACCEL_SPEED_MAX
-    int "Maximum speed for acceleration calculation"
-    default 4000
-    range 1000 10000
-    help
-      Speed at which maximum acceleration factor is reached.
+      1000 = 1.0x (no change), 800 = 0.8x (slower), 1200 = 1.2x (faster).
 
 config INPUT_PROCESSOR_ACCEL_EXPONENT
     int "Acceleration curve type"
     default 2
-    range 1 13
+    range 1 5
     help
       Advanced acceleration curve type:
       1 = Linear curve (f(t) = t)
@@ -233,10 +190,6 @@ config INPUT_PROCESSOR_ACCEL_EXPONENT
       3 = Moderate exponential curve (f(t) = e^(3t) - 1)
       4 = Strong exponential curve (f(t) = e^(4t) - 1)
       5 = Aggressive exponential curve (f(t) = e^(5t) - 1)
-      10 = Quadratic polynomial (f(t) = t^2)
-      11 = Cubic polynomial (f(t) = t^3)
-      12 = Quartic polynomial (f(t) = t^4)
-      13 = Quintic polynomial (f(t) = t^5)
 
 config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
     int "Mouse sensor DPI/CPI setting"
@@ -246,4 +199,13 @@ config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
       DPI/CPI setting of the mouse sensor. Used for sensitivity scaling.
       Standard values: 400, 800, 1200, 1600, 3200 DPI.
 
-endif # INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED
+config INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS
+    bool "Enable remainder tracking for precision"
+    default y
+    help
+      Enable fractional movement tracking for higher precision.
+      Disable this to reduce code size and memory usage on resource-constrained MCUs.
+
+endif # INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
+
+

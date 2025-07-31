@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <drivers/input_processor_accel.h>
 
-LOG_MODULE_DECLARE(input_processor_accel_main);
+LOG_MODULE_DECLARE(input_processor_accel);
 
 // =============================================================================
 // LEVEL-SPECIFIC CALCULATION FUNCTIONS
@@ -24,34 +24,50 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
 #else
     // Apply DPI-adjusted sensitivity with overflow protection
     // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
-    uint32_t dpi_adjusted_sensitivity = (cfg->sensitivity * 800) / cfg->sensor_dpi;
+    uint32_t dpi_adjusted_sensitivity = cfg->sensor_dpi > 0 ? 
+        (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
-    int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
+    // Use 64-bit arithmetic to prevent overflow during multiplication
+    int64_t result = ((int64_t)input_value * (int64_t)dpi_adjusted_sensitivity) / 1000LL;
+    
+    // Early overflow check
+    if (result > INT32_MAX) result = INT32_MAX;
+    if (result < INT32_MIN) result = INT32_MIN;
     
     // Apply simple curve based on input magnitude
     int32_t abs_input = abs(input_value);
-    if (abs_input > 1) {
+    if (abs_input > 1 && abs_input <= MAX_SAFE_INPUT_VALUE) {
         uint32_t curve_factor = 1000;
         
         switch (cfg->curve_type) {
-            case 0: // Linear
-                curve_factor = 1000 + ACCEL_CLAMP(abs_input * 100, 0, cfg->max_factor - 1000);
+            case 0: // Linear - safe multiplication
+                {
+                    uint32_t linear_add = (uint32_t)abs_input * 100;
+                    if (linear_add > cfg->max_factor - 1000) {
+                        linear_add = cfg->max_factor - 1000;
+                    }
+                    curve_factor = 1000 + linear_add;
+                }
                 break;
-            case 1: // Mild
+            case 1: // Mild - safe quadratic
                 curve_factor = accel_safe_quadratic_curve(abs_input, 10);
                 break;
-            case 2: // Strong
+            case 2: // Strong - safe quadratic
                 curve_factor = accel_safe_quadratic_curve(abs_input, 20);
                 break;
             default:
-                LOG_WRN("Invalid curve_type: %u, using linear", cfg->curve_type);
-                curve_factor = 1000 + ACCEL_CLAMP(abs_input * 100, 0, cfg->max_factor - 1000);
+                curve_factor = 1000 + ACCEL_CLAMP((uint32_t)abs_input * 100, 0, cfg->max_factor - 1000);
                 break;
         }
         
         curve_factor = ACCEL_CLAMP(curve_factor, 1000, cfg->max_factor);
-        result = (result * curve_factor) / 1000;
+        
+        // Safe multiplication with overflow check
+        int64_t temp_result = (result * (int64_t)curve_factor) / 1000LL;
+        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+        result = temp_result;
     }
     
     // Clamp result to safe range
@@ -66,169 +82,135 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // If Standard level is not enabled, fallback to simple calculation
     return accel_simple_calculate(cfg, input_value, code);
 #else
-    // Use enhanced speed calculation
-    uint32_t speed = accel_calculate_enhanced_speed(&data->timing, input_value);
+    // Use simplified speed calculation
+    uint32_t speed = accel_calculate_speed(data, input_value);
     
     // Apply DPI-adjusted sensitivity with overflow protection
     // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
-    uint32_t dpi_adjusted_sensitivity = (cfg->sensitivity * 800) / cfg->sensor_dpi;
+    uint32_t dpi_adjusted_sensitivity = cfg->sensor_dpi > 0 ? 
+        (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
     int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
     
     // Speed-based acceleration
+    uint32_t factor = cfg->min_factor;
     if (speed > cfg->speed_threshold) {
-        uint32_t factor = 1000;
         if (speed >= cfg->speed_max) {
             factor = cfg->max_factor;
         } else {
             uint32_t speed_range = cfg->speed_max - cfg->speed_threshold;
-            uint32_t speed_offset = speed - cfg->speed_threshold;
-            uint32_t t = (speed_offset * 1000) / speed_range;
+            if (speed_range == 0) {
+                factor = cfg->max_factor; // Fallback if range is zero
+            } else {
+                uint32_t speed_offset = speed - cfg->speed_threshold;
+                uint32_t t = (speed_offset * 1000) / speed_range;
             
-            // Apply curve with overflow protection
-            uint32_t curve;
-            switch (cfg->curve_type) {
-                case 0: curve = t; break; // Linear
-                case 1: curve = (t * t) / 1000; break; // Quadratic
-                case 2: {
-                    // Cubic with overflow protection
-                    uint64_t temp = (uint64_t)t * t * t;
-                    curve = (uint32_t)(temp / (1000ULL * 1000ULL));
-                    break;
+                // Overflow-safe exponential curve approximation for MCU
+                uint32_t curve;
+                t = (t > 1000) ? 1000 : t; // Clamp input to prevent overflow
+                
+                switch (cfg->acceleration_exponent) {
+                    case 1: // Linear
+                        curve = t;
+                        break;
+                    case 2: // Mild exponential - safe calculation
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            curve = t + (uint32_t)(t_squared / 2000ULL);
+                        }
+                        break;
+                    case 3: // Moderate exponential - safe calculation
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            uint64_t t_cubed = t_squared * t;
+                            curve = t + (uint32_t)(t_squared / 1000ULL) + (uint32_t)(t_cubed / 3000000ULL);
+                        }
+                        break;
+                    case 4: // Strong exponential - safe calculation
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            uint64_t t_cubed = t_squared * t;
+                            curve = t + (uint32_t)(t_squared / 800ULL) + (uint32_t)(t_cubed / 2000000ULL);
+                        }
+                        break;
+                    case 5: // Aggressive exponential - safe calculation
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            uint64_t t_cubed = t_squared * t;
+                            curve = t + (uint32_t)(t_squared / 600ULL) + (uint32_t)(t_cubed / 1500000ULL);
+                        }
+                        break;
+                    default:
+                        {
+                            uint64_t t_squared = (uint64_t)t * t;
+                            curve = (uint32_t)(t_squared / 1000ULL); // Fallback quadratic
+                        }
+                        break;
                 }
-                default: curve = (t * t) / 1000; break;
-            }
+                
+                // Final clamp to prevent overflow
+                curve = (curve > 1000) ? 1000 : curve;
             
-            curve = ACCEL_CLAMP(curve, 0, 1000);
-            factor = 1000 + (((cfg->max_factor - 1000) * curve) / 1000);
+                curve = ACCEL_CLAMP(curve, 0, 1000);
+                factor = cfg->min_factor + (((cfg->max_factor - cfg->min_factor) * curve) / 1000);
+            }
         }
         
-        factor = ACCEL_CLAMP(factor, 1000, cfg->max_factor);
-        result = (result * factor) / 1000;
+        factor = ACCEL_CLAMP(factor, cfg->min_factor, cfg->max_factor);
+        
+        // Safe multiplication with overflow check
+        int64_t temp_result = (result * (int64_t)factor) / 1000LL;
+        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+        result = temp_result;
     }
     
     // Y-axis boost with overflow protection (code 0x01 is Y-axis)
     if (code == 0x01) {
-        result = (result * cfg->y_boost) / 1000;
+        int64_t temp_result = (result * (int64_t)cfg->y_boost) / 1000LL;
+        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+        result = temp_result;
     }
     
-    // Clamp result to safe range
-    return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
-#endif
-}
-
-// Advanced acceleration: Full-featured with enhanced safety and timing
-int32_t accel_advanced_calculate(const struct accel_config *cfg, struct accel_data *data, 
-                                int32_t input_value, uint16_t code) {
-#if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_ADVANCED)
-    // If Advanced level is not enabled, fallback to standard calculation
-    return accel_standard_calculate(cfg, data, input_value, code);
-#else
-    // Use enhanced speed calculation
-    uint32_t speed = accel_calculate_enhanced_speed(&data->timing, input_value);
+    // Calculate final accelerated value
+    int32_t accelerated_value = (int32_t)(result / 1000LL);
     
-    // Acceleration factor calculation
-    uint16_t factor = cfg->min_factor;
-    
-    if (speed > cfg->speed_threshold) {
-        if (speed >= cfg->speed_max) {
-            factor = cfg->max_factor;
-        } else {
-            uint32_t speed_range = cfg->speed_max - cfg->speed_threshold;
-            uint32_t speed_offset = speed - cfg->speed_threshold;
-            uint32_t t_int = (speed_offset * 1000) / speed_range;
-
-            // Apply acceleration curve based on exponent with overflow protection
-            uint32_t curve;
-            switch (cfg->acceleration_exponent) {
-                case 1:
-                    curve = t_int;
-                    break;
-                case 2:
-                    {
-                        t_int = ACCEL_CLAMP(t_int, 0, 500); // Prevent overflow
-                        uint32_t x = (t_int * 2000) / 1000;
-                        uint32_t x2 = (x * x) / 1000;
-                        uint32_t x3 = (x2 * x) / 1000;
-                        curve = x + (x2 / 2) + (x3 / 6);
-                        curve = ACCEL_CLAMP(curve, 0, 1000);
-                    }
-                    break;
-                case 10:
-                    curve = (t_int * t_int) / 1000;
-                    break;
-                default:
-                    curve = (t_int * t_int) / 1000;
-                    break;
-            }
-            
-            curve = ACCEL_CLAMP(curve, 0, 1000);
-            factor = cfg->min_factor + (uint16_t)(((cfg->max_factor - cfg->min_factor) * curve) / 1000);
-            factor = ACCEL_CLAMP(factor, cfg->min_factor, cfg->max_factor);
-        }
-    }
-
-    // Apply DPI adjustment to the acceleration factor
-    // Standard reference DPI is 800, adjust factor based on actual sensor DPI
-    uint32_t dpi_adjusted_factor = (factor * 800) / cfg->sensor_dpi;
-    dpi_adjusted_factor = ACCEL_CLAMP(dpi_adjusted_factor, cfg->min_factor, cfg->max_factor);
-    
-    // Simple calculation with overflow protection
-    int64_t precise_value = ((int64_t)input_value * dpi_adjusted_factor);
-    int32_t accelerated_value = (int32_t)(precise_value / 1000LL);
-    
-    // Clamp to prevent extreme values
-    accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
-    
-    // Thread-safe remainder processing (simplified)
-    if (cfg->track_remainders) {
-        uint8_t remainder_idx = (code == 0x00) ? 0 : 1;
-        int32_t remainder = (int32_t)(precise_value % 1000LL);
+    // Optional remainder processing (can be disabled for MCU efficiency)
+#ifdef CONFIG_INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS
+    if (cfg->track_remainders && (code == INPUT_REL_X || code == INPUT_REL_Y)) {
+        int32_t remainder = (int32_t)(result % 1000LL);
         
-        int32_t current_remainder = atomic_get(&data->remainders[remainder_idx]);
+        // Select appropriate remainder storage
+        atomic_t *remainder_ptr = (code == INPUT_REL_X) ? &data->remainder_x : &data->remainder_y;
+        
+        int32_t current_remainder = atomic_get(remainder_ptr);
         int32_t new_remainder = current_remainder + remainder;
         
         if (abs(new_remainder) >= 1000) {
             int32_t carry = new_remainder / 1000;
-            accelerated_value += carry;
-            accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
+            
+            // Overflow-safe addition
+            int64_t temp_value = (int64_t)accelerated_value + carry;
+            if (temp_value > INT16_MAX) temp_value = INT16_MAX;
+            if (temp_value < INT16_MIN) temp_value = INT16_MIN;
+            accelerated_value = (int32_t)temp_value;
+            
             new_remainder = new_remainder % 1000;
         }
         
-        atomic_set(&data->remainders[remainder_idx], new_remainder);
+        atomic_set(remainder_ptr, new_remainder);
     }
+#endif
     
     // Minimum movement guarantee
     if (input_value != 0 && accelerated_value == 0) {
         accelerated_value = (input_value > 0) ? 1 : -1;
     }
     
-    // Thread-safe smooth large jumps prevention
-    int32_t last_factor = atomic_get(&data->last_factor);
-    if (last_factor > 0) {
-        int32_t factor_diff = abs((int32_t)factor - last_factor);
-        if (factor_diff > 500) {
-            uint16_t smooth_factor = last_factor + ((factor > last_factor) ? 250 : -250);
-            smooth_factor = ACCEL_CLAMP(smooth_factor, cfg->min_factor, cfg->max_factor);
-            
-            uint32_t dpi_adjusted_smooth_factor = (smooth_factor * 800) / cfg->sensor_dpi;
-            dpi_adjusted_smooth_factor = ACCEL_CLAMP(dpi_adjusted_smooth_factor, cfg->min_factor, cfg->max_factor);
-            
-            int64_t smooth_value = ((int64_t)input_value * dpi_adjusted_smooth_factor);
-            int32_t smooth_accelerated = (int32_t)(smooth_value / 1000LL);
-            smooth_accelerated = ACCEL_CLAMP(smooth_accelerated, INT16_MIN, INT16_MAX);
-            
-            if (abs(smooth_accelerated - accelerated_value) > abs(accelerated_value) / 4) {
-                accelerated_value = smooth_accelerated;
-                factor = smooth_factor;
-            }
-        }
-    }
-    
-    // Thread-safe factor update
-    atomic_set(&data->last_factor, factor);
-    
-    return accelerated_value;
+    // Clamp result to safe range
+    return (int32_t)ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
 #endif
 }
+
