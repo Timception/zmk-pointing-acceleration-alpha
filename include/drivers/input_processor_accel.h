@@ -31,7 +31,7 @@ extern "C" {
 // Enhanced time measurement constants
 #define MIN_TIME_DELTA_US       100     // Minimum time delta in microseconds (0.1ms)
 #define MAX_TIME_DELTA_MS       500     // Maximum time delta in milliseconds
-#define SPEED_HISTORY_SIZE      4       // Reduced for MCU efficiency
+// Removed - no longer using speed history
 #define SPEED_SCALE_FACTOR      1000000 // Scale factor for microsecond-based speed calculation
 
 // Input value limits to prevent overflow
@@ -71,14 +71,7 @@ extern "C" {
 // DATA STRUCTURES
 // =============================================================================
 
-/**
- * @brief Speed history entry for smoothing calculations
- */
-struct speed_sample {
-    uint32_t speed;         // Speed in counts per second
-    int64_t timestamp_us;   // Timestamp in microseconds
-    bool valid;             // Whether this sample is valid
-};
+// Removed - no longer needed for simplified implementation
 
 /**
  * @brief Simplified timing data structure for MCU efficiency
@@ -182,13 +175,7 @@ static inline int64_t accel_get_precise_time_us(void) {
 #endif
 }
 
-/**
- * @brief Calculate smoothed speed from history
- * @param timing Timing data structure
- * @param current_speed Current calculated speed
- * @return Smoothed speed value
- */
-uint32_t accel_calculate_smoothed_speed(struct timing_data *timing, uint32_t current_speed);
+// Removed - integrated into enhanced speed calculation
 
 /**
  * @brief Enhanced speed calculation with improved precision

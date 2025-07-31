@@ -33,22 +33,15 @@ static int accel_init_device(const struct device *dev) {
         return ret;
     }
     
-    // Initialize data structures
+    // Initialize data structures (simplified for MCU efficiency)
     k_mutex_init(&data->mutex);
     atomic_set(&data->timing.last_time_us, 0);
-    atomic_set(&data->timing.history_index, 0);
     atomic_set(&data->timing.stable_speed, 0);
-    atomic_set(&data->timing.event_count, 0);
     atomic_set(&data->last_factor, 1000);
     
     // Initialize remainders
     for (int i = 0; i < ACCEL_MAX_CODES; i++) {
         atomic_set(&data->remainders[i], 0);
-    }
-    
-    // Initialize speed history
-    for (int i = 0; i < SPEED_HISTORY_SIZE; i++) {
-        data->timing.speed_history[i].valid = false;
     }
     
     LOG_INF("Acceleration processor initialized (Level %d)", cfg->level);
