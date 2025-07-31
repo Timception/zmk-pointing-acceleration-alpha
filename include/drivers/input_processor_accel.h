@@ -184,7 +184,22 @@ static inline int64_t accel_get_precise_time_us(void) {
  */
 uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value);
 
-// Main event handler
+/**
+ * @brief Main event handler for acceleration processing
+ * @param dev Device instance
+ * @param event Input event to process
+ * @param param1 Additional parameter (unused)
+ * @param param2 Additional parameter (unused)
+ * @param state Input processor state (unused)
+ * @return 0: ZMK_INPUT_PROC_CONTINUE to continue processing, 
+ *         1: ZMK_INPUT_PROC_STOP to stop on critical errors or invalid configuration
+ * 
+ * Returns ZMK_INPUT_PROC_STOP in the following cases:
+ * - Critical parameter validation failure
+ * - Invalid configuration level
+ * - Abnormally large input values (hardware malfunction)
+ * - Calculation errors resulting in unsafe values
+ */
 int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
                       struct zmk_input_processor_state *state);

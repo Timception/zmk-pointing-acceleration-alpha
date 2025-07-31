@@ -99,10 +99,10 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
-    // Input validation
+    // Input validation - critical errors should stop processing
     if (!dev || !event || !cfg || !data) {
-        LOG_ERR("Invalid parameters");
-        return -EINVAL;
+        LOG_ERR("Critical error: Invalid parameters");
+        return 1; // Stop processing on critical error
     }
 
     // Pass through if not the specified type
@@ -131,6 +131,12 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     if (event->value == 0) {
         return 0;
     }
+    
+    // Check if acceleration is effectively disabled
+    if (cfg->max_factor <= 1000 && cfg->sensitivity <= 1000) {
+        // Acceleration is effectively disabled - pass through unchanged
+        return 0;
+    }
 
     // Mouse movement event acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
@@ -138,8 +144,12 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         int32_t input_value = accel_clamp_input_value(event->value);
         int32_t accelerated_value;
 
-        // Log extreme input values
-        if (abs(event->value) > MAX_SAFE_INPUT_VALUE) {
+        // Handle extreme input values
+        if (abs(event->value) > MAX_SAFE_INPUT_VALUE * 10) {
+            // Extremely abnormal input - likely hardware malfunction
+            LOG_ERR("Abnormal input value %d - stopping processing", event->value);
+            return 1;
+        } else if (abs(event->value) > MAX_SAFE_INPUT_VALUE) {
             LOG_WRN("Input value %d clamped to %d", event->value, input_value);
         }
 
@@ -153,8 +163,14 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                 break;
             default:
                 LOG_ERR("Invalid configuration level: %u", cfg->level);
-                accelerated_value = input_value; // Fallback to no acceleration
-                break;
+                // Stop processing on invalid configuration
+                return 1;
+        }
+
+        // Check for calculation errors (extreme results indicate problems)
+        if (abs(accelerated_value) > INT16_MAX) {
+            LOG_ERR("Calculation error: result %d exceeds safe range", accelerated_value);
+            return 1;
         }
 
         // Final safety check
@@ -163,6 +179,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
+        // Continue processing the modified event
         return 0;
     }
 
