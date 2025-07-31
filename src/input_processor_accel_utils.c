@@ -36,10 +36,10 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
 
 // Removed - now integrated into accel_calculate_enhanced_speed for efficiency
 
-// Simplified speed calculation for MCU efficiency
-uint32_t accel_calculate_enhanced_speed(struct timing_data *timing, int32_t input_value) {
+// Minimal speed calculation for MCU efficiency
+uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value) {
     uint32_t current_time_ms = k_uptime_get_32();
-    uint32_t last_time_ms = atomic_get(&timing->last_time_us); // Reuse as ms storage
+    uint32_t last_time_ms = atomic_get(&data->last_time_ms);
     
     uint32_t time_delta_ms = current_time_ms - last_time_ms;
     
@@ -52,19 +52,19 @@ uint32_t accel_calculate_enhanced_speed(struct timing_data *timing, int32_t inpu
         speed = (abs_input * 1000) / time_delta_ms;
     } else {
         // Edge case: use previous speed or estimate
-        speed = atomic_get(&timing->stable_speed);
+        speed = atomic_get(&data->stable_speed);
         if (speed == 0) {
             speed = abs_input * 100; // Simple estimate
         }
     }
     
     // Simple smoothing: 75% old + 25% new
-    uint32_t old_speed = atomic_get(&timing->stable_speed);
+    uint32_t old_speed = atomic_get(&data->stable_speed);
     speed = (old_speed * 3 + speed) / 4;
     
     // Update state
-    atomic_set(&timing->last_time_us, current_time_ms);
-    atomic_set(&timing->stable_speed, speed);
+    atomic_set(&data->last_time_ms, current_time_ms);
+    atomic_set(&data->stable_speed, speed);
     
     return speed;
 }

@@ -82,8 +82,8 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // If Standard level is not enabled, fallback to simple calculation
     return accel_simple_calculate(cfg, input_value, code);
 #else
-    // Use enhanced speed calculation
-    uint32_t speed = accel_calculate_enhanced_speed(&data->timing, input_value);
+    // Use simplified speed calculation
+    uint32_t speed = accel_calculate_speed(data, input_value);
     
     // Apply DPI-adjusted sensitivity with overflow protection
     // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
@@ -180,10 +180,12 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // Optional remainder processing (can be disabled for MCU efficiency)
 #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS
     if (cfg->track_remainders && (code == INPUT_REL_X || code == INPUT_REL_Y)) {
-        uint8_t remainder_idx = (code == INPUT_REL_X) ? 0 : 1;
         int32_t remainder = (int32_t)(result % 1000LL);
         
-        int32_t current_remainder = atomic_get(&data->remainders[remainder_idx]);
+        // Select appropriate remainder storage
+        atomic_t *remainder_ptr = (code == INPUT_REL_X) ? &data->remainder_x : &data->remainder_y;
+        
+        int32_t current_remainder = atomic_get(remainder_ptr);
         int32_t new_remainder = current_remainder + remainder;
         
         if (abs(new_remainder) >= 1000) {
@@ -198,7 +200,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
             new_remainder = new_remainder % 1000;
         }
         
-        atomic_set(&data->remainders[remainder_idx], new_remainder);
+        atomic_set(remainder_ptr, new_remainder);
     }
 #endif
     

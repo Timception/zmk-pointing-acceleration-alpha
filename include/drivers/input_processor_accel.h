@@ -26,7 +26,7 @@ extern "C" {
 // CONSTANTS AND CONFIGURATION
 // =============================================================================
 
-#define ACCEL_MAX_CODES 4
+// Removed - no longer using arrays indexed by code
 
 // Enhanced time measurement constants
 #define MIN_TIME_DELTA_US       100     // Minimum time delta in microseconds (0.1ms)
@@ -74,11 +74,22 @@ extern "C" {
 // Removed - no longer needed for simplified implementation
 
 /**
- * @brief Simplified timing data structure for MCU efficiency
+ * @brief Minimal acceleration data structure for MCU efficiency
+ * Total size: ~20 bytes (reduced from ~40 bytes)
  */
-struct timing_data {
-    atomic_t last_time_us;                          // Last event time (reused as ms)
+struct accel_data {
+    // Combined timing and speed data (8 bytes)
+    atomic_t last_time_ms;                          // Last event time in milliseconds
     atomic_t stable_speed;                          // Simple smoothed speed
+    
+    // Remainder tracking for X/Y only (8 bytes)
+    atomic_t remainder_x;                           // X-axis remainder
+    atomic_t remainder_y;                           // Y-axis remainder
+    
+    // Last acceleration factor (4 bytes)
+    atomic_t last_factor;                           // Last applied factor
+    
+    // No mutex - using atomic operations only for thread safety
 };
 
 /**
@@ -104,20 +115,8 @@ struct accel_config {
     uint16_t min_factor;
     uint8_t acceleration_exponent;
     
-
-    
     // DPI setting (available for all levels when using custom configuration)
     uint16_t sensor_dpi;
-};
-
-/**
- * @brief Thread-safe acceleration data structure
- */
-struct accel_data {
-    struct timing_data timing;                      // Enhanced timing data
-    atomic_t remainders[ACCEL_MAX_CODES];          // Thread-safe remainders
-    atomic_t last_factor;                          // Thread-safe last factor
-    struct k_mutex mutex;                          // Mutex for complex operations
 };
 
 // =============================================================================
@@ -178,12 +177,12 @@ static inline int64_t accel_get_precise_time_us(void) {
 // Removed - integrated into enhanced speed calculation
 
 /**
- * @brief Enhanced speed calculation with improved precision
- * @param timing Timing data structure
+ * @brief Simplified speed calculation for MCU efficiency
+ * @param data Acceleration data structure
  * @param input_value Current input value
  * @return Calculated and smoothed speed
  */
-uint32_t accel_calculate_enhanced_speed(struct timing_data *timing, int32_t input_value);
+uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value);
 
 // Main event handler
 int accel_handle_event(const struct device *dev, struct input_event *event,
