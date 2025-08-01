@@ -25,12 +25,6 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 static int accel_init_device(const struct device *dev) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
-    
-
-// debug
-    LOG_DBG("INPUT ACCEL PROCESSOR INIT");
-    printk("start init\n");
-
 
     // Validate configuration
     int ret = accel_validate_config(cfg);
@@ -104,13 +98,6 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                       struct zmk_input_processor_state *state) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
-
-
-
-// debug
-    LOG_DBG("* accel handle event start! *");
-    printk("printk test\n");
-
 
     // Input validation - critical errors should stop processing
     if (!dev || !event || !cfg || !data) {
@@ -195,10 +182,6 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Continue processing the modified event
         return 0;
     }
-
-
-// debug
-    LOG_DBG("* accel handle event end!! *");
 
     // Pass through other events as-is
     return 0;
