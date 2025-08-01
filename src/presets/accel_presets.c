@@ -16,6 +16,10 @@ typedef struct {
     uint16_t sensitivity;
     uint16_t max_factor;
     uint8_t curve_type;
+    uint16_t y_boost;
+    uint16_t speed_threshold;
+    uint16_t speed_max;
+    uint16_t min_factor;
 } preset_config_t;
 
 static const preset_config_t presets[] = {
@@ -23,19 +27,31 @@ static const preset_config_t presets[] = {
         .name = "office",
         .sensitivity = 1000,
         .max_factor = 2000,
-        .curve_type = 0  // Linear
+        .curve_type = 0,  // Linear
+        .y_boost = 1000,
+        .speed_threshold = 300,
+        .speed_max = 2000,
+        .min_factor = 1000
     },
     {
         .name = "gaming",
         .sensitivity = 1500,
         .max_factor = 3500,
-        .curve_type = 2  // Strong
+        .curve_type = 2,  // Strong
+        .y_boost = 1300,
+        .speed_threshold = 500,
+        .speed_max = 3500,
+        .min_factor = 1000
     },
     {
         .name = "high_sens",
         .sensitivity = 1800,
         .max_factor = 4000,
-        .curve_type = 1  // Mild
+        .curve_type = 1,  // Mild
+        .y_boost = 1500,
+        .speed_threshold = 400,
+        .speed_max = 4000,
+        .min_factor = 800
     }
 };
 
@@ -64,10 +80,18 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
         return -ENOENT;
     }
 
-    // Apply preset values (only affects level 1 settings)
+    // Apply preset values (works for both level 1 and 2)
     cfg->sensitivity = preset->sensitivity;
     cfg->max_factor = preset->max_factor;
     cfg->curve_type = preset->curve_type;
+    cfg->y_boost = preset->y_boost;
+    
+    // Level 2 specific settings
+    if (cfg->level == 2) {
+        cfg->speed_threshold = preset->speed_threshold;
+        cfg->speed_max = preset->speed_max;
+        cfg->min_factor = preset->min_factor;
+    }
 
     LOG_INF("Applied preset '%s': sens=%u, max=%u, curve=%u", 
             preset_name, preset->sensitivity, preset->max_factor, preset->curve_type);

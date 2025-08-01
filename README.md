@@ -43,7 +43,7 @@ input device by following this: https://zmk.dev/docs/features/pointing**
 
 ### **Level 2: Standard Features**
 
-- ✅ All Level 1 features
+- ✅ All Level 1 features **including presets**
 - ✅ **Speed-based acceleration** with configurable thresholds
 - ✅ **Y-axis boost** for widescreen displays
 - ✅ **Advanced exponential curves** with mathematical precision:
@@ -118,6 +118,12 @@ Add the acceleration configuration to your device overlay. This configuration sh
 
 **Option A: Use a Preset (Recommended)**
 
+Available presets work for both Level 1 and Level 2:
+
+- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE=y` - Conservative settings for office work
+- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y` - Balanced settings for gaming
+- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS=y` - High sensitivity for fast movements
+
 ```ini
 # In your prj.conf, choose a preset:
 CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y       # Gaming preset
@@ -152,6 +158,26 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 ```
 
 #### **Level 2: Standard Configuration**
+
+**Option A: Use a Preset (Recommended)**
+
+```ini
+# In your prj.conf, choose a preset:
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y       # Gaming preset
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE=y     # Office preset
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS=y  # High sensitivity preset
+```
+
+```devicetree
+&pointer_accel {
+    input-type = <INPUT_EV_REL>;
+    codes = <INPUT_REL_X INPUT_REL_Y>;
+    track-remainders;             // Enable precision tracking
+    // Preset values are automatically applied for all Level 2 settings!
+};
+```
+
+**Option B: Custom Standard Settings**
 
 ```devicetree
 &pointer_accel {
