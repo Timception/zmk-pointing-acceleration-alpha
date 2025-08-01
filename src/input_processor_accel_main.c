@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 static int accel_init_device(const struct device *dev) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
-    
+
     // Validate configuration
     int ret = accel_validate_config(cfg);
     if (ret < 0) {
@@ -65,9 +65,10 @@ static int accel_init_0(const struct device *dev) {
         return ret;
     }
     
-    // Note: Kconfig presets are currently only supported for Level 1 (Simple)
-    // For Level 2, use device tree configuration instead
-    
+
+    // Apply Kconfig presets if any (now supports both Level 1 and Level 2)
+    accel_config_apply_kconfig_preset(&accel_config_0);
+  
     // Validate final configuration
     ret = accel_validate_config(&accel_config_0);
     if (ret < 0) {
@@ -98,13 +99,6 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                       struct zmk_input_processor_state *state) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
-
-
-    LOG_INF("ACCEL HANDLE EVENT !!! START ****");
-
-
-
-
 
     // Input validation - critical errors should stop processing
     if (!dev || !event || !cfg || !data) {

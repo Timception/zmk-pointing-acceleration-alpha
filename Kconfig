@@ -127,9 +127,36 @@ endif # INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
 
 if INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
 
+choice INPUT_PROCESSOR_ACCEL_PRESET
+    prompt "Acceleration Preset"
+    default INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
+    help
+      Choose a preset configuration or customize manually.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
+    bool "Custom (configure manually)"
+
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE
+    bool "Office (conservative acceleration)"
+    help
+      Conservative acceleration suitable for office work and general use.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING
+    bool "Gaming (aggressive acceleration)"
+    help
+      Aggressive acceleration suitable for gaming and fast movements.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS
+    bool "High Sensitivity (enhanced responsiveness)"
+    help
+      High sensitivity configuration for enhanced responsiveness.
+
+endchoice
+
 config INPUT_PROCESSOR_ACCEL_SENSITIVITY
     int "Base sensitivity (scaled by 1000)"
     default 1200
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 500 3000
     help
       Base sensitivity multiplier. 1000 = 1.0x, 1200 = 1.2x, 1500 = 1.5x.
@@ -137,6 +164,7 @@ config INPUT_PROCESSOR_ACCEL_SENSITIVITY
 config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
     int "Maximum acceleration factor (scaled by 1000)"
     default 3000
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 1000 5000
     help
       Maximum acceleration factor at high speeds. 3000 = 3.0x acceleration.
@@ -144,6 +172,7 @@ config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
 config INPUT_PROCESSOR_ACCEL_CURVE_TYPE
     int "Acceleration curve type"
     default 1
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 0 2
     help
       Acceleration curve type:
@@ -152,6 +181,7 @@ config INPUT_PROCESSOR_ACCEL_CURVE_TYPE
 config INPUT_PROCESSOR_ACCEL_Y_BOOST
     int "Y-axis sensitivity boost (scaled by 1000)"
     default 1200
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 800 2000
     help
       Y-axis sensitivity multiplier. 1000 = same as X-axis, 1200 = 1.2x Y-axis.
@@ -160,6 +190,7 @@ config INPUT_PROCESSOR_ACCEL_Y_BOOST
 config INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD
     int "Speed threshold for acceleration start"
     default 500
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 100 2000
     help
       Speed threshold (counts per second) below which no acceleration is applied.
@@ -167,6 +198,7 @@ config INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD
 config INPUT_PROCESSOR_ACCEL_SPEED_MAX
     int "Speed for maximum acceleration"
     default 3500
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 1000 8000
     help
       Speed (counts per second) at which maximum acceleration factor is reached.
@@ -174,6 +206,7 @@ config INPUT_PROCESSOR_ACCEL_SPEED_MAX
 config INPUT_PROCESSOR_ACCEL_MIN_FACTOR
     int "Minimum acceleration factor (scaled by 1000)"
     default 1000
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 200 1500
     help
       Minimum acceleration factor. Values <1000 slow down movements at very low speeds.
@@ -182,6 +215,7 @@ config INPUT_PROCESSOR_ACCEL_MIN_FACTOR
 config INPUT_PROCESSOR_ACCEL_EXPONENT
     int "Acceleration curve type"
     default 2
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 1 5
     help
       Advanced acceleration curve type:
@@ -194,6 +228,7 @@ config INPUT_PROCESSOR_ACCEL_EXPONENT
 config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
     int "Mouse sensor DPI/CPI setting"
     default 800
+    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 400 8000
     help
       DPI/CPI setting of the mouse sensor. Used for sensitivity scaling.

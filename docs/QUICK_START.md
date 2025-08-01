@@ -34,8 +34,11 @@ manifest:
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y      # Level 1
 # CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y  # Level 2
 
-# For Level 1, choose a preset (optional)
+# Choose a preset (optional, works for both levels)
+# For Level 1 (Simple):
 CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
+# For Level 2 (Standard):
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
 ```
 
 ## 3. Add to Input Chain
