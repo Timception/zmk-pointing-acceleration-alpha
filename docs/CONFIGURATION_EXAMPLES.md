@@ -47,6 +47,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 
 ### Using Presets (Recommended)
 
+Available presets for Level 2:
+
+- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE=y` - Conservative settings for office work
+- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y` - Balanced settings for gaming
+- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS=y` - High sensitivity for fast movements
+
 ```ini
 # In prj.conf
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y
@@ -59,6 +65,8 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
     codes = <INPUT_REL_X INPUT_REL_Y>;
     track-remainders;             // Enable precision tracking
     // Preset values are automatically applied for all Level 2 settings
+    // Including: sensitivity, max-factor, curve-type, y-boost,
+    // speed-threshold, speed-max, min-factor
 };
 ```
 
@@ -67,6 +75,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
 ```ini
 # In prj.conf
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 ```
 
 ```devicetree

@@ -162,7 +162,8 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 **Option A: Use a Preset (Recommended)**
 
 ```ini
-# In your prj.conf, choose a preset:
+# In your prj.conf:
+CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y
 CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y       # Gaming preset
 # CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE=y     # Office preset
 # CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS=y  # High sensitivity preset
@@ -174,10 +175,18 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y       # Gaming preset
     codes = <INPUT_REL_X INPUT_REL_Y>;
     track-remainders;             // Enable precision tracking
     // Preset values are automatically applied for all Level 2 settings!
+    // Including: sensitivity, max-factor, curve-type, y-boost,
+    // speed-threshold, speed-max, min-factor
 };
 ```
 
 **Option B: Custom Standard Settings**
+
+```ini
+# In your prj.conf:
+CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
+```
 
 ```devicetree
 &pointer_accel {

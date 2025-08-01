@@ -65,7 +65,7 @@ static int accel_init_0(const struct device *dev) {
         return ret;
     }
     
-    // Apply Kconfig presets if any
+    // Apply Kconfig presets if any (now supports both Level 1 and Level 2)
     accel_config_apply_kconfig_preset(&accel_config_0);
     
     // Validate final configuration
