@@ -29,7 +29,7 @@ static int accel_init_device(const struct device *dev) {
 
 // debug
     LOG_DBG("INPUT ACCEL PROCESSOR INIT");
-    printk(“start init\n”);
+    printk("start init\n");
 
 
     // Validate configuration
