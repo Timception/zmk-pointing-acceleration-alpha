@@ -3,6 +3,7 @@
 
 #include <zephyr/logging/log.h>
 #include <string.h>
+#include <drivers/input_processor_accel.h>
 #include "../config/accel_config.h"
 
 LOG_MODULE_DECLARE(input_processor_accel);

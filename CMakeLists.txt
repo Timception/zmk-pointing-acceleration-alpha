@@ -9,10 +9,6 @@ zephyr_library_sources(
   src/input_processor_accel_calc.c
   src/config/accel_config.c
   src/validation/accel_validation.c
-)
-
-# Conditional compilation based on configuration level
-zephyr_library_sources_ifdef(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
   src/presets/accel_presets.c
 )
 
