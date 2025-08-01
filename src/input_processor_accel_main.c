@@ -9,8 +9,7 @@
 #include <drivers/input_processor_accel.h>
 #include "config/accel_config.h"
 
-// LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
-LOG_MODULE_REGISTER(input_processor_accel, 4);  // debug
+LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zmk_input_processor_acceleration
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
