@@ -65,8 +65,8 @@ static int accel_init_0(const struct device *dev) {
         return ret;
     }
     
-    // Apply Kconfig presets if any (temporarily disabled for debugging)
-    // accel_config_apply_kconfig_preset(&accel_config_0);
+    // Note: Kconfig presets are currently only supported for Level 1 (Simple)
+    // For Level 2, use device tree configuration instead
     
     // Validate final configuration
     ret = accel_validate_config(&accel_config_0);
