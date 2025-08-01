@@ -103,6 +103,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
 // debug
     LOG_DBG("* accel handle event start! *");
+    printk("printk test\n");
 
 
     // Input validation - critical errors should stop processing
