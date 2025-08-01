@@ -26,6 +26,12 @@ static int accel_init_device(const struct device *dev) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
     
+
+// debug
+    LOG_DBG("INPUT ACCEL PROCESSOR INIT");
+    printk(“start init\n”);
+
+
     // Validate configuration
     int ret = accel_validate_config(cfg);
     if (ret < 0) {
