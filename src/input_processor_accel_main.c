@@ -9,7 +9,8 @@
 #include <drivers/input_processor_accel.h>
 #include "config/accel_config.h"
 
-LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
+// LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
+LOG_MODULE_REGISTER(input_processor_accel, 4);  // debug
 
 #define DT_DRV_COMPAT zmk_input_processor_acceleration
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
@@ -99,6 +100,12 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
+
+
+// debug
+    LOG_DBG("* accel handle event start! *");
+
+
     // Input validation - critical errors should stop processing
     if (!dev || !event || !cfg || !data) {
         LOG_ERR("Critical error: Invalid parameters");
@@ -182,6 +189,10 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Continue processing the modified event
         return 0;
     }
+
+
+// debug
+    LOG_DBG("* accel handle event end!! *");
 
     // Pass through other events as-is
     return 0;
