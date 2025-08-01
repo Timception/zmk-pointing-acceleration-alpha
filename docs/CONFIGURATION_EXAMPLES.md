@@ -121,3 +121,33 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 - Enable `track-remainders` to accumulate fractional movements
 - Reduce `min-factor` to preserve small movements
 - Lower `speed-threshold` to start acceleration earlier
+
+## Tested Configurations
+
+### Optimized Widescreen Setup (Level 2)
+
+This configuration has been tested and optimized for widescreen displays:
+
+```devicetree
+&pointer_accel {
+    input-type = <INPUT_EV_REL>;
+    codes = <INPUT_REL_X INPUT_REL_Y>;
+    track-remainders;             // Enable precision tracking
+    sensitivity = <1300>;         // 1.3x base sensitivity
+    max-factor = <5000>;          // 5.0x maximum acceleration
+    curve-type = <2>;             // Strong curve for responsive feel
+    y-boost = <2500>;             // 2.5x Y-axis boost for widescreen
+    speed-threshold = <200>;      // Early acceleration start
+    speed-max = <4000>;           // Lower speed for max acceleration
+    min-factor = <800>;           // 0.8x minimum for precision
+    acceleration-exponent = <4>;  // Strong exponential curve
+    sensor-dpi = <800>;           // 800 DPI sensor
+};
+```
+
+**Features:**
+
+- **Responsive acceleration** - Starts accelerating at low speeds (200 counts/sec)
+- **Strong Y-axis boost** - 2.5x multiplier for comfortable vertical movement
+- **Smooth curves** - Strong exponential acceleration for natural feel
+- **High precision** - Remainder tracking enabled for smooth small movements
