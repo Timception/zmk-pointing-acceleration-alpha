@@ -5,6 +5,16 @@
 - **Level 1 (Simple)**: 3 basic settings + presets - recommended for most users
 - **Level 2 (Standard)**: 7 settings with speed-based acceleration and advanced curves
 
+## Key Settings Overview
+
+### Basic Parameters (Both Levels)
+
+- `sensitivity`: Base speed multiplier (1000 = 1.0x, 1200 = 1.2x)
+  - **Lower values**: More precise, slower movements
+  - **Higher values**: Faster movements for large displays
+- `max-factor`: Maximum acceleration at high speeds
+- `curve-type`: Acceleration curve (0=Linear, 1=Mild, 2=Strong)
+
 ## 2. Basic Setup
 
 ### Add to west.yml

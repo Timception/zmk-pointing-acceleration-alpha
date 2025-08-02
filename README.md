@@ -228,9 +228,20 @@ The acceleration processor provides several settings to customize how your point
 
 ### Basic Settings
 
+- `sensitivity`: (Default: 1000)
+
+  - Controls the base sensitivity multiplier for all pointer movements
+  - Values are in thousandths (e.g., 1200 = 1.2x speed, 800 = 0.8x speed)
+  - This affects the baseline speed before any acceleration is applied
+  - **Lower values (e.g., 800)**: Slower, more precise movements - good for detailed work
+  - **Higher values (e.g., 1500)**: Faster movements - good for large displays or quick navigation
+  - Example: `sensitivity = <1200>` makes all movements 20% faster than default
+
 - `max-factor`: (Default: 3500)
   - Controls maximum acceleration at high speeds
   - Values are in thousandths (e.g., 3500 = 3.5x speed)
+  - **Lower values (e.g., 2000)**: Less aggressive acceleration - more predictable movement
+  - **Higher values (e.g., 5000)**: More aggressive acceleration - faster for long distances
   - Example: `max-factor = <3000>` means fast movements are up to 3x faster
 
 ### Speed Settings
