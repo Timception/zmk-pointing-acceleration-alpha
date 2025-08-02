@@ -27,7 +27,7 @@ The acceleration makes fine cursor control more precise at slow speeds while all
 - Advanced exponential curves (1-5)
 - Perfect for users who want full control
 
-**Device Compatibility Note:** This module has been tested with Cirque trackpads and should work with other pointing devices (trackballs, trackpoints, other trackpads). Use with non-Cirque devices at your own risk.
+**Device Compatibility Note:** This module has been tested with trackballs using the Paw3222 mouse sensor. It should work with other pointing devices (trackpads, trackpoints, etc.). There may be risks you face due to differences in sensors and other factors.
 
 **Before you start, you should make sure that you have a working
 input device by following this: https://zmk.dev/docs/features/pointing**
@@ -329,7 +329,7 @@ The configurations under are just starting points - every person's perfect point
 - Share on Discord ZMK or my DM (with a quick note about your use case)
 - Comment on what worked/didn't work for you
 
-> **Remember**: These examples were primarily tested with Cirque trackpads. If you're using other pointing devices (like trackballs or trackpoints), your mileage may vary - and that's why sharing your experience is so valuable
+> **Remember**: These examples were primarily tested with trackballs using the Paw3222 mouse sensor. If you're using other pointing devices (like trackpads or trackpoints), your mileage may vary - and that's why sharing your experience is so valuable
 
 ### General Use (Level 2 Standard):
 
