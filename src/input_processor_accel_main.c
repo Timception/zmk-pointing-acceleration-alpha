@@ -6,6 +6,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <zephyr/logging/log.h>
+#include <stdlib.h>
 #include <drivers/input_processor_accel.h>
 #include "config/accel_config.h"
 
