@@ -11,7 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/input/input.h>
 #include <zephyr/sys/util.h>
-#include <drivers/input_processor.h>
+#include "input_processor.h"
 
 // Standard relative input event codes (following Linux input subsystem)
 // These are already included via drivers/input_processor.h -> zephyr/dt-bindings/input/input-event-codes.h

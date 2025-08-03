@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <drivers/input_processor_accel.h>
+#include "../../include/drivers/input_processor_accel.h"
 
 #ifdef __cplusplus
 extern "C" {

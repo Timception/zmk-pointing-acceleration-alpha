@@ -2,7 +2,7 @@
 // Only essential checks to prevent system crashes
 
 #include <zephyr/logging/log.h>
-#include <drivers/input_processor_accel.h>
+#include "../include/drivers/input_processor_accel.h"
 
 LOG_MODULE_DECLARE(input_processor_accel);
 
