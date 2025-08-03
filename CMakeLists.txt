@@ -14,7 +14,6 @@ zephyr_library_sources(
 
 # Include directories
 zephyr_library_include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 

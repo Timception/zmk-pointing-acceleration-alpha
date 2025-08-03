@@ -7,7 +7,7 @@
 
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
-#include <drivers/input_processor_accel.h>
+#include "../include/drivers/input_processor_accel.h"
 #include "config/accel_config.h"
 
 LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
