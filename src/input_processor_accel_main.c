@@ -135,7 +135,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     }
     
     // Check if acceleration is effectively disabled
-    if (cfg->max_factor <= 1000 && cfg->sensitivity <= 1000) {
+    if (cfg->max_factor <= 1000) {
         // Acceleration is effectively disabled - pass through unchanged
         return 0;
     }
