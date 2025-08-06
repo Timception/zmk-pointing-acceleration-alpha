@@ -127,6 +127,27 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     static bool first_call = true;
     if (first_call) {
         LOG_INF("*** FIRST EVENT: cfg->input_type=%d, INPUT_EV_REL=%d", cfg->input_type, INPUT_EV_REL);
+        
+        // EMERGENCY FIX: Force initialization if not done
+        if (cfg->input_type == 0) {
+            LOG_WRN("*** FORCING INITIALIZATION ***");
+            // Cast away const to force initialization
+            struct accel_config *mutable_cfg = (struct accel_config *)cfg;
+            mutable_cfg->input_type = INPUT_EV_REL;
+            mutable_cfg->level = 2;  // Level 2 (Standard)
+            mutable_cfg->sensitivity = 500;
+            mutable_cfg->max_factor = 2000;
+            mutable_cfg->curve_type = 2;
+            mutable_cfg->y_boost = 2000;
+            mutable_cfg->speed_threshold = 200;
+            mutable_cfg->speed_max = 4000;
+            mutable_cfg->min_factor = 800;
+            mutable_cfg->acceleration_exponent = 4;
+            mutable_cfg->sensor_dpi = 800;
+            LOG_INF("*** FORCED CONFIG: input_type=%d, level=%d, max_factor=%d ***", 
+                    mutable_cfg->input_type, mutable_cfg->level, mutable_cfg->max_factor);
+        }
+        
         first_call = false;
     }
 
