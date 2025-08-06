@@ -13,10 +13,13 @@
 #include <zephyr/sys/util.h>
 #include "input_processor.h"
 
-// Standard relative input event codes (following Linux input subsystem)
+// Standard input event types and codes (following Linux input subsystem)
 // These are already included via drivers/input_processor.h -> zephyr/dt-bindings/input/input-event-codes.h
-#define INPUT_REL_X 0x00
-#define INPUT_REL_Y 0x01
+#define INPUT_EV_REL 0x02     // Relative input event type
+#define INPUT_REL_X 0x00      // X-axis relative movement
+#define INPUT_REL_Y 0x01      // Y-axis relative movement
+#define INPUT_REL_WHEEL 0x08  // Vertical wheel
+#define INPUT_REL_HWHEEL 0x06 // Horizontal wheel
 
 #ifdef __cplusplus
 extern "C" {

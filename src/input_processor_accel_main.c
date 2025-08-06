@@ -69,6 +69,11 @@ static int accel_init_0(const struct device *dev) {
 
     // Apply Kconfig presets if any (now supports both Level 1 and Level 2)
     accel_config_apply_kconfig_preset(&accel_config_0);
+    
+    // Log final configuration for debugging
+    LOG_INF("Final config: level=%d, input_type=%d, max_factor=%d, sensitivity=%d", 
+            accel_config_0.level, accel_config_0.input_type, 
+            accel_config_0.max_factor, accel_config_0.sensitivity);
   
     // Validate final configuration
     ret = accel_validate_config(&accel_config_0);
@@ -142,7 +147,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     }
     
     // Check if acceleration is effectively disabled
-    LOG_DBG("*** CONFIG CHECK: max_factor=%d, sensitivity=%d", cfg->max_factor, cfg->sensitivity);
+    LOG_DBG("*** CONFIG CHECK: level=%d, max_factor=%d, sensitivity=%d", cfg->level, cfg->max_factor, cfg->sensitivity);
     if (cfg->max_factor <= 1000) {
         LOG_DBG("*** ACCEL DISABLED: max_factor=%d <= 1000", cfg->max_factor);
         // Acceleration is effectively disabled - pass through unchanged
