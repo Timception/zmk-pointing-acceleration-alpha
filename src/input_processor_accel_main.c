@@ -137,7 +137,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     }
     
     // Check if acceleration is effectively disabled
+    LOG_DBG("*** CONFIG CHECK: max_factor=%d, sensitivity=%d", cfg->max_factor, cfg->sensitivity);
     if (cfg->max_factor <= 1000) {
+        LOG_DBG("*** ACCEL DISABLED: max_factor=%d <= 1000", cfg->max_factor);
         // Acceleration is effectively disabled - pass through unchanged
         return 0;
     }
