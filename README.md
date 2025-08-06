@@ -100,6 +100,15 @@ Add the necessary includes to your device overlay file (e.g. `yourkeyboard_left.
 #include <behaviors/input_gestures_accel.dtsi>
 ```
 
+### Enable the acceleration module
+
+**IMPORTANT:** Add this required setting to your `prj.conf` file:
+
+```ini
+# REQUIRED: Enable the acceleration module
+CONFIG_ZMK_INPUT_PROCESSOR_ACCELERATION=y
+```
+
 ### Configure Your Level
 
 Choose your configuration level in your `prj.conf` file:
