@@ -49,7 +49,7 @@ static int accel_init_device(const struct device *dev) {
 static const uint16_t accel_codes_0[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEEL, INPUT_REL_HWHEEL };
 
 static struct accel_config accel_config_0 = {
-    .input_type = INPUT_EV_REL,
+    .input_type = 2,  // INPUT_EV_REL = 2 (force numeric value)
     .codes = accel_codes_0,
     .codes_count = 4,
     .track_remainders = DT_INST_NODE_HAS_PROP(0, track_remainders),
@@ -74,6 +74,8 @@ static int accel_init_0(const struct device *dev) {
     LOG_INF("Final config: level=%d, input_type=%d, max_factor=%d, sensitivity=%d", 
             accel_config_0.level, accel_config_0.input_type, 
             accel_config_0.max_factor, accel_config_0.sensitivity);
+    LOG_INF("Compile-time constants: INPUT_EV_REL=%d, INPUT_REL_X=%d, INPUT_REL_Y=%d", 
+            INPUT_EV_REL, INPUT_REL_X, INPUT_REL_Y);
   
     // Validate final configuration
     ret = accel_validate_config(&accel_config_0);
