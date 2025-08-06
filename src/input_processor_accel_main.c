@@ -101,11 +101,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
-
-// debug
     LOG_DBG("** Accel handle event Start! **");
-
-
     // Input validation - critical errors should stop processing
     if (!dev || !event || !cfg || !data) {
         LOG_ERR("Critical error: Invalid parameters");
@@ -187,12 +183,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         event->value = accelerated_value;
         
         // Continue processing the modified event
+        LOG_DBG("** Accel Event End, Continue process event **");
         return 0;
     }
-
-// debug
-LOG_DBG("** Accel Event End !! **");
-
 
     // Pass through other events as-is
     return 0;
