@@ -111,8 +111,10 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Pass through if not the specified type
     if (event->type != cfg->input_type) {
+        LOG_DBG("*** TYPE MISMATCH: event->type=%d, cfg->input_type=%d", event->type, cfg->input_type);
         return 0;
     }
+    LOG_DBG("*** TYPE MATCHED: type=%d", event->type);
 
     // Pass through if not the specified code
     bool code_matched = false;
