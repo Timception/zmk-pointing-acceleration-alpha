@@ -6,6 +6,9 @@ I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-poi
 
 ---
 
+** A fatal error has occurred! **
+---
+
 # ZMK MULTI-LEVEL POINTING ACCELERATION
 
 This repository contains a **2-level** pointer acceleration implementation for pointing devices in ZMK, designed to accommodate users from beginners to advanced enthusiasts.
