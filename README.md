@@ -27,16 +27,6 @@ The acceleration makes fine cursor control more precise at slow speeds while all
 - Advanced exponential curves (1-5)
 - Perfect for users who want full control
 
-## 🚨 **Prerequisites**
-
-**IMPORTANT:** This module requires `CONFIG_ZMK_INPUT_PROCESSOR_ACCELERATION=y` to be enabled in your configuration. Without this setting, the acceleration module will not function.
-
-Add this to your `prj.conf` file:
-
-```ini
-CONFIG_ZMK_INPUT_PROCESSOR_ACCELERATION=y
-```
-
 **Device Compatibility Note:** This module has been tested with trackballs using the PAW3222 mouse sensor. It should work with other pointing devices (trackpads, trackpoints, etc.). There may be risks you face due to differences in sensors and other factors.
 
 **Before you start, you should make sure that you have a working
