@@ -18,11 +18,11 @@ LOG_MODULE_DECLARE(input_processor_accel);
 
 static const struct accel_config level1_defaults = {
     .level = 1,
-    .sensitivity = 1200,
-    .max_factor = 2500,
+    .sensitivity = 1000,
+    .max_factor = 1800,
     .curve_type = 1,
     // Y-axis boost now enabled from level 1
-    .y_boost = 1200,
+    .y_boost = 1100,
     .speed_threshold = 0,
     .speed_max = 1000,
     .min_factor = 1000,
@@ -32,12 +32,12 @@ static const struct accel_config level1_defaults = {
 
 static const struct accel_config level2_defaults = {
     .level = 2,
-    .sensitivity = 1200,
-    .max_factor = 3000,
+    .sensitivity = 1000,
+    .max_factor = 2200,
     .curve_type = 1,
-    .y_boost = 1200,
-    .speed_threshold = 500,
-    .speed_max = 3500,
+    .y_boost = 1100,
+    .speed_threshold = 600,
+    .speed_max = 3000,
     .min_factor = 1000,
     .acceleration_exponent = 2,
     .sensor_dpi = 800
