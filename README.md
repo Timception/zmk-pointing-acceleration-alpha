@@ -27,7 +27,7 @@ The acceleration makes fine cursor control more precise at slow speeds while all
 - Advanced exponential curves (1-5)
 - Perfect for users who want full control
 
-**Device Compatibility Note:** This module has been tested with trackballs using the PAW3222 mouse sensor and the Azoteq IQS7211E touch sensor trackpad. It should work with other pointing devices (trackpads, trackpoints, etc.). There may be risks you face due to differences in sensors and other factors.
+**Device Compatibility Note:** This module has been tested with a trackball using the PAW3222 mouse sensor and a trackpad using the Azoteq IQS7211E touch sensor. It should work with other pointing devices (trackpads, trackpoints, etc.). There may be risks you face due to differences in sensors and other factors.
 
 **Before you start, you should make sure that you have a working
 input device by following this: https://zmk.dev/docs/features/pointing**
