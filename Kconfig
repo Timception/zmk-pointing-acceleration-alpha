@@ -84,7 +84,7 @@ endchoice
 
 config INPUT_PROCESSOR_ACCEL_SENSITIVITY
     int "Base sensitivity (scaled by 1000)"
-    default 400
+    default 500
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 200 2000
     help
@@ -155,7 +155,7 @@ endchoice
 
 config INPUT_PROCESSOR_ACCEL_SENSITIVITY
     int "Base sensitivity (scaled by 1000)"
-    default 400
+    default 500
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 200 2000
     help
@@ -189,7 +189,7 @@ config INPUT_PROCESSOR_ACCEL_Y_BOOST
 
 config INPUT_PROCESSOR_ACCEL_SPEED_THRESHOLD
     int "Speed threshold for acceleration start"
-    default 500
+    default 600
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 100 2000
     help
@@ -205,7 +205,7 @@ config INPUT_PROCESSOR_ACCEL_SPEED_MAX
 
 config INPUT_PROCESSOR_ACCEL_MIN_FACTOR
     int "Minimum acceleration factor (scaled by 1000)"
-    default 1000
+    default 900
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 200 1500
     help

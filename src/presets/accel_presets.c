@@ -30,13 +30,13 @@ static const preset_config_t presets[] = {
         .max_factor = 2000,
         .curve_type = 0,  // Linear
         .y_boost = 1000,
-        .speed_threshold = 300,
+        .speed_threshold = 600,
         .speed_max = 2000,
-        .min_factor = 1000
+        .min_factor = 900
     },
     {
         .name = "gaming",
-        .sensitivity = 1500,
+        .sensitivity = 1300,
         .max_factor = 3500,
         .curve_type = 2,  // Strong
         .y_boost = 1300,
@@ -46,7 +46,7 @@ static const preset_config_t presets[] = {
     },
     {
         .name = "high_sens",
-        .sensitivity = 1800,
+        .sensitivity = 1500,
         .max_factor = 4000,
         .curve_type = 1,  // Mild
         .y_boost = 1500,
