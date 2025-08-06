@@ -142,7 +142,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Mouse movement event acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
-        LOG_DBG("Accel start: %s=%d", event->code == INPUT_REL_X ? "X" : "Y", event->value);
+        LOG_DBG("** Accel start: %s=%d", event->code == INPUT_REL_X ? "X" : "Y", event->value);
         
         // Clamp input value to prevent overflow
         int32_t input_value = accel_clamp_input_value(event->value);
@@ -183,7 +183,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
-        LOG_DBG("Accel end: %s=%d->%d", event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
+        LOG_DBG("** Accel end: %s=%d->%d", event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
         return 0;
     }
 
