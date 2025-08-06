@@ -137,13 +137,13 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             mutable_cfg->codes = accel_codes_0;  // Use the static array
             mutable_cfg->codes_count = 4;
             mutable_cfg->level = 2;  // Level 2 (Standard)
-            mutable_cfg->sensitivity = 500;
-            mutable_cfg->max_factor = 2000;
-            mutable_cfg->curve_type = 2;
-            mutable_cfg->y_boost = 2000;
-            mutable_cfg->speed_threshold = 200;
-            mutable_cfg->speed_max = 4000;
-            mutable_cfg->min_factor = 800;
+            mutable_cfg->sensitivity = 800;   // 0.8x base sensitivity (繊細な基本感度)
+            mutable_cfg->max_factor = 4000;   // 4.0x maximum acceleration (高速時の大きな加速)
+            mutable_cfg->curve_type = 1;      // Mild curve
+            mutable_cfg->y_boost = 1200;     // 1.2x Y-axis boost
+            mutable_cfg->speed_threshold = 300; // Higher threshold (ゆっくりした動きは加速しない)
+            mutable_cfg->speed_max = 1500;    // Lower max speed (早めに最大加速に到達)
+            mutable_cfg->min_factor = 800;    // 0.8x minimum (低速時はさらに繊細に)
             mutable_cfg->acceleration_exponent = 4;
             mutable_cfg->sensor_dpi = 800;
             LOG_INF("*** FORCED CONFIG: input_type=%d, codes_count=%d, max_factor=%d ***", 
