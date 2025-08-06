@@ -14,34 +14,8 @@
 #include "input_processor.h"
 
 // Standard input event types and codes (following Linux input subsystem)
-// Use Zephyr's standard definitions from zephyr/dt-bindings/input/input-event-codes.h
-// If not available, define them manually
-#ifndef EV_REL
-#define EV_REL 0x02
-#endif
-
-#ifndef REL_X
-#define REL_X 0x00
-#endif
-
-#ifndef REL_Y
-#define REL_Y 0x01
-#endif
-
-#ifndef REL_WHEEL
-#define REL_WHEEL 0x08
-#endif
-
-#ifndef REL_HWHEEL
-#define REL_HWHEEL 0x06
-#endif
-
-// Map to INPUT_ prefixed names for consistency with existing code
-#define INPUT_EV_REL EV_REL
-#define INPUT_REL_X REL_X
-#define INPUT_REL_Y REL_Y
-#define INPUT_REL_WHEEL REL_WHEEL
-#define INPUT_REL_HWHEEL REL_HWHEEL
+// These are already defined in zephyr/dt-bindings/input/input-event-codes.h
+// INPUT_EV_REL = 0x02, INPUT_REL_X = 0x00, INPUT_REL_Y = 0x01, etc.
 
 #ifdef __cplusplus
 extern "C" {

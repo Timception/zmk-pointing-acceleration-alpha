@@ -49,7 +49,7 @@ static int accel_init_device(const struct device *dev) {
 static const uint16_t accel_codes_0[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEEL, INPUT_REL_HWHEEL };
 
 static struct accel_config accel_config_0 = {
-    .input_type = 2,  // INPUT_EV_REL = 2 (force numeric value)
+    .input_type = INPUT_EV_REL,  // Use Zephyr's standard definition (0x02)
     .codes = accel_codes_0,
     .codes_count = 4,
     .track_remainders = DT_INST_NODE_HAS_PROP(0, track_remainders),
