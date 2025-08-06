@@ -10,6 +10,9 @@
 #include "../include/drivers/input_processor_accel.h"
 #include "config/accel_config.h"
 
+// Debug macro
+#define STRINGIFY(x) #x
+
 LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zmk_input_processor_acceleration
@@ -55,10 +58,20 @@ static struct accel_config accel_config_0 = {
     .track_remainders = DT_INST_NODE_HAS_PROP(0, track_remainders),
 };
 
+// Debug: Check compile-time value
+#if defined(INPUT_EV_REL)
+#pragma message "INPUT_EV_REL is defined as: " STRINGIFY(INPUT_EV_REL)
+#else
+#pragma message "INPUT_EV_REL is NOT defined"
+#endif
+
 static struct accel_data accel_data_0 = {0};
 
 // Device initialization wrapper
 static int accel_init_0(const struct device *dev) {
+    LOG_INF("*** ACCEL INIT STARTED ***");
+    LOG_INF("Initial input_type before config: %d", accel_config_0.input_type);
+    
     // Initialize configuration based on current level
     int ret = accel_config_init(&accel_config_0, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
     if (ret < 0) {
@@ -109,6 +122,13 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     struct accel_data *data = dev->data;
 
     LOG_DBG("*** ACCEL HANDLER CALLED: type=%d, code=%d, value=%d", event->type, event->code, event->value);
+    
+    // Debug: First time only
+    static bool first_call = true;
+    if (first_call) {
+        LOG_INF("*** FIRST EVENT: cfg->input_type=%d, INPUT_EV_REL=%d", cfg->input_type, INPUT_EV_REL);
+        first_call = false;
+    }
 
     // Input validation - critical errors should stop processing
     if (!dev || !event || !cfg || !data) {
