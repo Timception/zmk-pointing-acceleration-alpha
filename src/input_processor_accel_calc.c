@@ -97,6 +97,9 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
     
+    LOG_DBG("*** CALC DEBUG: input=%d, speed=%d, dpi_sens=%d, result=%lld", 
+            input_value, speed, dpi_adjusted_sensitivity, result);
+    
     // Speed-based acceleration
     uint32_t factor = cfg->min_factor;
     if (speed > cfg->speed_threshold) {
@@ -178,8 +181,10 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         result = temp_result;
     }
     
-    // Calculate final accelerated value
-    int32_t accelerated_value = (int32_t)(result / 1000LL);
+    // Calculate final accelerated value (result is already in correct scale)
+    int32_t accelerated_value = (int32_t)result;
+    
+    LOG_DBG("*** FINAL CALC: result=%lld, accelerated_value=%d", result, accelerated_value);
     
     // Optional remainder processing (can be disabled for MCU efficiency)
 #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS
