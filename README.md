@@ -27,7 +27,7 @@ The acceleration makes fine cursor control more precise at slow speeds while all
 - Advanced exponential curves (1-5)
 - Perfect for users who want full control
 
-**Device Compatibility Note:** This module has been tested with a trackball using the PAW3222 mouse sensor and a trackpad using the Azoteq IQS7211E touch sensor. It should work with other pointing devices (trackpads, trackpoints, etc.). There may be risks you face due to differences in sensors and other factors.
+**Device Compatibility Note:** This module has been tested with a trackball using the PAW3222 pointing device sensor and a trackpad using the Azoteq IQS7211E touch sensor. It should work with other pointing devices (trackpads, trackpoints, etc.). There may be risks you face due to differences in sensors and other factors.
 
 **Before you start, you should make sure that you have a working
 input device by following this: https://zmk.dev/docs/features/pointing**
@@ -54,7 +54,7 @@ input device by following this: https://zmk.dev/docs/features/pointing**
     - Strong exponential (4): `f(t) = e^(4t) - 1` - Aggressive acceleration
     - Aggressive exponential (5): `f(t) = e^(5t) - 1` - Maximum responsiveness
 - ✅ **7 configurable parameters** for complete customization
-- ✅ Compatible with any relative input device (mouse, trackball, touchpad)
+- ✅ Compatible with any relative input device (pointing devices, trackball, touchpad)
 
 ## Installation & Usage
 
@@ -291,7 +291,7 @@ The acceleration processor provides several settings to customize how your point
 ### Hardware Settings
 
 - `sensor-dpi`: (Default: 800)
-  - DPI/CPI setting of your mouse sensor
+  - DPI/CPI setting of your pointing device sensor
   - Used for automatic sensitivity scaling
   - Common values: 400, 800, 1200, 1600, 3200 DPI
   - Higher DPI sensors will have reduced sensitivity to maintain consistent feel
@@ -338,7 +338,7 @@ The configurations under are just starting points - every person's perfect point
 - Share on Discord ZMK or my DM (with a quick note about your use case)
 - Comment on what worked/didn't work for you
 
-> **Remember**: These examples were primarily tested with trackballs using the PAW3222 mouse sensor. If you're using other pointing devices (like trackpads or trackpoints), your mileage may vary - and that's why sharing your experience is so valuable
+> **Remember**: These examples were primarily tested with trackballs using the PAW3222 pointing device sensor. If you're using other pointing devices (like trackpads or trackpoints), your mileage may vary - and that's why sharing your experience is so valuable
 
 ### General Use (Level 2 Standard):
 

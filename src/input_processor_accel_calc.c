@@ -20,14 +20,11 @@ LOG_MODULE_DECLARE(input_processor_accel);
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code) {
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)
     // If Simple level is not enabled, return minimal processing
-    LOG_DBG("* Accel processing: Level1 disabled, minimal processing");
     // Remove division to preserve precision
     int64_t result = (int64_t)input_value * 1200;
     if (result > 1000) result = result / 1000;
     return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
 #else
-    LOG_DBG("* Accel processing: Level1 simple calculation (fixed)");
-    
     // Calculate DPI-adjusted sensitivity
     uint32_t dpi_adjusted_sensitivity = cfg->sensor_dpi > 0 ? 
         (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
@@ -103,8 +100,6 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     LOG_DBG("* Accel processing: Level2 disabled, fallback to Level1");
     return accel_simple_calculate(cfg, input_value, code);
 #else
-    LOG_DBG("* Accel processing: Level2 standard calculation (fixed)");
-    
     uint32_t speed = accel_calculate_speed(data, input_value);
     
     // Calculate DPI-adjusted sensitivity
@@ -117,9 +112,6 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     // Always apply base scaling to prevent overflow
     result = result / 100;  // Scale down by 100 instead of 1000 to preserve precision
-    
-    LOG_DBG("*** CALC DEBUG: input=%d, speed=%d, dpi_sens=%d, result=%lld", 
-            input_value, speed, dpi_adjusted_sensitivity, result);
     
     // Speed-based acceleration
     uint32_t factor = cfg->min_factor;
@@ -204,8 +196,6 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     // Calculate final accelerated value
     int32_t accelerated_value = (int32_t)result;
-    
-    LOG_DBG("*** FINAL CALC: result=%lld, accelerated_value=%d", result, accelerated_value);
     
     // Optional remainder processing (can be disabled for MCU efficiency)
 #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS

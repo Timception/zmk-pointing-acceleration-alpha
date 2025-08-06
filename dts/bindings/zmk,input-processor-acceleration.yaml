@@ -31,7 +31,7 @@ properties:
     description: |
       [LEVEL 1] Base sensitivity multiplier (scaled by 1000).
       1000 = 1.0x, 1200 = 1.2x, 1500 = 1.5x
-      Simple way to adjust overall mouse sensitivity.
+      Simple way to adjust overall pointing device sensitivity.
 
   max-factor:
     type: int
@@ -97,6 +97,6 @@ properties:
     type: int
     default: 800
     description: |
-      [ALL LEVELS] Mouse sensor DPI/CPI setting.
+      [ALL LEVELS] Pointing device sensor DPI/CPI setting.
       Used for automatic sensitivity scaling. Common values: 400, 800, 1200, 1600, 3200.
       Higher DPI sensors will have reduced sensitivity to maintain consistent feel.

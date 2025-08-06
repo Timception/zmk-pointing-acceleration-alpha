@@ -1,4 +1,4 @@
-// input_processor_accel_main.c - ZMK Input Processor for Mouse Acceleration
+// input_processor_accel_main.c - ZMK Input Processor for Pointing Device Acceleration
 // Refactored for better maintainability and modularity
 // 
 // Copyright (c) 2024 The ZMK Contributors
@@ -56,7 +56,7 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
 #define ACCEL_INIT_FUNC(inst)                                                                     \
     static int accel_init_##inst(const struct device *dev) {                                     \
         struct accel_config *cfg = (struct accel_config *)dev->config;                          \
-        LOG_INF("*** ACCEL INIT STARTED for instance %d ***", inst);                            \
+        LOG_INF("Accel init: instance %d", inst);                                              \
                                                                                                   \
         /* Initialize configuration based on current level */                                    \
         int ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, inst);             \
@@ -74,16 +74,14 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
         /* Apply Kconfig presets */                                                             \
         accel_config_apply_kconfig_preset(cfg);                                                 \
                                                                                                   \
-        /* Log final configuration for debugging */                                             \
-        LOG_INF("Final config: level=%d, input_type=%d, max_factor=%d, sensitivity=%d",        \
-                cfg->level, cfg->input_type, cfg->max_factor, cfg->sensitivity);                \
-        LOG_INF("Compile-time constants: INPUT_EV_REL=%d, INPUT_REL_X=%d, INPUT_REL_Y=%d",     \
-                INPUT_EV_REL, INPUT_REL_X, INPUT_REL_Y);                                         \
+        /* Log configuration */                                                                  \
+        LOG_INF("Accel config: level=%d, max_factor=%d, sensitivity=%d",                       \
+                cfg->level, cfg->max_factor, cfg->sensitivity);                                 \
                                                                                                   \
         /* Validate final configuration */                                                      \
         ret = accel_validate_config(cfg);                                                       \
         if (ret < 0) {                                                                          \
-            LOG_ERR("Final configuration validation failed: %d", ret);                         \
+            LOG_ERR("Configuration validation failed: %d", ret);                               \
             return ret;                                                                         \
         }                                                                                       \
                                                                                                  \
@@ -119,20 +117,16 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
-    LOG_DBG("*** ACCEL HANDLER CALLED: type=%d, code=%d, value=%d", event->type, event->code, event->value);
-
     // Input validation - critical errors should stop processing
     if (!dev || !event || !cfg || !data) {
         LOG_ERR("Critical error: Invalid parameters");
-        return 1; // Stop processing on critical error
+        return 1;
     }
 
     // Pass through if not the specified type
     if (event->type != cfg->input_type) {
-        LOG_DBG("*** TYPE MISMATCH: event->type=%d, cfg->input_type=%d", event->type, cfg->input_type);
         return 0;
     }
-    LOG_DBG("*** TYPE MATCHED: type=%d", event->type);
 
     // Pass through if not the specified code
     bool code_matched = false;
@@ -143,10 +137,8 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         }
     }
     if (!code_matched) {
-        LOG_DBG("*** CODE NOT MATCHED: code=%d", event->code);
         return 0;
     }
-    LOG_DBG("*** CODE MATCHED: code=%d", event->code);
 
     // Pass through wheel events as-is
     if (event->code == INPUT_REL_WHEEL || event->code == INPUT_REL_HWHEEL) {
@@ -155,30 +147,23 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Pass through zero values as-is
     if (event->value == 0) {
-        LOG_DBG("*** ZERO VALUE SKIP: value=0");
         return 0;
     }
     
     // Check if acceleration is effectively disabled
-    LOG_DBG("*** CONFIG CHECK: level=%d, max_factor=%d, sensitivity=%d", cfg->level, cfg->max_factor, cfg->sensitivity);
     if (cfg->max_factor <= 1000) {
-        LOG_DBG("*** ACCEL DISABLED: max_factor=%d <= 1000", cfg->max_factor);
-        // Acceleration is effectively disabled - pass through unchanged
         return 0;
     }
 
-    // Mouse movement event acceleration processing
+    // Pointing device movement event acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
-        LOG_DBG("** Accel start: %s=%d", event->code == INPUT_REL_X ? "X" : "Y", event->value);
-        
         // Clamp input value to prevent overflow
         int32_t input_value = accel_clamp_input_value(event->value);
         int32_t accelerated_value;
 
         // Handle extreme input values
         if (abs(event->value) > MAX_SAFE_INPUT_VALUE * 10) {
-            // Extremely abnormal input - likely hardware malfunction
-            LOG_ERR("Abnormal input value %d - stopping processing", event->value);
+            LOG_ERR("Abnormal input value %d", event->value);
             return 1;
         } else if (abs(event->value) > MAX_SAFE_INPUT_VALUE) {
             LOG_WRN("Input value %d clamped to %d", event->value, input_value);
@@ -194,11 +179,10 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                 break;
             default:
                 LOG_ERR("Invalid configuration level: %u", cfg->level);
-                // Stop processing on invalid configuration
                 return 1;
         }
 
-        // Check for calculation errors (extreme results indicate problems)
+        // Check for calculation errors
         if (abs(accelerated_value) > INT16_MAX) {
             LOG_ERR("Calculation error: result %d exceeds safe range", accelerated_value);
             return 1;
@@ -210,7 +194,11 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
-        LOG_DBG("** Accel end: %s=%d->%d", event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
+        // Log only significant changes for debugging
+        if (abs(input_value - accelerated_value) > 5) {
+            LOG_DBG("Accel: %s %d->%d", event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
+        }
+        
         return 0;
     }
 
