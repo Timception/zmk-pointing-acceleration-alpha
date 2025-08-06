@@ -20,8 +20,10 @@ LOG_MODULE_DECLARE(input_processor_accel);
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code) {
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)
     // If Simple level is not enabled, return minimal processing
+    LOG_DBG("Accel processing: Level1 disabled, minimal processing");
     return (int32_t)ACCEL_CLAMP(((int64_t)input_value * 1200) / 1000, INT16_MIN, INT16_MAX);
 #else
+    LOG_DBG("Accel processing: Level1 simple calculation");
     // Apply DPI-adjusted sensitivity with overflow protection
     // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
     uint32_t dpi_adjusted_sensitivity = cfg->sensor_dpi > 0 ? 
@@ -80,8 +82,10 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                                 int32_t input_value, uint16_t code) {
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)
     // If Standard level is not enabled, fallback to simple calculation
+    LOG_DBG("Accel processing: Level2 disabled, fallback to Level1");
     return accel_simple_calculate(cfg, input_value, code);
 #else
+    LOG_DBG("Accel processing: Level2 standard calculation");
     // Use simplified speed calculation
     uint32_t speed = accel_calculate_speed(data, input_value);
     

@@ -142,11 +142,11 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Mouse movement event acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
+        LOG_DBG("Accel start: %s=%d", event->code == INPUT_REL_X ? "X" : "Y", event->value);
+        
         // Clamp input value to prevent overflow
         int32_t input_value = accel_clamp_input_value(event->value);
         int32_t accelerated_value;
-
-        LOG_DBG("Acceleration processing Start! **");
 
         // Handle extreme input values
         if (abs(event->value) > MAX_SAFE_INPUT_VALUE * 10) {
@@ -183,8 +183,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
-        // Continue processing the modified event
-        LOG_DBG("Continue process event (Accel process)");
+        LOG_DBG("Accel end: %s=%d->%d", event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
         return 0;
     }
 
