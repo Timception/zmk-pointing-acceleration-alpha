@@ -123,8 +123,10 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         }
     }
     if (!code_matched) {
+        LOG_DBG("*** CODE NOT MATCHED: code=%d", event->code);
         return 0;
     }
+    LOG_DBG("*** CODE MATCHED: code=%d", event->code);
 
     // Pass through wheel events as-is
     if (event->code == INPUT_REL_WHEEL || event->code == INPUT_REL_HWHEEL) {
@@ -133,6 +135,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Pass through zero values as-is
     if (event->value == 0) {
+        LOG_DBG("*** ZERO VALUE SKIP: value=0");
         return 0;
     }
     
