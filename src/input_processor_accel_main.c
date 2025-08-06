@@ -134,6 +134,8 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             // Cast away const to force initialization
             struct accel_config *mutable_cfg = (struct accel_config *)cfg;
             mutable_cfg->input_type = INPUT_EV_REL;
+            mutable_cfg->codes = accel_codes_0;  // Use the static array
+            mutable_cfg->codes_count = 4;
             mutable_cfg->level = 2;  // Level 2 (Standard)
             mutable_cfg->sensitivity = 500;
             mutable_cfg->max_factor = 2000;
@@ -144,8 +146,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             mutable_cfg->min_factor = 800;
             mutable_cfg->acceleration_exponent = 4;
             mutable_cfg->sensor_dpi = 800;
-            LOG_INF("*** FORCED CONFIG: input_type=%d, level=%d, max_factor=%d ***", 
-                    mutable_cfg->input_type, mutable_cfg->level, mutable_cfg->max_factor);
+            LOG_INF("*** FORCED CONFIG: input_type=%d, codes_count=%d, max_factor=%d ***", 
+                    mutable_cfg->input_type, mutable_cfg->codes_count, mutable_cfg->max_factor);
+            LOG_INF("*** CODES: [0]=%d, [1]=%d ***", mutable_cfg->codes[0], mutable_cfg->codes[1]);
         }
         
         first_call = false;
