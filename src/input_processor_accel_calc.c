@@ -21,17 +21,25 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)
     // If Simple level is not enabled, return minimal processing
     LOG_DBG("* Accel processing: Level1 disabled, minimal processing");
-    return (int32_t)ACCEL_CLAMP(((int64_t)input_value * 1200) / 1000, INT16_MIN, INT16_MAX);
+    // Remove division to preserve precision
+    int64_t result = (int64_t)input_value * 1200;
+    if (result > 1000) result = result / 1000;
+    return (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
 #else
-    LOG_DBG("* Accel processing: Level1 simple calculation");
-    // Apply DPI-adjusted sensitivity with overflow protection
-    // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
+    LOG_DBG("* Accel processing: Level1 simple calculation (fixed)");
+    
+    // Calculate DPI-adjusted sensitivity
     uint32_t dpi_adjusted_sensitivity = cfg->sensor_dpi > 0 ? 
         (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
-    // Use 64-bit arithmetic to prevent overflow during multiplication
-    int64_t result = ((int64_t)input_value * (int64_t)dpi_adjusted_sensitivity) / 1000LL;
+    // Basic calculation (conditional division instead of always dividing by 1000)
+    int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+    
+    // Normalize only when sensitivity exceeds 1000
+    if (dpi_adjusted_sensitivity > 1000) {
+        result = result / 1000;
+    }
     
     // Early overflow check
     if (result > INT32_MAX) result = INT32_MAX;
@@ -65,11 +73,18 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         
         curve_factor = ACCEL_CLAMP(curve_factor, 1000, cfg->max_factor);
         
-        // Safe multiplication with overflow check
-        int64_t temp_result = (result * (int64_t)curve_factor) / 1000LL;
-        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
-        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
-        result = temp_result;
+        // Apply curve (divide only when necessary)
+        if (curve_factor > 1000) {
+            int64_t temp_result = (result * (int64_t)curve_factor) / 1000LL;
+            if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+            if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+            result = temp_result;
+        }
+    }
+    
+    // Minimum movement guarantee
+    if (input_value != 0 && result == 0) {
+        result = (input_value > 0) ? 1 : -1;
     }
     
     // Clamp result to safe range
@@ -85,17 +100,17 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     LOG_DBG("* Accel processing: Level2 disabled, fallback to Level1");
     return accel_simple_calculate(cfg, input_value, code);
 #else
-    LOG_DBG("* Accel processing: Level2 standard calculation");
-    // Use simplified speed calculation
+    LOG_DBG("* Accel processing: Level2 standard calculation (fixed)");
+    
     uint32_t speed = accel_calculate_speed(data, input_value);
     
-    // Apply DPI-adjusted sensitivity with overflow protection
-    // Standard reference DPI is 800, adjust sensitivity based on actual sensor DPI
+    // Calculate DPI-adjusted sensitivity
     uint32_t dpi_adjusted_sensitivity = cfg->sensor_dpi > 0 ? 
         (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
-    int64_t result = ((int64_t)input_value * dpi_adjusted_sensitivity) / 1000;
+    // Basic calculation (conditional division instead of always dividing)
+    int64_t result = (int64_t)input_value * dpi_adjusted_sensitivity;
     
     LOG_DBG("*** CALC DEBUG: input=%d, speed=%d, dpi_sens=%d, result=%lld", 
             input_value, speed, dpi_adjusted_sensitivity, result);
@@ -113,7 +128,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                 uint32_t speed_offset = speed - cfg->speed_threshold;
                 uint32_t t = (speed_offset * 1000) / speed_range;
             
-                // Overflow-safe exponential curve approximation for MCU
+                // Exponential curve calculation (simplified)
                 uint32_t curve;
                 t = (t > 1000) ? 1000 : t; // Clamp input to prevent overflow
                 
@@ -166,22 +181,29 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         
         factor = ACCEL_CLAMP(factor, cfg->min_factor, cfg->max_factor);
         
-        // Safe multiplication with overflow check
-        int64_t temp_result = (result * (int64_t)factor) / 1000LL;
-        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
-        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
-        result = temp_result;
+        // Apply acceleration (divide only when necessary)
+        if (factor > 1000) {
+            int64_t temp_result = (result * (int64_t)factor) / 1000LL;
+            if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+            if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+            result = temp_result;
+        }
+    } else {
+        // For low speed, normalize only when sensitivity exceeds 1000
+        if (dpi_adjusted_sensitivity > 1000) {
+            result = result / 1000;
+        }
     }
     
-    // Y-axis boost with overflow protection (code 0x01 is Y-axis)
-    if (code == 0x01) {
+    // Y-axis boost (divide only when necessary)
+    if (code == 0x01 && cfg->y_boost > 1000) {
         int64_t temp_result = (result * (int64_t)cfg->y_boost) / 1000LL;
         if (temp_result > INT32_MAX) temp_result = INT32_MAX;
         if (temp_result < INT32_MIN) temp_result = INT32_MIN;
         result = temp_result;
     }
     
-    // Calculate final accelerated value (result is already in correct scale)
+    // Calculate final accelerated value
     int32_t accelerated_value = (int32_t)result;
     
     LOG_DBG("*** FINAL CALC: result=%lld, accelerated_value=%d", result, accelerated_value);
