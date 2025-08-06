@@ -18,29 +18,28 @@ LOG_MODULE_DECLARE(input_processor_accel);
 
 static const struct accel_config level1_defaults = {
     .level = 1,
-    .sensitivity = 1000,
-    .max_factor = 1800,
-    .curve_type = 1,
-    // Y-axis boost now enabled from level 1
-    .y_boost = 1100,
-    .speed_threshold = 0,
-    .speed_max = 1000,
-    .min_factor = 1000,
+    .sensitivity = 400,        // 0.4x (precise control equivalent to 1/4 scaling)
+    .max_factor = 1200,        // 1.2x (gentle acceleration)
+    .curve_type = 0,           // Linear (simple acceleration curve)
+    .y_boost = 1000,           // 1.0x (no Y-axis boost)
+    .speed_threshold = 1200,   // High threshold for precision-focused control
+    .speed_max = 2500,         // Moderate maximum speed
+    .min_factor = 1000,        // 1.0x (no minimum acceleration)
     .acceleration_exponent = 2,
-    .sensor_dpi = 800
+    .sensor_dpi = 400          // Low DPI sensor support
 };
 
 static const struct accel_config level2_defaults = {
     .level = 2,
-    .sensitivity = 1000,
-    .max_factor = 2200,
-    .curve_type = 1,
-    .y_boost = 1100,
-    .speed_threshold = 600,
-    .speed_max = 3000,
-    .min_factor = 1000,
+    .sensitivity = 400,        // 0.4x (precise control equivalent to 1/4 scaling)
+    .max_factor = 1200,        // 1.2x (gentle acceleration)
+    .curve_type = 0,           // Linear (simple acceleration curve)
+    .y_boost = 1000,           // 1.0x (no Y-axis boost)
+    .speed_threshold = 1200,   // High threshold for precision-focused control
+    .speed_max = 2500,         // Moderate maximum speed
+    .min_factor = 1000,        // 1.0x (no minimum acceleration)
     .acceleration_exponent = 2,
-    .sensor_dpi = 800
+    .sensor_dpi = 400          // Low DPI sensor support
 };
 
 
