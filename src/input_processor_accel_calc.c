@@ -33,12 +33,15 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
-    // Basic calculation (conditional division instead of always dividing by 1000)
+    // Basic calculation with proper scaling
     int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
     
-    // Normalize only when sensitivity exceeds 1000
-    if (dpi_adjusted_sensitivity > 1000) {
+    // Always normalize to prevent overflow (but preserve precision for small values)
+    if (dpi_adjusted_sensitivity >= 1000) {
         result = result / 1000;
+    } else {
+        // For sensitivity < 1000, scale down less aggressively
+        result = result / 100;
     }
     
     // Early overflow check
@@ -109,8 +112,11 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         (cfg->sensitivity * 800) / cfg->sensor_dpi : cfg->sensitivity;
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
-    // Basic calculation (conditional division instead of always dividing)
+    // Basic calculation with proper scaling
     int64_t result = (int64_t)input_value * dpi_adjusted_sensitivity;
+    
+    // Always apply base scaling to prevent overflow
+    result = result / 100;  // Scale down by 100 instead of 1000 to preserve precision
     
     LOG_DBG("*** CALC DEBUG: input=%d, speed=%d, dpi_sens=%d, result=%lld", 
             input_value, speed, dpi_adjusted_sensitivity, result);
@@ -181,22 +187,15 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         
         factor = ACCEL_CLAMP(factor, cfg->min_factor, cfg->max_factor);
         
-        // Apply acceleration (divide only when necessary)
-        if (factor > 1000) {
-            int64_t temp_result = (result * (int64_t)factor) / 1000LL;
-            if (temp_result > INT32_MAX) temp_result = INT32_MAX;
-            if (temp_result < INT32_MIN) temp_result = INT32_MIN;
-            result = temp_result;
-        }
-    } else {
-        // For low speed, normalize only when sensitivity exceeds 1000
-        if (dpi_adjusted_sensitivity > 1000) {
-            result = result / 1000;
-        }
+        // Apply acceleration with proper scaling
+        int64_t temp_result = (result * (int64_t)factor) / 1000LL;
+        if (temp_result > INT32_MAX) temp_result = INT32_MAX;
+        if (temp_result < INT32_MIN) temp_result = INT32_MIN;
+        result = temp_result;
     }
     
-    // Y-axis boost (divide only when necessary)
-    if (code == 0x01 && cfg->y_boost > 1000) {
+    // Y-axis boost with proper scaling
+    if (code == 0x01) {
         int64_t temp_result = (result * (int64_t)cfg->y_boost) / 1000LL;
         if (temp_result > INT32_MAX) temp_result = INT32_MAX;
         if (temp_result < INT32_MIN) temp_result = INT32_MIN;

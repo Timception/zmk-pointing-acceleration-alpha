@@ -10,9 +10,6 @@
 #include "../include/drivers/input_processor_accel.h"
 #include "config/accel_config.h"
 
-// Debug macro
-#define STRINGIFY(x) #x
-
 LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zmk_input_processor_acceleration
@@ -48,68 +45,69 @@ static int accel_init_device(const struct device *dev) {
     return 0;
 }
 
-// Device instance creation
-static const uint16_t accel_codes_0[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEEL, INPUT_REL_HWHEEL };
+// =============================================================================
+// DEVICE INSTANCE CREATION USING DT_INST_FOREACH_STATUS_OKAY
+// =============================================================================
 
-static struct accel_config accel_config_0 = {
-    .input_type = INPUT_EV_REL,  // Use Zephyr's standard definition (0x02)
-    .codes = accel_codes_0,
-    .codes_count = 4,
-    .track_remainders = DT_INST_NODE_HAS_PROP(0, track_remainders),
-};
+// Common codes array for all instances
+static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEEL, INPUT_REL_HWHEEL };
 
-// Debug: Check compile-time value
-#if defined(INPUT_EV_REL)
-#pragma message "INPUT_EV_REL is defined as: " STRINGIFY(INPUT_EV_REL)
-#else
-#pragma message "INPUT_EV_REL is NOT defined"
-#endif
-
-static struct accel_data accel_data_0 = {0};
-
-// Device initialization wrapper
-static int accel_init_0(const struct device *dev) {
-    LOG_INF("*** ACCEL INIT STARTED ***");
-    LOG_INF("Initial input_type before config: %d", accel_config_0.input_type);
-    
-    // Initialize configuration based on current level
-    int ret = accel_config_init(&accel_config_0, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
-    if (ret < 0) {
-        LOG_ERR("Configuration initialization failed: %d", ret);
-        return ret;
+// Macro to create device instance initialization function
+#define ACCEL_INIT_FUNC(inst)                                                                     \
+    static int accel_init_##inst(const struct device *dev) {                                     \
+        struct accel_config *cfg = (struct accel_config *)dev->config;                          \
+        LOG_INF("*** ACCEL INIT STARTED for instance %d ***", inst);                            \
+                                                                                                  \
+        /* Initialize configuration based on current level */                                    \
+        int ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, inst);             \
+        if (ret < 0) {                                                                           \
+            LOG_ERR("Configuration initialization failed: %d", ret);                            \
+            return ret;                                                                          \
+        }                                                                                        \
+                                                                                                  \
+        /* Set input type and codes */                                                           \
+        cfg->input_type = INPUT_EV_REL;                                                          \
+        cfg->codes = accel_codes;                                                                \
+        cfg->codes_count = ARRAY_SIZE(accel_codes);                                             \
+        cfg->track_remainders = DT_INST_NODE_HAS_PROP(inst, track_remainders);                  \
+                                                                                                  \
+        /* Apply Kconfig presets */                                                             \
+        accel_config_apply_kconfig_preset(cfg);                                                 \
+                                                                                                  \
+        /* Log final configuration for debugging */                                             \
+        LOG_INF("Final config: level=%d, input_type=%d, max_factor=%d, sensitivity=%d",        \
+                cfg->level, cfg->input_type, cfg->max_factor, cfg->sensitivity);                \
+        LOG_INF("Compile-time constants: INPUT_EV_REL=%d, INPUT_REL_X=%d, INPUT_REL_Y=%d",     \
+                INPUT_EV_REL, INPUT_REL_X, INPUT_REL_Y);                                         \
+                                                                                                  \
+        /* Validate final configuration */                                                      \
+        ret = accel_validate_config(cfg);                                                       \
+        if (ret < 0) {                                                                          \
+            LOG_ERR("Final configuration validation failed: %d", ret);                         \
+            return ret;                                                                         \
+        }                                                                                       \
+                                                                                                 \
+        return accel_init_device(dev);                                                          \
     }
-    
 
-    // Apply Kconfig presets if any (now supports both Level 1 and Level 2)
-    accel_config_apply_kconfig_preset(&accel_config_0);
-    
-    // Log final configuration for debugging
-    LOG_INF("Final config: level=%d, input_type=%d, max_factor=%d, sensitivity=%d", 
-            accel_config_0.level, accel_config_0.input_type, 
-            accel_config_0.max_factor, accel_config_0.sensitivity);
-    LOG_INF("Compile-time constants: INPUT_EV_REL=%d, INPUT_REL_X=%d, INPUT_REL_Y=%d", 
-            INPUT_EV_REL, INPUT_REL_X, INPUT_REL_Y);
-  
-    // Validate final configuration
-    ret = accel_validate_config(&accel_config_0);
-    if (ret < 0) {
-        LOG_ERR("Final configuration validation failed: %d", ret);
-        return ret;
-    }
-    
-    return accel_init_device(dev);
-}
+// Macro to create device instance data and config structures
+#define ACCEL_DEVICE_DEFINE(inst)                                                               \
+    static struct accel_data accel_data_##inst = {0};                                          \
+    static struct accel_config accel_config_##inst = {0};                                      \
+    ACCEL_INIT_FUNC(inst)                                                                      \
+    DEVICE_DT_INST_DEFINE(inst,                                                                \
+                          accel_init_##inst,                                                    \
+                          NULL,                                                                 \
+                          &accel_data_##inst,                                                   \
+                          &accel_config_##inst,                                                 \
+                          POST_KERNEL,                                                          \
+                          CONFIG_INPUT_PROCESSOR_ACCELERATION_INIT_PRIORITY,                    \
+                          &(const struct zmk_input_processor_driver_api){                      \
+                              .handle_event = accel_handle_event                                \
+                          });
 
-DEVICE_DT_INST_DEFINE(0,
-                      accel_init_0,
-                      NULL,
-                      &accel_data_0,
-                      &accel_config_0,
-                      POST_KERNEL,
-                      CONFIG_INPUT_PROCESSOR_ACCELERATION_INIT_PRIORITY,
-                      &(const struct zmk_input_processor_driver_api){
-                          .handle_event = accel_handle_event
-                      });
+// Create device instances for all enabled DT nodes
+DT_INST_FOREACH_STATUS_OKAY(ACCEL_DEVICE_DEFINE)
 
 // =============================================================================
 // MAIN EVENT HANDLER
@@ -122,37 +120,6 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     struct accel_data *data = dev->data;
 
     LOG_DBG("*** ACCEL HANDLER CALLED: type=%d, code=%d, value=%d", event->type, event->code, event->value);
-    
-    // Debug: First time only
-    static bool first_call = true;
-    if (first_call) {
-        LOG_INF("*** FIRST EVENT: cfg->input_type=%d, INPUT_EV_REL=%d", cfg->input_type, INPUT_EV_REL);
-        
-        // EMERGENCY FIX: Force initialization if not done
-        if (cfg->input_type == 0) {
-            LOG_WRN("*** FORCING INITIALIZATION ***");
-            // Cast away const to force initialization
-            struct accel_config *mutable_cfg = (struct accel_config *)cfg;
-            mutable_cfg->input_type = INPUT_EV_REL;
-            mutable_cfg->codes = accel_codes_0;  // Use the static array
-            mutable_cfg->codes_count = 4;
-            mutable_cfg->level = 2;  // Level 2 (Standard)
-            mutable_cfg->sensitivity = 800;   // 0.8x base sensitivity (繊細な基本感度)
-            mutable_cfg->max_factor = 4000;   // 4.0x maximum acceleration (高速時の大きな加速)
-            mutable_cfg->curve_type = 1;      // Mild curve
-            mutable_cfg->y_boost = 1200;     // 1.2x Y-axis boost
-            mutable_cfg->speed_threshold = 300; // Higher threshold (ゆっくりした動きは加速しない)
-            mutable_cfg->speed_max = 1500;    // Lower max speed (早めに最大加速に到達)
-            mutable_cfg->min_factor = 800;    // 0.8x minimum (低速時はさらに繊細に)
-            mutable_cfg->acceleration_exponent = 4;
-            mutable_cfg->sensor_dpi = 800;
-            LOG_INF("*** FORCED CONFIG: input_type=%d, codes_count=%d, max_factor=%d ***", 
-                    mutable_cfg->input_type, mutable_cfg->codes_count, mutable_cfg->max_factor);
-            LOG_INF("*** CODES: [0]=%d, [1]=%d ***", mutable_cfg->codes[0], mutable_cfg->codes[1]);
-        }
-        
-        first_call = false;
-    }
 
     // Input validation - critical errors should stop processing
     if (!dev || !event || !cfg || !data) {
