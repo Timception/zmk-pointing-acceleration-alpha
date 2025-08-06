@@ -13,9 +13,10 @@ zephyr_library_sources(
 )
 
 # Include directories
-zephyr_library_include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Add ZMK app include directory - use all possible paths
+zephyr_include_directories(${APPLICATION_SOURCE_DIR}/include)
 
 # Compiler optimizations for size
 zephyr_compile_options(-Os -ffunction-sections -fdata-sections)
