@@ -111,7 +111,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     int64_t result = (int64_t)input_value * dpi_adjusted_sensitivity;
     
     // Always apply base scaling to prevent overflow
-    result = result / 100;  // Scale down by 100 instead of 1000 to preserve precision
+    result = result / 1000;  // Scale down by 1000 for proper sensitivity scaling
     
     // Speed-based acceleration
     uint32_t factor = cfg->min_factor;
