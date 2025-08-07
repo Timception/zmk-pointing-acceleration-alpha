@@ -24,7 +24,7 @@ extern "C" {
 // =============================================================================
 
 // Core safety limits to prevent overflow and system crashes
-#define MAX_SAFE_INPUT_VALUE    1000    // Maximum safe input value
+#define MAX_SAFE_INPUT_VALUE    2000    // Maximum safe input value (increased for trackball support)
 #define MAX_SAFE_FACTOR         10000   // Maximum safe acceleration factor
 #define MAX_SAFE_SENSITIVITY    5000    // Maximum safe sensitivity
 #define MIN_SAFE_SENSITIVITY    100     // Minimum safe sensitivity
