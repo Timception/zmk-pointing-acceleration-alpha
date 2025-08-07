@@ -402,14 +402,14 @@ The configurations under are just starting points - every person's perfect point
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
     track-remainders;          // Enable precision tracking
-    sensitivity = <1300>;      // 1.3x base sensitivity
-    max-factor = <5000>;       // 5.0x maximum acceleration
-    curve-type = <2>;          // Strong curve for responsive feel
-    y-boost = <2500>;          // 2.5x Y-axis boost for widescreen
-    speed-threshold = <200>;   // Early acceleration start
-    speed-max = <4000>;        // Lower speed for max acceleration
+    sensitivity = <800>;       // 0.8x base sensitivity
+    max-factor = <2500>;       // 2.5x maximum acceleration
+    curve-type = <1>;          // Mild curve for responsive feel
+    y-boost = <1000>;          // 2.5x Y-axis boost for widescreen
+    speed-threshold = <300>;   // Early acceleration start
+    speed-max = <3000>;        // Lower speed for max acceleration
     min-factor = <800>;        // 0.8x minimum for precision
-    acceleration-exponent = <4>; // Strong exponential curve
+    acceleration-exponent = <3>; // Moderate exponential curve
     sensor-dpi = <800>;        // 800 DPI sensor
 };
 ```
