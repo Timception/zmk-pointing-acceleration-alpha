@@ -36,12 +36,12 @@ static const preset_config_t presets[] = {
     },
     {
         .name = "gaming",
-        .sensitivity = 1200,
-        .max_factor = 3500,
-        .curve_type = 2,  // Strong
-        .y_boost = 1200,
-        .speed_threshold = 500,
-        .speed_max = 3500,
+        .sensitivity = 1000,
+        .max_factor = 2200,
+        .curve_type = 1,  // Strong
+        .y_boost = 1100,
+        .speed_threshold = 600,
+        .speed_max = 2500,
         .min_factor = 1000
     },
     {
