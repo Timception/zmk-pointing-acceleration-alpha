@@ -32,14 +32,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     
     // Basic calculation with proper scaling
     int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
-    
-    // Always normalize to prevent overflow (but preserve precision for small values)
-    if (dpi_adjusted_sensitivity >= 1000) {
-        result = result / 1000;
-    } else {
-        // For sensitivity < 1000, scale down less aggressively
-        result = result / 100;
-    }
+    result = result / 1000;
     
     // Early overflow check
     if (result > INT32_MAX) result = INT32_MAX;

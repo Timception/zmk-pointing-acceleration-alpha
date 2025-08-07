@@ -400,20 +400,67 @@ The configurations under are just starting points - every person's perfect point
 
 ### Optimized Widescreen (Level 2 Standard) - Tested Configuration:
 
+#### Gaming
+
 ```devicetree
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
     track-remainders;          // Enable precision tracking
-    sensitivity = <1300>;      // 1.3x base sensitivity
-    max-factor = <5000>;       // 5.0x maximum acceleration
-    curve-type = <2>;          // Strong curve for responsive feel
-    y-boost = <2500>;          // 2.5x Y-axis boost for widescreen
-    speed-threshold = <200>;   // Early acceleration start
-    speed-max = <4000>;        // Lower speed for max acceleration
+    sensitivity = <800>;       // 0.8x base sensitivity
+    max-factor = <2500>;       // 2.5x maximum acceleration
+    curve-type = <1>;          // Mild curve for responsive feel
+    y-boost = <1000>;          // 2.5x Y-axis boost for widescreen
+    speed-threshold = <300>;   // Early acceleration start
+    speed-max = <3000>;        // Lower speed for max acceleration
     min-factor = <800>;        // 0.8x minimum for precision
-    acceleration-exponent = <4>; // Strong exponential curve
+    acceleration-exponent = <3>; // Moderate exponential curve
     sensor-dpi = <800>;        // 800 DPI sensor
+};
+```
+
+#### Office
+
+```devicetree
+&pointer_accel {
+    input-type = <INPUT_EV_REL>;
+    codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
+
+    /* ------------- Office Preset ------------- */
+    /* Lower base sensitivity, very gentle acceleration */
+    /* Prioritizes slow and precise pointer movement   */
+
+    sensitivity           = <600>;   /* 0.6 × base sensitivity */
+    min-factor            = <700>;   /* Starts at 0.7× */
+    max-factor            = <1500>;  /* Maximum 1.5× acceleration */
+    curve-type            = <0>;     /* Linear: input is directly mapped to output */
+    speed-threshold       = <400>;   /* Acceleration starts at 400 cnt/s */
+    speed-max             = <2500>;  /* Reaches max-factor at 2500 cnt/s */
+    y-boost               = <1000>;  /* Same multiplier for X and Y axes */
+    acceleration-exponent = <1>;     /* Linear (no exponential curve) */
+    sensor-dpi            = <800>;   /* Assumes 800 DPI sensor */
+};
+```
+
+#### High-sens
+
+```devicetree
+&pointer_accel {
+    input-type = <INPUT_EV_REL>;
+    codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
+
+    /* --- High-sens: No boost at low speed, strong boost at mid/high speed --- */
+    /* Initial movement is precise (no acceleration), acceleration increases in mid/high speed */
+
+    sensitivity           = <1000>;   /* 1.0 × base sensitivity (no gain at low speed) */
+    min-factor            = <1000>;   /* 1.0× at low speed (no acceleration) */
+    max-factor            = <4000>;   /* Up to 4.0× at high speed */
+    curve-type            = <2>;      /* Strong curve for aggressive acceleration */
+    speed-threshold       = <300>;    /* Acceleration starts above 300 cnt/s */
+    speed-max             = <1200>;   /* Reaches max-factor at 1200 cnt/s */
+    y-boost               = <1300>;   /* 1.3× for Y axis (matches X) */
+    acceleration-exponent = <4>;      /* Strong exponential for mid/high speed */
+    sensor-dpi            = <800>;
 };
 ```
 
