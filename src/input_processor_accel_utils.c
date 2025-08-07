@@ -15,7 +15,7 @@ LOG_MODULE_DECLARE(input_processor_accel);
 
 uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
     // Prevent overflow: if abs_input > sqrt(UINT32_MAX / multiplier), clamp it
-    const uint32_t max_safe_input = 1000;  // Conservative limit
+    const uint32_t max_safe_input = 2000;  // Updated limit for trackball support
     
     if (abs_input > max_safe_input) {
         abs_input = max_safe_input;

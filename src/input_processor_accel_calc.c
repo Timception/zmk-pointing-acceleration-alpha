@@ -156,8 +156,12 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
                                      INT32_MAX * SENSITIVITY_SCALE);
     
+    LOG_DBG("Level1 Debug: Input=%d, Sensitivity=%u, Raw result=%lld", 
+            input_value, dpi_adjusted_sensitivity, result);
+    
     if (abs(result) >= SENSITIVITY_SCALE) {
         result = result / SENSITIVITY_SCALE;
+        LOG_DBG("Level1 Debug: After sensitivity scaling: %lld", result);
     }
     
     int32_t abs_input = abs(input_value);
@@ -194,18 +198,27 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         
         curve_factor = ACCEL_CLAMP(curve_factor, SENSITIVITY_SCALE, cfg->max_factor);
         
+        LOG_DBG("Level1 Debug: abs_input=%d, curve_type=%u, curve_factor=%u, max_factor=%u", 
+                abs_input, cfg->curve_type, curve_factor, cfg->max_factor);
+        
         if (curve_factor > SENSITIVITY_SCALE) {
             int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, INT32_MAX * SENSITIVITY_SCALE);
             result = temp_result / SENSITIVITY_SCALE;
+            LOG_DBG("Level1 Debug: After acceleration: temp=%lld, final=%lld", temp_result, result);
         }
     }
     
     if (input_value != 0 && result == 0) {
         result = (input_value > 0) ? 1 : -1;
+        LOG_DBG("Level1 Debug: Zero result forced to: %lld", result);
     }
     
     int32_t safe_result = safe_int64_to_int32(result);
-    return safe_int32_to_int16(safe_result);
+    int16_t final_result = safe_int32_to_int16(safe_result);
+    
+    LOG_DBG("Level1 Debug: Final conversion: %lld -> %d -> %d", result, safe_result, final_result);
+    
+    return final_result;
 #endif
 }
 

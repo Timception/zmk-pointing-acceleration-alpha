@@ -47,7 +47,7 @@ extern "C" {
 // Calculation scaling constants
 #define SENSITIVITY_SCALE       1000    // Sensitivity scaling factor
 #define SPEED_NORMALIZATION     1000    // Speed normalization factor
-#define LINEAR_CURVE_MULTIPLIER 100ULL  // Linear curve multiplication factor
+#define LINEAR_CURVE_MULTIPLIER 10ULL   // Linear curve multiplication factor (reduced for proper scaling)
 
 // Essential utility macros (optimized for MCU)
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
