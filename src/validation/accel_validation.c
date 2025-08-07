@@ -30,8 +30,8 @@ int accel_validate_config(const struct accel_config *cfg) {
     }
     
     // Validate DPI range
-    if (cfg->sensor_dpi < 400 || cfg->sensor_dpi > 8000) {
-        LOG_ERR("Sensor DPI %u out of reasonable range (400-8000)", cfg->sensor_dpi);
+    if (cfg->sensor_dpi < 400 || cfg->sensor_dpi > MAX_SENSOR_DPI) {
+        LOG_ERR("Sensor DPI %u out of reasonable range (400-%u)", cfg->sensor_dpi, MAX_SENSOR_DPI);
         return -EINVAL;
     }
     

@@ -47,8 +47,8 @@ static inline int16_t safe_int32_to_int16(int32_t value) {
 static uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
     uint32_t dpi_adjusted_sensitivity;
     
-    if (cfg->sensor_dpi > 0 && cfg->sensor_dpi <= 8000) {
-        uint64_t temp = (uint64_t)cfg->sensitivity * 800ULL;
+    if (cfg->sensor_dpi > 0 && cfg->sensor_dpi <= MAX_SENSOR_DPI) {
+        uint64_t temp = (uint64_t)cfg->sensitivity * STANDARD_DPI_REFERENCE;
         uint64_t calculated = temp / cfg->sensor_dpi;
         
         if (calculated > MAX_SAFE_SENSITIVITY) {
@@ -66,54 +66,62 @@ static uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cf
 
 static uint32_t calculate_exponential_curve(uint32_t t, uint8_t exponent) {
     switch (exponent) {
-        case 1:
+        case 1: // Linear
             return t;
-        case 2:
+            
+        case 2: // Mild exponential
             {
                 uint64_t t_sq = (uint64_t)t * t;
-                uint32_t quad = (t_sq > 2000ULL * UINT32_MAX) ? UINT32_MAX : (uint32_t)(t_sq / 2000ULL);
-                uint32_t result;
-                if (t > UINT32_MAX - quad) {
-                    result = UINT32_MAX;
-                } else {
-                    result = t + quad;
-                }
+                uint32_t quad = (t_sq > CURVE_MILD_DIVISOR * UINT32_MAX) ? 
+                    UINT32_MAX : (uint32_t)(t_sq / CURVE_MILD_DIVISOR);
+                uint32_t result = (t > UINT32_MAX - quad) ? UINT32_MAX : t + quad;
                 return result;
             }
-        case 3:
+            
+        case 3: // Moderate exponential
             {
                 uint64_t t_sq = (uint64_t)t * t;
-                uint32_t quad = (t_sq > 1000ULL * UINT32_MAX) ? UINT32_MAX : (uint32_t)(t_sq / 1000ULL);
+                uint32_t quad = (t_sq > CURVE_MODERATE_QUAD_DIV * UINT32_MAX) ? 
+                    UINT32_MAX : (uint32_t)(t_sq / CURVE_MODERATE_QUAD_DIV);
                 uint64_t t_cb = (t_sq > UINT64_MAX / t) ? UINT64_MAX : t_sq * t;
-                uint32_t cubic = (t_cb > 3000000ULL * UINT32_MAX) ? UINT32_MAX : (uint32_t)(t_cb / 3000000ULL);
+                uint32_t cubic = (t_cb > CURVE_MODERATE_CUBIC_DIV * UINT32_MAX) ? 
+                    UINT32_MAX : (uint32_t)(t_cb / CURVE_MODERATE_CUBIC_DIV);
                 uint64_t temp_result = (uint64_t)t + quad + cubic;
                 uint32_t result = (temp_result > UINT32_MAX) ? UINT32_MAX : (uint32_t)temp_result;
                 return result;
             }
-        case 4:
+            
+        case 4: // Strong exponential
             {
                 uint64_t t_sq = (uint64_t)t * t;
-                uint32_t quad = (t_sq > 800ULL * UINT32_MAX) ? UINT32_MAX : (uint32_t)(t_sq / 800ULL);
+                uint32_t quad = (t_sq > CURVE_STRONG_QUAD_DIV * UINT32_MAX) ? 
+                    UINT32_MAX : (uint32_t)(t_sq / CURVE_STRONG_QUAD_DIV);
                 uint64_t t_cb = (t_sq > UINT64_MAX / t) ? UINT64_MAX : t_sq * t;
-                uint32_t cubic = (t_cb > 2000000ULL * UINT32_MAX) ? UINT32_MAX : (uint32_t)(t_cb / 2000000ULL);
+                uint32_t cubic = (t_cb > CURVE_STRONG_CUBIC_DIV * UINT32_MAX) ? 
+                    UINT32_MAX : (uint32_t)(t_cb / CURVE_STRONG_CUBIC_DIV);
                 uint64_t temp_result = (uint64_t)t + quad + cubic;
                 uint32_t result = (temp_result > UINT32_MAX) ? UINT32_MAX : (uint32_t)temp_result;
                 return result;
             }
-        case 5:
+            
+        case 5: // Aggressive exponential
             {
                 uint64_t t_sq = (uint64_t)t * t;
-                uint32_t quad = (t_sq > 600ULL * UINT32_MAX) ? UINT32_MAX : (uint32_t)(t_sq / 600ULL);
+                uint32_t quad = (t_sq > CURVE_AGGRESSIVE_QUAD_DIV * UINT32_MAX) ? 
+                    UINT32_MAX : (uint32_t)(t_sq / CURVE_AGGRESSIVE_QUAD_DIV);
                 uint64_t t_cb = (t_sq > UINT64_MAX / t) ? UINT64_MAX : t_sq * t;
-                uint32_t cubic = (t_cb > 1500000ULL * UINT32_MAX) ? UINT32_MAX : (uint32_t)(t_cb / 1500000ULL);
+                uint32_t cubic = (t_cb > CURVE_AGGRESSIVE_CUBIC_DIV * UINT32_MAX) ? 
+                    UINT32_MAX : (uint32_t)(t_cb / CURVE_AGGRESSIVE_CUBIC_DIV);
                 uint64_t temp_result = (uint64_t)t + quad + cubic;
                 uint32_t result = (temp_result > UINT32_MAX) ? UINT32_MAX : (uint32_t)temp_result;
                 return result;
             }
-        default:
+            
+        default: // Fallback quadratic
             {
                 uint64_t t_sq = (uint64_t)t * t;
-                uint32_t result = (t_sq > 1000ULL * UINT32_MAX) ? UINT32_MAX : (uint32_t)(t_sq / 1000ULL);
+                uint32_t result = (t_sq > CURVE_DEFAULT_DIVISOR * UINT32_MAX) ? 
+                    UINT32_MAX : (uint32_t)(t_sq / CURVE_DEFAULT_DIVISOR);
                 return result;
             }
     }
@@ -132,8 +140,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)
     LOG_DBG("Simple level not enabled, using fallback calculation");
     int64_t result = safe_multiply_64((int64_t)input_value, 1200LL, INT32_MAX);
-    if (abs(result) > 1000) {
-        result = result / 1000;
+    if (abs(result) > SENSITIVITY_SCALE) {
+        result = result / SENSITIVITY_SCALE;
     }
     
     int32_t safe_result = safe_int64_to_int32(result);
@@ -145,10 +153,11 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     }
     
     uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
-    int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, INT32_MAX * 1000LL);
+    int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
+                                     INT32_MAX * SENSITIVITY_SCALE);
     
-    if (abs(result) >= 1000) {
-        result = result / 1000;
+    if (abs(result) >= SENSITIVITY_SCALE) {
+        result = result / SENSITIVITY_SCALE;
     }
     
     int32_t abs_input = abs(input_value);
@@ -158,12 +167,13 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         switch (cfg->curve_type) {
             case 0: // Linear
                 {
-                    uint64_t linear_add = (uint64_t)abs_input * 100ULL;
-                    uint32_t max_add = (cfg->max_factor > 1000) ? cfg->max_factor - 1000 : 0;
+                    uint64_t linear_add = (uint64_t)abs_input * LINEAR_CURVE_MULTIPLIER;
+                    uint32_t max_add = (cfg->max_factor > SENSITIVITY_SCALE) ? 
+                        cfg->max_factor - SENSITIVITY_SCALE : 0;
                     if (linear_add > max_add) {
                         linear_add = max_add;
                     }
-                    curve_factor = 1000 + (uint32_t)linear_add;
+                    curve_factor = SENSITIVITY_SCALE + (uint32_t)linear_add;
                 }
                 break;
             case 1: // Mild
@@ -174,18 +184,19 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 break;
             default:
                 {
-                    uint64_t default_add = (uint64_t)abs_input * 100ULL;
-                    uint32_t max_add = (cfg->max_factor > 1000) ? cfg->max_factor - 1000 : 0;
-                    curve_factor = 1000 + ACCEL_CLAMP((uint32_t)default_add, 0, max_add);
+                    uint64_t default_add = (uint64_t)abs_input * LINEAR_CURVE_MULTIPLIER;
+                    uint32_t max_add = (cfg->max_factor > SENSITIVITY_SCALE) ? 
+                        cfg->max_factor - SENSITIVITY_SCALE : 0;
+                    curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)default_add, 0, max_add);
                 }
                 break;
         }
         
-        curve_factor = ACCEL_CLAMP(curve_factor, 1000, cfg->max_factor);
+        curve_factor = ACCEL_CLAMP(curve_factor, SENSITIVITY_SCALE, cfg->max_factor);
         
-        if (curve_factor > 1000) {
-            int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, INT32_MAX * 1000LL);
-            result = temp_result / 1000LL;
+        if (curve_factor > SENSITIVITY_SCALE) {
+            int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, INT32_MAX * SENSITIVITY_SCALE);
+            result = temp_result / SENSITIVITY_SCALE;
         }
     }
     
@@ -222,10 +233,11 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
     
-    int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, INT32_MAX * 1000LL);
+    int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
+                                     INT32_MAX * SENSITIVITY_SCALE);
     
-    if (abs(result) >= 1000) {
-        result = result / 1000;
+    if (abs(result) >= SENSITIVITY_SCALE) {
+        result = result / SENSITIVITY_SCALE;
     }
     
     // Speed-based acceleration with overflow protection
@@ -238,18 +250,18 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
             uint32_t speed_offset = speed - cfg->speed_threshold;
             
             // Safe calculation of normalized speed (0-1000)
-            uint64_t t_temp = ((uint64_t)speed_offset * 1000ULL) / speed_range;
-            uint32_t t = (t_temp > 1000) ? 1000 : (uint32_t)t_temp;
+            uint64_t t_temp = ((uint64_t)speed_offset * SPEED_NORMALIZATION) / speed_range;
+            uint32_t t = (t_temp > SPEED_NORMALIZATION) ? SPEED_NORMALIZATION : (uint32_t)t_temp;
             
             uint32_t curve = calculate_exponential_curve(t, cfg->acceleration_exponent);
             
             // Final clamp and factor calculation
-            curve = ACCEL_CLAMP(curve, 0, 1000);
+            curve = ACCEL_CLAMP(curve, 0, SPEED_NORMALIZATION);
             
             // Safe factor calculation with overflow protection
             if (cfg->max_factor >= cfg->min_factor) {
                 uint64_t factor_range = cfg->max_factor - cfg->min_factor;
-                uint64_t factor_add = (factor_range * curve) / 1000;
+                uint64_t factor_add = (factor_range * curve) / SPEED_NORMALIZATION;
                 factor = cfg->min_factor + (uint32_t)ACCEL_CLAMP(factor_add, 0, factor_range);
             } else {
                 factor = cfg->min_factor;
@@ -259,16 +271,16 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         factor = ACCEL_CLAMP(factor, cfg->min_factor, cfg->max_factor);
         
         // Apply acceleration with overflow protection
-        if (factor > 1000) {
-            int64_t temp_result = safe_multiply_64(result, (int64_t)factor, INT32_MAX * 1000LL);
-            result = temp_result / 1000LL;
+        if (factor > SENSITIVITY_SCALE) {
+            int64_t temp_result = safe_multiply_64(result, (int64_t)factor, INT32_MAX * SENSITIVITY_SCALE);
+            result = temp_result / SENSITIVITY_SCALE;
         }
     }
     
     // Y-axis boost with overflow protection
-    if (code == INPUT_REL_Y && cfg->y_boost != 1000) {
-        int64_t temp_result = safe_multiply_64(result, (int64_t)cfg->y_boost, INT32_MAX * 1000LL);
-        result = temp_result / 1000LL;
+    if (code == INPUT_REL_Y && cfg->y_boost != SENSITIVITY_SCALE) {
+        int64_t temp_result = safe_multiply_64(result, (int64_t)cfg->y_boost, INT32_MAX * SENSITIVITY_SCALE);
+        result = temp_result / SENSITIVITY_SCALE;
     }
     
     // Calculate final accelerated value with safe conversion
@@ -278,8 +290,8 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
 #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS
     if (cfg->track_remainders && (code == INPUT_REL_X || code == INPUT_REL_Y)) {
         // Calculate remainder safely
-        int64_t full_result = safe_multiply_64(result, 1000LL, INT64_MAX);
-        int32_t remainder = (int32_t)(full_result % 1000LL);
+        int64_t full_result = safe_multiply_64(result, SENSITIVITY_SCALE, INT64_MAX);
+        int32_t remainder = (int32_t)(full_result % SENSITIVITY_SCALE);
         
         // Select appropriate remainder storage (single-threaded optimization)
         int32_t *remainder_ptr = (code == INPUT_REL_X) ? &data->remainder_x : &data->remainder_y;
@@ -290,14 +302,14 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         int64_t new_remainder_64 = (int64_t)current_remainder + remainder;
         int32_t new_remainder = safe_int64_to_int32(new_remainder_64);
         
-        if (abs(new_remainder) >= 1000) {
-            int32_t carry = new_remainder / 1000;
+        if (abs(new_remainder) >= SENSITIVITY_SCALE) {
+            int32_t carry = new_remainder / SENSITIVITY_SCALE;
             
             // Overflow-safe addition
             int64_t temp_value = (int64_t)accelerated_value + carry;
             accelerated_value = safe_int64_to_int32(temp_value);
             
-            new_remainder = new_remainder % 1000;
+            new_remainder = new_remainder % SENSITIVITY_SCALE;
         }
         
         // Direct assignment (no atomic operation needed in single-threaded context)

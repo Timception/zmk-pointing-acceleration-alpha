@@ -30,6 +30,25 @@ extern "C" {
 #define MIN_SAFE_SENSITIVITY    100     // Minimum safe sensitivity
 #define MAX_REASONABLE_SPEED    50000   // Maximum reasonable speed (counts/sec)
 
+// DPI calculation constants
+#define STANDARD_DPI_REFERENCE  800     // Reference DPI for normalization
+#define MAX_SENSOR_DPI          8000    // Maximum supported sensor DPI
+
+// Exponential curve calculation constants
+#define CURVE_MILD_DIVISOR      2000ULL    // Divisor for mild exponential curve
+#define CURVE_MODERATE_QUAD_DIV 1000ULL    // Quadratic divisor for moderate curve
+#define CURVE_MODERATE_CUBIC_DIV 3000000ULL // Cubic divisor for moderate curve
+#define CURVE_STRONG_QUAD_DIV   800ULL     // Quadratic divisor for strong curve
+#define CURVE_STRONG_CUBIC_DIV  2000000ULL // Cubic divisor for strong curve
+#define CURVE_AGGRESSIVE_QUAD_DIV 600ULL   // Quadratic divisor for aggressive curve
+#define CURVE_AGGRESSIVE_CUBIC_DIV 1500000ULL // Cubic divisor for aggressive curve
+#define CURVE_DEFAULT_DIVISOR   1000ULL    // Default curve divisor
+
+// Calculation scaling constants
+#define SENSITIVITY_SCALE       1000    // Sensitivity scaling factor
+#define SPEED_NORMALIZATION     1000    // Speed normalization factor
+#define LINEAR_CURVE_MULTIPLIER 100ULL  // Linear curve multiplication factor
+
 // Essential utility macros (optimized for MCU)
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 
