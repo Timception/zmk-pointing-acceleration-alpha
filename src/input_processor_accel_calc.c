@@ -16,18 +16,9 @@ LOG_MODULE_DECLARE(input_processor_accel);
 // OVERFLOW-SAFE HELPER FUNCTIONS
 // =============================================================================
 
-/**
- * @brief Safely multiply two values with overflow protection
- * @param a First value
- * @param b Second value
- * @param max_result Maximum allowed result
- * @return Safe multiplication result, clamped to max_result
- */
 static inline int64_t safe_multiply_64(int64_t a, int64_t b, int64_t max_result) {
-    // Check for potential overflow before multiplication
     if (a == 0 || b == 0) return 0;
     
-    // Check if multiplication would overflow
     if (a > 0 && b > 0) {
         if (a > max_result / b) return max_result;
     } else if (a < 0 && b < 0) {
@@ -41,22 +32,12 @@ static inline int64_t safe_multiply_64(int64_t a, int64_t b, int64_t max_result)
     return a * b;
 }
 
-/**
- * @brief Safely convert int64_t to int32_t with bounds checking
- * @param value 64-bit value to convert
- * @return 32-bit value, clamped to INT32 range
- */
 static inline int32_t safe_int64_to_int32(int64_t value) {
     if (value > INT32_MAX) return INT32_MAX;
     if (value < INT32_MIN) return INT32_MIN;
     return (int32_t)value;
 }
 
-/**
- * @brief Safely convert int32_t to int16_t with bounds checking
- * @param value 32-bit value to convert
- * @return 16-bit value, clamped to INT16 range
- */
 static inline int16_t safe_int32_to_int16(int32_t value) {
     if (value > INT16_MAX) return INT16_MAX;
     if (value < INT16_MIN) return INT16_MIN;
@@ -67,26 +48,27 @@ static inline int16_t safe_int32_to_int16(int32_t value) {
 // LEVEL-SPECIFIC CALCULATION FUNCTIONS
 // =============================================================================
 
-// Simple acceleration: Just apply sensitivity and basic curve with safety
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code) {
+    if (!cfg) {
+        LOG_ERR("Configuration pointer is NULL in simple calculation");
+        return input_value;
+    }
+
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)
-    // If Simple level is not enabled, return minimal processing with overflow protection
+    LOG_DBG("Simple level not enabled, using fallback calculation");
     int64_t result = safe_multiply_64((int64_t)input_value, 1200LL, INT32_MAX);
     if (abs(result) > 1000) {
         result = result / 1000;
     }
     return safe_int32_to_int16(safe_int64_to_int32(result));
 #else
-    // Input validation and early bounds checking
     if (abs(input_value) > MAX_SAFE_INPUT_VALUE) {
         LOG_WRN("Input value %d exceeds safe limit, clamping", input_value);
         input_value = (input_value > 0) ? MAX_SAFE_INPUT_VALUE : -MAX_SAFE_INPUT_VALUE;
     }
     
-    // Calculate DPI-adjusted sensitivity with overflow protection
     uint32_t dpi_adjusted_sensitivity;
     if (cfg->sensor_dpi > 0 && cfg->sensor_dpi <= 8000) {
-        // Safe calculation: check for overflow before multiplication
         uint64_t temp = (uint64_t)cfg->sensitivity * 800ULL;
         if (temp / cfg->sensor_dpi > MAX_SAFE_SENSITIVITY) {
             dpi_adjusted_sensitivity = MAX_SAFE_SENSITIVITY;
@@ -98,21 +80,18 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     }
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
-    // Basic calculation with overflow protection
     int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, INT32_MAX * 1000LL);
     
-    // Safe division with remainder preservation
     if (abs(result) >= 1000) {
         result = result / 1000;
     }
     
-    // Apply simple curve based on input magnitude with overflow protection
     int32_t abs_input = abs(input_value);
     if (abs_input > 1 && abs_input <= MAX_SAFE_INPUT_VALUE) {
         uint32_t curve_factor = 1000;
         
         switch (cfg->curve_type) {
-            case 0: // Linear - safe multiplication
+            case 0: // Linear
                 {
                     uint64_t linear_add = (uint64_t)abs_input * 100ULL;
                     uint32_t max_add = (cfg->max_factor > 1000) ? cfg->max_factor - 1000 : 0;
@@ -122,10 +101,10 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                     curve_factor = 1000 + (uint32_t)linear_add;
                 }
                 break;
-            case 1: // Mild - safe quadratic
+            case 1: // Mild
                 curve_factor = accel_safe_quadratic_curve(abs_input, 10);
                 break;
-            case 2: // Strong - safe quadratic
+            case 2: // Strong
                 curve_factor = accel_safe_quadratic_curve(abs_input, 20);
                 break;
             default:
@@ -139,32 +118,35 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         
         curve_factor = ACCEL_CLAMP(curve_factor, 1000, cfg->max_factor);
         
-        // Apply curve with overflow protection
         if (curve_factor > 1000) {
             int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, INT32_MAX * 1000LL);
             result = temp_result / 1000LL;
         }
     }
     
-    // Minimum movement guarantee
     if (input_value != 0 && result == 0) {
         result = (input_value > 0) ? 1 : -1;
     }
     
-    // Final safe conversion with bounds checking
     return safe_int32_to_int16(safe_int64_to_int32(result));
 #endif
 }
 
-// Standard acceleration: Speed-based with Y-axis boost and enhanced timing
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code) {
+    if (!cfg) {
+        LOG_ERR("Configuration pointer is NULL in standard calculation");
+        return input_value;
+    }
+    if (!data) {
+        LOG_ERR("Data pointer is NULL in standard calculation");
+        return input_value;
+    }
+
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)
-    // If Standard level is not enabled, fallback to simple calculation
-    LOG_DBG("* Accel processing: Level2 disabled, fallback to Level1");
+    LOG_DBG("Standard level not enabled, fallback to simple calculation");
     return accel_simple_calculate(cfg, input_value, code);
 #else
-    // Input validation and early bounds checking
     if (abs(input_value) > MAX_SAFE_INPUT_VALUE) {
         LOG_WRN("Input value %d exceeds safe limit, clamping", input_value);
         input_value = (input_value > 0) ? MAX_SAFE_INPUT_VALUE : -MAX_SAFE_INPUT_VALUE;
@@ -186,10 +168,8 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     }
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     
-    // Basic calculation with overflow protection
     int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, INT32_MAX * 1000LL);
     
-    // Safe division with remainder preservation
     if (abs(result) >= 1000) {
         result = result / 1000;
     }

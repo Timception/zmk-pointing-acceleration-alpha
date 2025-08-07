@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 // Forward declarations - moved to header
 // void accel_config_apply_kconfig_preset(struct accel_config *cfg);
 
-// Simplified device initialization function
+
 static int accel_init_device(const struct device *dev) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
@@ -117,15 +117,39 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
-    // Input validation - critical errors should stop processing
-    if (!dev || !event || !cfg || !data) {
-        LOG_ERR("Critical error: Invalid parameters");
+
+    if (!dev) {
+        LOG_ERR("Critical error: Device pointer is NULL");
+        return 1;
+    }
+    if (!event) {
+        LOG_ERR("Critical error: Event pointer is NULL");
+        return 1;
+    }
+    if (!cfg) {
+        LOG_ERR("Critical error: Configuration pointer is NULL for device %s", dev->name);
+        return 1;
+    }
+    if (!data) {
+        LOG_ERR("Critical error: Data pointer is NULL for device %s", dev->name);
+        return 1;
+    }
+
+    // Configuration sanity check
+    if (cfg->level < 1 || cfg->level > 2) {
+        LOG_ERR("Invalid configuration level %u for device %s", cfg->level, dev->name);
         return 1;
     }
 
     // Pass through if not the specified type
     if (event->type != cfg->input_type) {
         return 0;
+    }
+
+    // Validate codes array before processing
+    if (!cfg->codes || cfg->codes_count == 0) {
+        LOG_ERR("Invalid codes configuration for device %s", dev->name);
+        return 1;
     }
 
     // Pass through if not the specified code
@@ -137,6 +161,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         }
     }
     if (!code_matched) {
+        LOG_DBG("Event code %u not in configured codes for device %s", event->code, dev->name);
         return 0;
     }
 
@@ -152,6 +177,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     
     // Check if acceleration is effectively disabled
     if (cfg->max_factor <= 1000) {
+        LOG_DBG("Acceleration disabled (max_factor=%u) for device %s", cfg->max_factor, dev->name);
         return 0;
     }
 

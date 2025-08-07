@@ -31,12 +31,10 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
 }
 
 // =============================================================================
-// ENHANCED TIMING FUNCTIONS
+// TIMING FUNCTIONS
 // =============================================================================
 
-// Removed - now integrated into accel_calculate_enhanced_speed for efficiency
-
-// Minimal speed calculation for MCU efficiency
+// Speed calculation for MCU efficiency
 uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value) {
     uint32_t current_time_ms = k_uptime_get_32();
     uint32_t last_time_ms = data->last_time_ms;
