@@ -47,12 +47,12 @@ static const preset_config_t presets[] = {
     {
         .name = "high_sens",
         .sensitivity = 1000,
-        .max_factor = 6000,
+        .max_factor = 4000,
         .curve_type = 1,    // Mild
         .y_boost = 1300,
-        .speed_threshold = 400,
-        .speed_max = 1500,
-        .min_factor = 1200
+        .speed_threshold = 500,
+        .speed_max = 2500,
+        .min_factor = 1100
     }
 };
 
