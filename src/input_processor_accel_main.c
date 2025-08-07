@@ -34,12 +34,12 @@ static int accel_init_device(const struct device *dev) {
         return ret;
     }
     
-    // Initialize data structures (minimal for MCU efficiency)
-    atomic_set(&data->last_time_ms, 0);
-    atomic_set(&data->stable_speed, 0);
-    atomic_set(&data->remainder_x, 0);
-    atomic_set(&data->remainder_y, 0);
-    atomic_set(&data->last_factor, 1000);
+    // Initialize data structures (optimized for single-threaded MCU)
+    data->last_time_ms = 0;
+    data->stable_speed = 0;
+    data->remainder_x = 0;
+    data->remainder_y = 0;
+    data->last_factor = 1000;
     
     LOG_INF("Acceleration processor initialized (Level %d)", cfg->level);
     return 0;

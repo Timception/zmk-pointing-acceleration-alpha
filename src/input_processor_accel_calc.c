@@ -300,10 +300,10 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         int64_t full_result = safe_multiply_64(result, 1000LL, INT64_MAX);
         int32_t remainder = (int32_t)(full_result % 1000LL);
         
-        // Select appropriate remainder storage
-        atomic_t *remainder_ptr = (code == INPUT_REL_X) ? &data->remainder_x : &data->remainder_y;
+        // Select appropriate remainder storage (single-threaded optimization)
+        int32_t *remainder_ptr = (code == INPUT_REL_X) ? &data->remainder_x : &data->remainder_y;
         
-        int32_t current_remainder = atomic_get(remainder_ptr);
+        int32_t current_remainder = *remainder_ptr;
         
         // Safe remainder addition with overflow check
         int64_t new_remainder_64 = (int64_t)current_remainder + remainder;
@@ -319,7 +319,8 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
             new_remainder = new_remainder % 1000;
         }
         
-        atomic_set(remainder_ptr, new_remainder);
+        // Direct assignment (no atomic operation needed in single-threaded context)
+        *remainder_ptr = new_remainder;
     }
 #endif
     

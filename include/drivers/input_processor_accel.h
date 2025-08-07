@@ -64,7 +64,8 @@ extern "C" {
 #define CLAMP(val, min, max) ACCEL_CLAMP(val, min, max)
 #endif
 
-// Thread safety: Use atomic operations for shared data (macros removed - use atomic_* functions directly)
+// Single-threaded optimization: ZMK input processing is single-threaded,
+// so atomic operations are not necessary and add unnecessary overhead
 
 // =============================================================================
 // DATA STRUCTURES
@@ -74,21 +75,24 @@ extern "C" {
 
 /**
  * @brief Minimal acceleration data structure for MCU efficiency
- * Total size: ~20 bytes (reduced from ~40 bytes)
+ * Total size: ~20 bytes (optimized from atomic operations)
+ * 
+ * Note: ZMK input processing is single-threaded, so atomic operations
+ * are not necessary and add unnecessary overhead.
  */
 struct accel_data {
     // Combined timing and speed data (8 bytes)
-    atomic_t last_time_ms;                          // Last event time in milliseconds
-    atomic_t stable_speed;                          // Simple smoothed speed
+    uint32_t last_time_ms;                          // Last event time in milliseconds
+    uint32_t stable_speed;                          // Simple smoothed speed
     
     // Remainder tracking for X/Y only (8 bytes)
-    atomic_t remainder_x;                           // X-axis remainder
-    atomic_t remainder_y;                           // Y-axis remainder
+    int32_t remainder_x;                            // X-axis remainder
+    int32_t remainder_y;                            // Y-axis remainder
     
     // Last acceleration factor (4 bytes)
-    atomic_t last_factor;                           // Last applied factor
+    uint32_t last_factor;                           // Last applied factor
     
-    // No mutex - using atomic operations only for thread safety
+    // Single-threaded optimization: no atomic operations needed
 };
 
 /**

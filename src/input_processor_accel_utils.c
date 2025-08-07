@@ -39,7 +39,7 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
 // Minimal speed calculation for MCU efficiency
 uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value) {
     uint32_t current_time_ms = k_uptime_get_32();
-    uint32_t last_time_ms = atomic_get(&data->last_time_ms);
+    uint32_t last_time_ms = data->last_time_ms;
     
     uint32_t time_delta_ms = current_time_ms - last_time_ms;
     
@@ -52,19 +52,19 @@ uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value) {
         speed = (abs_input * 1000) / time_delta_ms;
     } else {
         // Edge case: use previous speed or estimate
-        speed = atomic_get(&data->stable_speed);
+        speed = data->stable_speed;
         if (speed == 0) {
             speed = abs_input * 100; // Simple estimate
         }
     }
     
     // Simple smoothing: 75% old + 25% new
-    uint32_t old_speed = atomic_get(&data->stable_speed);
+    uint32_t old_speed = data->stable_speed;
     speed = (old_speed * 3 + speed) / 4;
     
-    // Update state
-    atomic_set(&data->last_time_ms, current_time_ms);
-    atomic_set(&data->stable_speed, speed);
+    // Update state (single-threaded, no atomic operations needed)
+    data->last_time_ms = current_time_ms;
+    data->stable_speed = speed;
     
     return speed;
 }
