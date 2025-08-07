@@ -26,13 +26,13 @@ typedef struct {
 static const preset_config_t presets[] = {
     {
         .name = "office",
-        .sensitivity = 800,
-        .max_factor = 2000,
+        .sensitivity = 700,
+        .max_factor = 1400,
         .curve_type = 0,  // Linear
         .y_boost = 1000,
-        .speed_threshold = 600,
-        .speed_max = 2000,
-        .min_factor = 900
+        .speed_threshold = 800,
+        .speed_max = 2500,
+        .min_factor = 800
     },
     {
         .name = "gaming",
