@@ -84,7 +84,7 @@ endchoice
 
 config INPUT_PROCESSOR_ACCEL_SENSITIVITY
     int "Base sensitivity (scaled by 1000)"
-    default 500
+    default 1000
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 200 2000
     help
@@ -93,11 +93,11 @@ config INPUT_PROCESSOR_ACCEL_SENSITIVITY
 
 config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
     int "Maximum acceleration factor (scaled by 1000)"
-    default 1200
+    default 2000
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 1000 3000
     help
-      Maximum acceleration factor at high speeds. 1200 = 1.2x (gentle acceleration).
+      Maximum acceleration factor at high speeds. 2000 = 2.0x (moderate acceleration).
 
 config INPUT_PROCESSOR_ACCEL_CURVE_TYPE
     int "Acceleration curve type"
@@ -155,7 +155,7 @@ endchoice
 
 config INPUT_PROCESSOR_ACCEL_SENSITIVITY
     int "Base sensitivity (scaled by 1000)"
-    default 500
+    default 1000
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 200 2000
     help
@@ -163,11 +163,11 @@ config INPUT_PROCESSOR_ACCEL_SENSITIVITY
 
 config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
     int "Maximum acceleration factor (scaled by 1000)"
-    default 1200
+    default 2000
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     range 1000 3000
     help
-      Maximum acceleration factor at high speeds. 1200 = 1.2x (gentle acceleration).
+      Maximum acceleration factor at high speeds. 2000 = 2.0x (moderate acceleration).
 
 config INPUT_PROCESSOR_ACCEL_CURVE_TYPE
     int "Acceleration curve type"
