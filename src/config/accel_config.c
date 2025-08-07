@@ -18,28 +18,28 @@ LOG_MODULE_DECLARE(input_processor_accel);
 
 static const struct accel_config level1_defaults = {
     .level = 1,
-    .sensitivity = 400,        // 0.4x (precise control equivalent to 1/4 scaling)
-    .max_factor = 1200,        // 1.2x (gentle acceleration)
-    .curve_type = 0,           // Linear (simple acceleration curve)
+    .sensitivity = 1000,       // 1.0x (neutral base sensitivity)
+    .max_factor = 2000,        // 2.0x (mild acceleration, not too aggressive)
+    .curve_type = 1,           // Mild (smooth acceleration curve)
     .y_boost = 1000,           // 1.0x (no Y-axis boost)
-    .speed_threshold = 1200,   // High threshold for precision-focused control
-    .speed_max = 2500,         // Moderate maximum speed
+    .speed_threshold = 800,    // Moderate threshold for balanced control
+    .speed_max = 3000,         // Reasonable maximum speed
     .min_factor = 1000,        // 1.0x (no minimum acceleration)
     .acceleration_exponent = 2,
-    .sensor_dpi = 400          // Low DPI sensor support
+    .sensor_dpi = 800          // Standard DPI sensor support
 };
 
 static const struct accel_config level2_defaults = {
     .level = 2,
-    .sensitivity = 400,        // 0.4x (precise control equivalent to 1/4 scaling)
-    .max_factor = 1200,        // 1.2x (gentle acceleration)
-    .curve_type = 0,           // Linear (simple acceleration curve)
-    .y_boost = 1000,           // 1.0x (no Y-axis boost)
-    .speed_threshold = 1200,   // High threshold for precision-focused control
-    .speed_max = 2500,         // Moderate maximum speed
-    .min_factor = 1000,        // 1.0x (no minimum acceleration)
-    .acceleration_exponent = 2,
-    .sensor_dpi = 400          // Low DPI sensor support
+    .sensitivity = 1000,       // 1.0x (neutral base sensitivity)
+    .max_factor = 2500,        // 2.5x (moderate acceleration for standard level)
+    .curve_type = 1,           // Mild (smooth acceleration curve)
+    .y_boost = 1000,           // 1.0x (no Y-axis boost by default)
+    .speed_threshold = 600,    // Lower threshold for more responsive acceleration
+    .speed_max = 3500,         // Higher maximum speed for standard level
+    .min_factor = 900,         // 0.9x (slight precision boost for slow movements)
+    .acceleration_exponent = 2, // Mild exponential curve
+    .sensor_dpi = 800          // Standard DPI sensor support
 };
 
 
