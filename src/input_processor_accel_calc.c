@@ -138,11 +138,13 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     }
 
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)
-    LOG_DBG("Simple level not enabled, using fallback calculation");
-    int64_t result = safe_multiply_64((int64_t)input_value, 1200LL, INT32_MAX);
+    LOG_DBG("Simple level not enabled, using fallback calculation for input: %d", input_value);
+    int64_t result = safe_multiply_64((int64_t)input_value, 2000LL, INT32_MAX);
     if (abs(result) > SENSITIVITY_SCALE) {
         result = result / SENSITIVITY_SCALE;
     }
+    
+    LOG_DBG("Fallback result: %d -> %lld", input_value, result);
     
     int32_t safe_result = safe_int64_to_int32(result);
     return safe_int32_to_int16(safe_result);
