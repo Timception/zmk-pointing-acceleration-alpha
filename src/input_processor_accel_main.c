@@ -14,13 +14,6 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zmk_input_processor_acceleration
 
-// Debug: Check if any compatible nodes exist
-#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
-#pragma message "Found compatible acceleration nodes"
-#else
-#pragma message "No compatible acceleration nodes found"
-#endif
-
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
 // =============================================================================
