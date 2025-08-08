@@ -7,12 +7,14 @@
 
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../include/drivers/input_processor_accel.h"
 #include "config/accel_config.h"
 
 LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zmk_input_processor_acceleration
+
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
 // =============================================================================
@@ -34,12 +36,10 @@ static int accel_init_device(const struct device *dev) {
         return ret;
     }
     
-    // Initialize data structures (optimized for single-threaded MCU)
+    // Initialize simplified data structures
     data->last_time_ms = 0;
-    data->stable_speed = 0;
-    data->remainder_x = 0;
-    data->remainder_y = 0;
-    data->last_factor = 1000;
+    data->recent_speed = 0;
+    data->speed_samples = 0;
     
     LOG_INF("Acceleration processor initialized (Level %d)", cfg->level);
     return 0;
@@ -69,7 +69,9 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
         cfg->input_type = INPUT_EV_REL;                                                          \
         cfg->codes = accel_codes;                                                                \
         cfg->codes_count = ARRAY_SIZE(accel_codes);                                             \
-        cfg->track_remainders = DT_INST_NODE_HAS_PROP(inst, track_remainders);                  \
+        /* Read track_remainders property for compatibility but ignore it */                    \
+        bool track_remainders_ignored = DT_INST_NODE_HAS_PROP(inst, track_remainders);         \
+        (void)track_remainders_ignored; /* Suppress unused variable warning */                  \
                                                                                                   \
         /* Apply Kconfig presets */                                                             \
         accel_config_apply_kconfig_preset(cfg);                                                 \
@@ -107,6 +109,57 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
 // Create device instances for all enabled DT nodes
 DT_INST_FOREACH_STATUS_OKAY(ACCEL_DEVICE_DEFINE)
 
+// Alternative: Direct node reference for &pointer_accel style definitions
+#if DT_NODE_EXISTS(DT_ALIAS(pointer_accel)) && DT_NODE_HAS_STATUS(DT_ALIAS(pointer_accel), okay)
+#define POINTER_ACCEL_NODE DT_ALIAS(pointer_accel)
+
+static struct accel_data pointer_accel_data = {0};
+static struct accel_config pointer_accel_config = {0};
+
+static int pointer_accel_init(const struct device *dev) {
+    struct accel_config *cfg = (struct accel_config *)dev->config;
+    LOG_INF("Pointer accel init: direct node reference");
+    
+    // Initialize configuration
+    int ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
+    if (ret < 0) {
+        LOG_ERR("Configuration initialization failed: %d", ret);
+        return ret;
+    }
+    
+    // Set input type and codes
+    cfg->input_type = INPUT_EV_REL;
+    cfg->codes = accel_codes;
+    cfg->codes_count = ARRAY_SIZE(accel_codes);
+    /* Read track_remainders property for compatibility but ignore it */
+    bool track_remainders_ignored = DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, track_remainders);
+    (void)track_remainders_ignored; /* Suppress unused variable warning */
+    
+    // Apply Kconfig presets
+    accel_config_apply_kconfig_preset(cfg);
+    
+    // Log configuration
+    LOG_INF("Pointer accel config: level=%d, max_factor=%d, sensitivity=%d",
+            cfg->level, cfg->max_factor, cfg->sensitivity);
+    
+    // Validate configuration
+    ret = accel_validate_config(cfg);
+    if (ret < 0) {
+        LOG_ERR("Configuration validation failed: %d", ret);
+        return ret;
+    }
+    
+    return accel_init_device(dev);
+}
+
+DEVICE_DT_DEFINE(POINTER_ACCEL_NODE, pointer_accel_init, NULL,
+                 &pointer_accel_data, &pointer_accel_config,
+                 POST_KERNEL, CONFIG_INPUT_PROCESSOR_ACCELERATION_INIT_PRIORITY,
+                 &(const struct zmk_input_processor_driver_api){
+                     .handle_event = accel_handle_event
+                 });
+#endif
+
 // =============================================================================
 // MAIN EVENT HANDLER
 // =============================================================================
@@ -120,25 +173,30 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     if (!dev) {
         LOG_ERR("Critical error: Device pointer is NULL");
-        return 1;
+        return 0; // Pass through instead of blocking
     }
     if (!event) {
         LOG_ERR("Critical error: Event pointer is NULL");
-        return 1;
+        return 0; // Pass through instead of blocking
     }
     if (!cfg) {
         LOG_ERR("Critical error: Configuration pointer is NULL for device %s", dev->name);
-        return 1;
+        return 0; // Pass through instead of blocking
     }
     if (!data) {
         LOG_ERR("Critical error: Data pointer is NULL for device %s", dev->name);
-        return 1;
+        return 0; // Pass through instead of blocking
     }
 
     // Configuration sanity check
     if (cfg->level < 1 || cfg->level > 2) {
         LOG_ERR("Invalid configuration level %u for device %s", cfg->level, dev->name);
-        return 1;
+        return 0; // Pass through instead of blocking
+    }
+    
+    // Initialize data structure only on first use
+    if (data && data->last_time_ms == 0) {
+        memset(data, 0, sizeof(struct accel_data));
     }
 
     // Pass through if not the specified type
@@ -210,19 +268,34 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
         // Check for calculation errors
         if (abs(accelerated_value) > INT16_MAX) {
-            LOG_ERR("Calculation error: result %d exceeds safe range", accelerated_value);
-            return 1;
+            LOG_ERR("Calculation error: result %d exceeds safe range, clamping and continuing", accelerated_value);
+            accelerated_value = (accelerated_value > 0) ? INT16_MAX : INT16_MIN;
+            // Continue processing instead of returning error
         }
 
+        // Enhanced safety checks
+        if (abs(accelerated_value) > 32767) {
+            LOG_ERR("Accelerated value %d exceeds safe range, clamping", accelerated_value);
+            accelerated_value = (accelerated_value > 0) ? 32767 : -32767;
+        }
+        
         // Final safety check
         accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
+        
+        // Sanity check: ensure we don't have zero movement from non-zero input
+        if (input_value != 0 && accelerated_value == 0) {
+            accelerated_value = (input_value > 0) ? 1 : -1;
+            LOG_DBG("Zero acceleration corrected to: %d", accelerated_value);
+        }
 
         // Update event value
         event->value = accelerated_value;
         
-        // Log only significant changes for debugging
-        if (abs(input_value - accelerated_value) > 5) {
-            LOG_DBG("Accel: %s %d->%d", event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
+        // Minimal logging to prevent system overload
+        static uint32_t log_counter = 0;
+        if ((log_counter++ % 100) == 0) {
+            LOG_DBG("Accel: %s %d->%d", 
+                    event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
         }
         
         return 0;

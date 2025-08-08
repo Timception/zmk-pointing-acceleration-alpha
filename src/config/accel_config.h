@@ -43,6 +43,13 @@ const struct accel_config *accel_config_get_defaults(uint8_t level);
  */
 void accel_config_apply_kconfig_preset(struct accel_config *cfg);
 
+/**
+ * @brief Validate configuration values for safety and correctness
+ * @param cfg Configuration structure to validate
+ * @return 0 if valid, negative error code if invalid
+ */
+int accel_validate_config(const struct accel_config *cfg);
+
 #ifdef __cplusplus
 }
 #endif

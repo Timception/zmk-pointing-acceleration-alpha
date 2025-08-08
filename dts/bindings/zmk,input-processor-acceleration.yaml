@@ -17,9 +17,12 @@ properties:
   track-remainders:
     type: boolean
     description: |
-      Accumulate and apply fractional movement remainders for higher precision.
-      This is a boolean property - include it to enable, omit it to disable.
-      Usage: track-remainders; (not track-remainders = <1>;)
+      DEPRECATED: This property is ignored for safety reasons.
+      Remainder tracking has been removed to prevent memory corruption.
+      Including this property will not cause errors but has no effect.
+
+      This property exists only for compatibility with ZMK's input_listener.c
+      which expects this property to be defined in the binding.
 
   # =============================================================================
   # LEVEL 1: SIMPLE PROPERTIES (Available when CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL=1)

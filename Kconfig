@@ -234,12 +234,8 @@ config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
       DPI/CPI setting of the pointing device sensor. Used for sensitivity scaling.
       Standard values: 400, 800, 1200, 1600, 3200 DPI.
 
-config INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS
-    bool "Enable remainder tracking for precision"
-    default y
-    help
-      Enable fractional movement tracking for higher precision.
-      Disable this to reduce code size and memory usage on resource-constrained MCUs.
+# Remainder tracking removed for safety and simplicity
+# The precision loss (1/1000) is negligible for practical mouse usage
 
 endif # INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
 

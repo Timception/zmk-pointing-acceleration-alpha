@@ -24,7 +24,7 @@ extern "C" {
 // =============================================================================
 
 // Core safety limits to prevent overflow and system crashes
-#define MAX_SAFE_INPUT_VALUE    1000    // Maximum safe input value
+#define MAX_SAFE_INPUT_VALUE    2000    // Maximum safe input value (increased for trackball support)
 #define MAX_SAFE_FACTOR         10000   // Maximum safe acceleration factor
 #define MAX_SAFE_SENSITIVITY    5000    // Maximum safe sensitivity
 #define MIN_SAFE_SENSITIVITY    100     // Minimum safe sensitivity
@@ -47,10 +47,14 @@ extern "C" {
 // Calculation scaling constants
 #define SENSITIVITY_SCALE       1000    // Sensitivity scaling factor
 #define SPEED_NORMALIZATION     1000    // Speed normalization factor
-#define LINEAR_CURVE_MULTIPLIER 100ULL  // Linear curve multiplication factor
+#define LINEAR_CURVE_MULTIPLIER 10ULL   // Linear curve multiplication factor (reduced for proper scaling)
 
 // Essential utility macros (optimized for MCU)
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
+
+// Simplified speed calculation constants
+#define ACCEL_MAX_SPEED_SAMPLES     8       // Maximum speed samples for averaging
+#define ACCEL_SPEED_SCALE_FACTOR    10      // Speed scaling factor (simpler than 1000)
 
 // Backward compatibility
 #ifndef CLAMP
@@ -62,14 +66,17 @@ extern "C" {
 // =============================================================================
 
 /**
- * @brief Acceleration data structure for MCU efficiency
+ * @brief Simplified acceleration data structure - minimal accumulation risk
  */
 struct accel_data {
-    uint32_t last_time_ms;
-    uint32_t stable_speed;
-    int32_t remainder_x;
-    int32_t remainder_y;
-    uint32_t last_factor;
+    uint32_t last_time_ms;         // Time tracking for speed calculation
+    uint16_t recent_speed;         // Recent speed (simplified, 16-bit to prevent overflow)
+    uint8_t speed_samples;         // Number of recent samples (max 255)
+    
+    // Removed: remainder_x, remainder_y (precision loss acceptable for safety)
+    // Removed: last_factor (not actually used)
+    // Removed: stable_speed (replaced with simpler recent_speed)
+    // Removed: all anti-accumulation fields (no longer needed)
 };
 
 /**
@@ -79,7 +86,7 @@ struct accel_config {
     uint8_t input_type;
     const uint16_t *codes;
     uint32_t codes_count;
-    bool track_remainders;
+
     uint8_t level;
     
     uint16_t sensitivity;
@@ -126,15 +133,29 @@ static inline int32_t accel_clamp_input_value(int32_t input_value) {
 }
 
 uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier);
-uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value);
+int32_t accel_safe_fallback_calculate(int32_t input_value, uint32_t max_factor);
 
 int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
                       struct zmk_input_processor_state *state);
 
+// Level-specific calculation functions
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code);
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code);
+
+// Common calculation functions (shared between levels)
+int64_t safe_multiply_64(int64_t a, int64_t b, int64_t max_result);
+int32_t safe_int64_to_int32(int64_t value);
+int16_t safe_int32_to_int16(int32_t value);
+uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg);
+
+#if defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)
+uint32_t calculate_exponential_curve(uint32_t t, uint8_t exponent);
+#endif
+
+// Simplified speed calculation functions
+uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value);
 
 #ifdef __cplusplus
 }

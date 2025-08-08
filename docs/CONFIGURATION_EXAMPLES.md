@@ -63,7 +63,6 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
-    track-remainders;             // Enable precision tracking
     // Preset values are automatically applied for all Level 2 settings
     // Including: sensitivity, max-factor, curve-type, y-boost,
     // speed-threshold, speed-max, min-factor
@@ -82,7 +81,6 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
-    track-remainders;             // Enable precision tracking
     sensitivity = <1200>;         // 1.2x base sensitivity
     max-factor = <3000>;          // 3.0x maximum acceleration
     curve-type = <1>;             // Basic mild curve
@@ -141,11 +139,11 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 - Reduce `max-factor`
 - Use mild curve (`curve-type = <1>`)
 - Use linear exponential curve (`acceleration-exponent = <1>`) in Level 2
-- Enable `track-remainders` for smoother movement
+- Use simplified processing for better stability
 
 ### Small Movements Lost
 
-- Enable `track-remainders` to accumulate fractional movements
+- Use lower sensitivity values for better precision
 - Reduce `min-factor` to preserve small movements
 - Lower `speed-threshold` to start acceleration earlier
 
@@ -159,7 +157,6 @@ This configuration has been tested and optimized for widescreen displays:
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
-    track-remainders;             // Enable precision tracking
     sensitivity = <1300>;         // 1.3x base sensitivity
     max-factor = <5000>;          // 5.0x maximum acceleration
     curve-type = <2>;             // Strong curve for responsive feel
@@ -177,4 +174,4 @@ This configuration has been tested and optimized for widescreen displays:
 - **Responsive acceleration** - Starts accelerating at low speeds (200 counts/sec)
 - **Strong Y-axis boost** - 2.5x multiplier for comfortable vertical movement
 - **Smooth curves** - Strong exponential acceleration for natural feel
-- **High precision** - Remainder tracking enabled for smooth small movements
+- **Simplified processing** - Optimized for stability and safety

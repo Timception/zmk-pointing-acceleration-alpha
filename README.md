@@ -182,7 +182,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y       # Gaming preset
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
-    track-remainders;             // Enable precision tracking
+    // track-remainders removed for safety
     // Preset values are automatically applied for all Level 2 settings!
     // Including: sensitivity, max-factor, curve-type, y-boost,
     // speed-threshold, speed-max, min-factor
@@ -299,13 +299,6 @@ The acceleration processor provides several settings to customize how your point
 
 ### Advanced Options
 
-- `track-remainders`: (Default: disabled) **[Level 2 Standard only]**
-  - Enables tracking of fractional movements for higher precision
-  - Accumulates small movements that would otherwise be lost due to rounding
-  - Improves precision by carrying over fractional parts to subsequent movements
-  - Enable with `track-remainders;` in your config (boolean property)
-  - Particularly useful for low DPI sensors or high acceleration factors
-
 ### Visual Examples
 
 Here's how different configurations affect pointer movement:
@@ -346,7 +339,6 @@ The configurations under are just starting points - every person's perfect point
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
-    track-remainders;          // Enable precision tracking
     sensitivity = <1200>;      // 1.2x base sensitivity
     max-factor = <3000>;       // Good acceleration for large movements
     curve-type = <1>;          // Basic mild curve
@@ -382,7 +374,6 @@ The configurations under are just starting points - every person's perfect point
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
-    track-remainders;          // Enable precision tracking
     sensitivity = <1000>;      // 1.0x base sensitivity
     max-factor = <4000>;       // 4.0x maximum
     curve-type = <2>;          // Strong basic curve
@@ -403,7 +394,6 @@ The configurations under are just starting points - every person's perfect point
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
-    track-remainders;          // Enable precision tracking
     sensitivity = <800>;       // 0.8x base sensitivity
     max-factor = <2500>;       // 2.5x maximum acceleration
     curve-type = <1>;          // Mild curve for responsive feel

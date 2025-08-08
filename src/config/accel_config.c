@@ -115,6 +115,17 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
             400, 8000);
     }
 
+    // Enhanced safety: Validate configuration after initialization
+    int validation_result = accel_validate_config(cfg);
+    if (validation_result != 0) {
+        LOG_ERR("Configuration validation failed for level %u: %d", level, validation_result);
+        // Reset to safe defaults on validation failure
+        memcpy(cfg, defaults, sizeof(struct accel_config));
+    }
+
     LOG_DBG("Configuration initialized for level %u", level);
-    return 0;
+    return validation_result;
 }
+
+// Configuration validation is handled in src/validation/accel_validation.c
+// to avoid duplicate symbol errors
