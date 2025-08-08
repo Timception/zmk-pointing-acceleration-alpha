@@ -171,7 +171,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     
     uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
     int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
-                                     INT32_MAX * SENSITIVITY_SCALE);
+                                     (int64_t)INT32_MAX * SENSITIVITY_SCALE);
     
     LOG_DBG("Level1 Debug: Input=%d, Sensitivity=%u, Raw result=%lld", 
             input_value, dpi_adjusted_sensitivity, result);
@@ -221,7 +221,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 abs_input, cfg->curve_type, curve_factor, cfg->max_factor);
         
         if (curve_factor > SENSITIVITY_SCALE) {
-            int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, INT32_MAX * SENSITIVITY_SCALE);
+            int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, (int64_t)INT32_MAX * SENSITIVITY_SCALE);
             result = temp_result / SENSITIVITY_SCALE;
             LOG_DBG("Level1 Debug: After acceleration: temp=%lld, final=%lld", temp_result, result);
         }
@@ -267,7 +267,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
     
     int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
-                                     INT32_MAX * SENSITIVITY_SCALE);
+                                     (int64_t)INT32_MAX * SENSITIVITY_SCALE);
     
     if (abs(result) >= SENSITIVITY_SCALE) {
         result = result / SENSITIVITY_SCALE;
@@ -305,14 +305,14 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         
         // Apply acceleration with overflow protection
         if (factor > SENSITIVITY_SCALE) {
-            int64_t temp_result = safe_multiply_64(result, (int64_t)factor, INT32_MAX * SENSITIVITY_SCALE);
+            int64_t temp_result = safe_multiply_64(result, (int64_t)factor, (int64_t)INT32_MAX * SENSITIVITY_SCALE);
             result = temp_result / SENSITIVITY_SCALE;
         }
     }
     
     // Y-axis boost with overflow protection
     if (code == INPUT_REL_Y && cfg->y_boost != SENSITIVITY_SCALE) {
-        int64_t temp_result = safe_multiply_64(result, (int64_t)cfg->y_boost, INT32_MAX * SENSITIVITY_SCALE);
+        int64_t temp_result = safe_multiply_64(result, (int64_t)cfg->y_boost, (int64_t)INT32_MAX * SENSITIVITY_SCALE);
         result = temp_result / SENSITIVITY_SCALE;
     }
     
