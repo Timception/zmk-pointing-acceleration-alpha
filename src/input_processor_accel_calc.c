@@ -64,6 +64,7 @@ static uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cf
     return dpi_adjusted_sensitivity;
 }
 
+#if defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)
 static uint32_t calculate_exponential_curve(uint32_t t, uint8_t exponent) {
     switch (exponent) {
         case 1: // Linear
@@ -126,6 +127,7 @@ static uint32_t calculate_exponential_curve(uint32_t t, uint8_t exponent) {
             }
     }
 }
+#endif // CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
 
 // =============================================================================
 // LEVEL-SPECIFIC CALCULATION FUNCTIONS
