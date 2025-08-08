@@ -321,6 +321,12 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // Calculate final accelerated value with safe conversion
     int32_t accelerated_value = safe_int64_to_int32(result);
     
+    // Additional safety check for Level 2
+    if (abs(accelerated_value) > 32767) {
+        LOG_ERR("Level2: Accelerated value %d exceeds safe range, clamping", accelerated_value);
+        accelerated_value = (accelerated_value > 0) ? 32767 : -32767;
+    }
+    
     // Optional remainder processing with overflow protection
 #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_TRACK_REMAINDERS
     if (cfg->track_remainders && (code == INPUT_REL_X || code == INPUT_REL_Y)) {

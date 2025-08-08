@@ -170,19 +170,19 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     if (!dev) {
         LOG_ERR("Critical error: Device pointer is NULL");
-        return 1;
+        return 0; // Pass through instead of blocking
     }
     if (!event) {
         LOG_ERR("Critical error: Event pointer is NULL");
-        return 1;
+        return 0; // Pass through instead of blocking
     }
     if (!cfg) {
         LOG_ERR("Critical error: Configuration pointer is NULL for device %s", dev->name);
-        return 1;
+        return 0; // Pass through instead of blocking
     }
     if (!data) {
         LOG_ERR("Critical error: Data pointer is NULL for device %s", dev->name);
-        return 1;
+        return 0; // Pass through instead of blocking
     }
 
     // Configuration sanity check
@@ -260,20 +260,36 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
         // Check for calculation errors
         if (abs(accelerated_value) > INT16_MAX) {
-            LOG_ERR("Calculation error: result %d exceeds safe range", accelerated_value);
-            return 1;
+            LOG_ERR("Calculation error: result %d exceeds safe range, clamping and continuing", accelerated_value);
+            accelerated_value = (accelerated_value > 0) ? INT16_MAX : INT16_MIN;
+            // Continue processing instead of returning error
         }
 
+        // Enhanced safety checks
+        if (abs(accelerated_value) > 32767) {
+            LOG_ERR("Accelerated value %d exceeds safe range, clamping", accelerated_value);
+            accelerated_value = (accelerated_value > 0) ? 32767 : -32767;
+        }
+        
         // Final safety check
         accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
+        
+        // Sanity check: ensure we don't have zero movement from non-zero input
+        if (input_value != 0 && accelerated_value == 0) {
+            accelerated_value = (input_value > 0) ? 1 : -1;
+            LOG_DBG("Zero acceleration corrected to: %d", accelerated_value);
+        }
 
         // Update event value
         event->value = accelerated_value;
         
-        // Enhanced debug logging for troubleshooting
-        LOG_DBG("Accel: %s %d->%d (level=%d, max_factor=%d, sensitivity=%d)", 
-                event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value,
-                cfg->level, cfg->max_factor, cfg->sensitivity);
+        // Rate-limited debug logging to prevent system overload
+        static uint32_t log_counter = 0;
+        if ((log_counter++ % 10) == 0 || abs(input_value - accelerated_value) > 50) {
+            LOG_DBG("Accel: %s %d->%d (level=%d, max_factor=%d, sensitivity=%d)", 
+                    event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value,
+                    cfg->level, cfg->max_factor, cfg->sensitivity);
+        }
         
         return 0;
     }
