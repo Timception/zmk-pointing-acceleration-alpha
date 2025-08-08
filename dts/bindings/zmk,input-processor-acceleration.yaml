@@ -14,8 +14,15 @@ properties:
     required: true
     description: Array of event code values to accelerate (e.g. REL_X, REL_Y)
 
-  # track-remainders removed for safety and simplicity
-  # The precision loss (1/1000) is negligible for practical mouse usage
+  track-remainders:
+    type: boolean
+    description: |
+      DEPRECATED: This property is ignored for safety reasons.
+      Remainder tracking has been removed to prevent memory corruption.
+      Including this property will not cause errors but has no effect.
+
+      This property exists only for compatibility with ZMK's input_listener.c
+      which expects this property to be defined in the binding.
 
   # =============================================================================
   # LEVEL 1: SIMPLE PROPERTIES (Available when CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL=1)

@@ -69,7 +69,9 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
         cfg->input_type = INPUT_EV_REL;                                                          \
         cfg->codes = accel_codes;                                                                \
         cfg->codes_count = ARRAY_SIZE(accel_codes);                                             \
-        // track_remainders removed for safety                  \
+        /* Read track_remainders property for compatibility but ignore it */                    \
+        bool track_remainders_ignored = DT_INST_NODE_HAS_PROP(inst, track_remainders);         \
+        (void)track_remainders_ignored; /* Suppress unused variable warning */                  \
                                                                                                   \
         /* Apply Kconfig presets */                                                             \
         accel_config_apply_kconfig_preset(cfg);                                                 \
@@ -129,7 +131,9 @@ static int pointer_accel_init(const struct device *dev) {
     cfg->input_type = INPUT_EV_REL;
     cfg->codes = accel_codes;
     cfg->codes_count = ARRAY_SIZE(accel_codes);
-    // track_remainders removed for safety
+    /* Read track_remainders property for compatibility but ignore it */
+    bool track_remainders_ignored = DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, track_remainders);
+    (void)track_remainders_ignored; /* Suppress unused variable warning */
     
     // Apply Kconfig presets
     accel_config_apply_kconfig_preset(cfg);
