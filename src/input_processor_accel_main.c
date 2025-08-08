@@ -13,6 +13,14 @@
 LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zmk_input_processor_acceleration
+
+// Debug: Check if any compatible nodes exist
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#pragma message "Found compatible acceleration nodes"
+#else
+#pragma message "No compatible acceleration nodes found"
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
 // =============================================================================
@@ -106,6 +114,55 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
 
 // Create device instances for all enabled DT nodes
 DT_INST_FOREACH_STATUS_OKAY(ACCEL_DEVICE_DEFINE)
+
+// Alternative: Direct node reference for &pointer_accel style definitions
+#if DT_NODE_EXISTS(DT_ALIAS(pointer_accel)) && DT_NODE_HAS_STATUS(DT_ALIAS(pointer_accel), okay)
+#define POINTER_ACCEL_NODE DT_ALIAS(pointer_accel)
+
+static struct accel_data pointer_accel_data = {0};
+static struct accel_config pointer_accel_config = {0};
+
+static int pointer_accel_init(const struct device *dev) {
+    struct accel_config *cfg = (struct accel_config *)dev->config;
+    LOG_INF("Pointer accel init: direct node reference");
+    
+    // Initialize configuration
+    int ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
+    if (ret < 0) {
+        LOG_ERR("Configuration initialization failed: %d", ret);
+        return ret;
+    }
+    
+    // Set input type and codes
+    cfg->input_type = INPUT_EV_REL;
+    cfg->codes = accel_codes;
+    cfg->codes_count = ARRAY_SIZE(accel_codes);
+    cfg->track_remainders = DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, track_remainders);
+    
+    // Apply Kconfig presets
+    accel_config_apply_kconfig_preset(cfg);
+    
+    // Log configuration
+    LOG_INF("Pointer accel config: level=%d, max_factor=%d, sensitivity=%d",
+            cfg->level, cfg->max_factor, cfg->sensitivity);
+    
+    // Validate configuration
+    ret = accel_validate_config(cfg);
+    if (ret < 0) {
+        LOG_ERR("Configuration validation failed: %d", ret);
+        return ret;
+    }
+    
+    return accel_init_device(dev);
+}
+
+DEVICE_DT_DEFINE(POINTER_ACCEL_NODE, pointer_accel_init, NULL,
+                 &pointer_accel_data, &pointer_accel_config,
+                 POST_KERNEL, CONFIG_INPUT_PROCESSOR_ACCELERATION_INIT_PRIORITY,
+                 &(const struct zmk_input_processor_driver_api){
+                     .handle_event = accel_handle_event
+                 });
+#endif
 
 // =============================================================================
 // MAIN EVENT HANDLER
