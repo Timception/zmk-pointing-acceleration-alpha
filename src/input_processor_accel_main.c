@@ -194,8 +194,8 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         return 0; // Pass through instead of blocking
     }
     
-    // CRITICAL: Reset data structure every time to prevent ANY accumulation
-    if (data) {
+    // Initialize data structure only on first use
+    if (data && data->last_time_ms == 0) {
         memset(data, 0, sizeof(struct accel_data));
     }
 
@@ -259,9 +259,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                 accelerated_value = accel_simple_calculate(cfg, input_value, event->code);
                 break;
             case 2:
-                // TEMPORARY: Use safe fallback for Level 2 to prevent system freeze
-                LOG_DBG("Level 2 using safe fallback mode");
-                accelerated_value = accel_safe_fallback_calculate(input_value, cfg->max_factor);
+                accelerated_value = accel_standard_calculate(cfg, data, input_value, event->code);
                 break;
             default:
                 LOG_ERR("Invalid configuration level: %u", cfg->level);
