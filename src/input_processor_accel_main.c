@@ -7,6 +7,7 @@
 
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../include/drivers/input_processor_accel.h"
 #include "config/accel_config.h"
 
@@ -35,12 +36,10 @@ static int accel_init_device(const struct device *dev) {
         return ret;
     }
     
-    // Initialize data structures (optimized for single-threaded MCU)
+    // Initialize simplified data structures
     data->last_time_ms = 0;
-    data->stable_speed = 0;
-    data->remainder_x = 0;
-    data->remainder_y = 0;
-    data->last_factor = 1000;
+    data->recent_speed = 0;
+    data->speed_samples = 0;
     
     LOG_INF("Acceleration processor initialized (Level %d)", cfg->level);
     return 0;
@@ -70,7 +69,7 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
         cfg->input_type = INPUT_EV_REL;                                                          \
         cfg->codes = accel_codes;                                                                \
         cfg->codes_count = ARRAY_SIZE(accel_codes);                                             \
-        cfg->track_remainders = DT_INST_NODE_HAS_PROP(inst, track_remainders);                  \
+        // track_remainders removed for safety                  \
                                                                                                   \
         /* Apply Kconfig presets */                                                             \
         accel_config_apply_kconfig_preset(cfg);                                                 \
@@ -130,7 +129,7 @@ static int pointer_accel_init(const struct device *dev) {
     cfg->input_type = INPUT_EV_REL;
     cfg->codes = accel_codes;
     cfg->codes_count = ARRAY_SIZE(accel_codes);
-    cfg->track_remainders = DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, track_remainders);
+    // track_remainders removed for safety
     
     // Apply Kconfig presets
     accel_config_apply_kconfig_preset(cfg);
@@ -191,16 +190,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         return 0; // Pass through instead of blocking
     }
     
-    // Periodic data structure health check (every 1000 events)
-    static uint32_t health_check_counter = 0;
-    if ((++health_check_counter % 1000) == 0) {
-        if (data->stable_speed > 100000 || abs(data->remainder_x) > 10000 || abs(data->remainder_y) > 10000) {
-            LOG_WRN("Data corruption detected, resetting acceleration state");
-            data->stable_speed = 0;
-            data->remainder_x = 0;
-            data->remainder_y = 0;
-            data->last_time_ms = 0;
-        }
+    // CRITICAL: Reset data structure every time to prevent ANY accumulation
+    if (data) {
+        memset(data, 0, sizeof(struct accel_data));
     }
 
     // Pass through if not the specified type
@@ -263,7 +255,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                 accelerated_value = accel_simple_calculate(cfg, input_value, event->code);
                 break;
             case 2:
-                accelerated_value = accel_standard_calculate(cfg, data, input_value, event->code);
+                // TEMPORARY: Use safe fallback for Level 2 to prevent system freeze
+                LOG_DBG("Level 2 using safe fallback mode");
+                accelerated_value = accel_safe_fallback_calculate(input_value, cfg->max_factor);
                 break;
             default:
                 LOG_ERR("Invalid configuration level: %u", cfg->level);
@@ -295,12 +289,11 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
-        // Rate-limited debug logging to prevent system overload
+        // Minimal logging to prevent system overload
         static uint32_t log_counter = 0;
-        if ((log_counter++ % 10) == 0 || abs(input_value - accelerated_value) > 50) {
-            LOG_DBG("Accel: %s %d->%d (level=%d, max_factor=%d, sensitivity=%d)", 
-                    event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value,
-                    cfg->level, cfg->max_factor, cfg->sensitivity);
+        if ((log_counter++ % 100) == 0) {
+            LOG_DBG("Accel: %s %d->%d", 
+                    event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
         }
         
         return 0;

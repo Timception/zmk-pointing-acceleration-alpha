@@ -52,6 +52,10 @@ extern "C" {
 // Essential utility macros (optimized for MCU)
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
 
+// Simplified speed calculation constants
+#define ACCEL_MAX_SPEED_SAMPLES     8       // Maximum speed samples for averaging
+#define ACCEL_SPEED_SCALE_FACTOR    10      // Speed scaling factor (simpler than 1000)
+
 // Backward compatibility
 #ifndef CLAMP
 #define CLAMP(val, min, max) ACCEL_CLAMP(val, min, max)
@@ -62,14 +66,17 @@ extern "C" {
 // =============================================================================
 
 /**
- * @brief Acceleration data structure for MCU efficiency
+ * @brief Simplified acceleration data structure - minimal accumulation risk
  */
 struct accel_data {
-    uint32_t last_time_ms;
-    uint32_t stable_speed;
-    int32_t remainder_x;
-    int32_t remainder_y;
-    uint32_t last_factor;
+    uint32_t last_time_ms;         // Time tracking for speed calculation
+    uint16_t recent_speed;         // Recent speed (simplified, 16-bit to prevent overflow)
+    uint8_t speed_samples;         // Number of recent samples (max 255)
+    
+    // Removed: remainder_x, remainder_y (precision loss acceptable for safety)
+    // Removed: last_factor (not actually used)
+    // Removed: stable_speed (replaced with simpler recent_speed)
+    // Removed: all anti-accumulation fields (no longer needed)
 };
 
 /**
@@ -79,7 +86,7 @@ struct accel_config {
     uint8_t input_type;
     const uint16_t *codes;
     uint32_t codes_count;
-    bool track_remainders;
+
     uint8_t level;
     
     uint16_t sensitivity;
@@ -127,6 +134,7 @@ static inline int32_t accel_clamp_input_value(int32_t input_value) {
 
 uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier);
 uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value);
+int32_t accel_safe_fallback_calculate(int32_t input_value, uint32_t max_factor);
 
 int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
@@ -135,6 +143,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code);
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code);
+
+// Simplified speed calculation functions
+uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value);
 
 #ifdef __cplusplus
 }
