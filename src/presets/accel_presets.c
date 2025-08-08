@@ -28,8 +28,8 @@ static const preset_config_t presets[] = {
         .name = "office",
         .sensitivity = 1000,
         .max_factor = 2000,
-        .curve_type = 0,  // Linear
-        .y_boost = 1000,
+        .curve_type = 1,      // Mild
+        .y_boost = 1050,
         .speed_threshold = 800,
         .speed_max = 2500,
         .min_factor = 1000
@@ -37,19 +37,19 @@ static const preset_config_t presets[] = {
     {
         .name = "gaming",
         .sensitivity = 1000,
-        .max_factor = 2200,
-        .curve_type = 1,    // Mild
-        .y_boost = 1100,
+        .max_factor = 2300,
+        .curve_type = 2,      // Strong
+        .y_boost = 1150,
         .speed_threshold = 600,
-        .speed_max = 2500,
+        .speed_max = 2600,
         .min_factor = 1000
     },
     {
         .name = "high_sens",
         .sensitivity = 1000,
-        .max_factor = 3000,
-        .curve_type = 2,    // Strong
-        .y_boost = 1300,
+        .max_factor = 2700,
+        .curve_type = 2,      // Strong
+        .y_boost = 1200,
         .speed_threshold = 500,
         .speed_max = 2500,
         .min_factor = 1100
