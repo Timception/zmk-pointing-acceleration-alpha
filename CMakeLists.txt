@@ -13,15 +13,14 @@ zephyr_library_sources(
 )
 
 # Level-specific source files (conditionally included)
-# Note: Both levels can be compiled simultaneously for runtime selection
-
-# Always include Level 1 (Simple) - it's used as fallback
-zephyr_library_sources(
+# Include Level 1 (Simple) if enabled
+zephyr_library_sources_ifdef(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
   src/input_processor_accel_calc_level1.c
 )
 
-# Include Level 2 (Standard) only if enabled
+# Include Level 2 (Standard) if enabled  
 zephyr_library_sources_ifdef(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
+  src/input_processor_accel_calc_level1.c
   src/input_processor_accel_calc_level2.c
 )
 
