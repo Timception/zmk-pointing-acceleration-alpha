@@ -76,6 +76,9 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
         /* Apply Kconfig presets */                                                             \
         accel_config_apply_kconfig_preset(cfg);                                                 \
                                                                                                   \
+        /* CRITICAL: Ensure level remains unchanged after preset application */                \
+        cfg->level = CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL;                                        \
+                                                                                                  \
         /* Log configuration */                                                                  \
         LOG_INF("Accel config: level=%d, max_factor=%d, sensitivity=%d",                       \
                 cfg->level, cfg->max_factor, cfg->sensitivity);                                 \
@@ -137,6 +140,9 @@ static int pointer_accel_init(const struct device *dev) {
     
     // Apply Kconfig presets
     accel_config_apply_kconfig_preset(cfg);
+    
+    // CRITICAL: Ensure level remains unchanged after preset application
+    cfg->level = CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL;
     
     // Log configuration
     LOG_INF("Pointer accel config: level=%d, max_factor=%d, sensitivity=%d",

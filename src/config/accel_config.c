@@ -63,11 +63,17 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
         return -EINVAL;
     }
 
-    // Start with defaults
+    // CRITICAL: Force level from .conf setting ONLY - ignore all other sources
+    LOG_INF("Initializing acceleration config with .conf level: %u", level);
+    
+    // Start with defaults for the specified level
     const struct accel_config *defaults = accel_config_get_defaults(level);
     memcpy(cfg, defaults, sizeof(struct accel_config));
+    
+    // ABSOLUTE: Level is determined ONLY by .conf file
+    cfg->level = level;
 
-    // Override with device tree values if present
+    // Override with device tree values if present (but NOT level)
     #define DT_DRV_COMPAT zmk_input_processor_acceleration
     
     if (level == 1) {
@@ -115,15 +121,31 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
             400, 8000);
     }
 
+    // ABSOLUTE FINAL: Level is ONLY from .conf - no exceptions
+    cfg->level = level;
+    
+    // Log to verify level is correctly set
+    LOG_INF("Final configuration: level=%u (from .conf), max_factor=%u, sensitivity=%u", 
+            cfg->level, cfg->max_factor, cfg->sensitivity);
+    
     // Enhanced safety: Validate configuration after initialization
     int validation_result = accel_validate_config(cfg);
     if (validation_result != 0) {
         LOG_ERR("Configuration validation failed for level %u: %d", level, validation_result);
         // Reset to safe defaults on validation failure
         memcpy(cfg, defaults, sizeof(struct accel_config));
+        cfg->level = level; // Ensure level is preserved even after reset
+        LOG_WRN("Reset to defaults, level forced to: %u", cfg->level);
     }
 
-    LOG_DBG("Configuration initialized for level %u", level);
+    // Final verification
+    if (cfg->level != level) {
+        LOG_ERR("CRITICAL: Level mismatch detected! Expected: %u, Got: %u - FORCING correction", 
+                level, cfg->level);
+        cfg->level = level;
+    }
+
+    LOG_INF("Configuration initialization complete: level=%u (verified)", cfg->level);
     return validation_result;
 }
 
