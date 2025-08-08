@@ -39,6 +39,14 @@ uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value) {
     uint32_t current_time_ms = k_uptime_get_32();
     uint32_t last_time_ms = data->last_time_ms;
     
+    // Handle time overflow or invalid state
+    if (current_time_ms < last_time_ms || last_time_ms == 0) {
+        // Reset state on overflow or first call
+        data->last_time_ms = current_time_ms;
+        data->stable_speed = 0;
+        return abs(input_value) * 10; // Conservative estimate
+    }
+    
     uint32_t time_delta_ms = current_time_ms - last_time_ms;
     
     // Simple speed calculation: input magnitude per time
@@ -47,18 +55,32 @@ uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value) {
     
     if (time_delta_ms > 0 && time_delta_ms < 500) {
         // Normal case: speed = counts per second
-        speed = (abs_input * 1000) / time_delta_ms;
+        uint64_t temp_speed = ((uint64_t)abs_input * 1000) / time_delta_ms;
+        speed = (temp_speed > UINT32_MAX) ? UINT32_MAX : (uint32_t)temp_speed;
+        
+        // Clamp to reasonable range
+        speed = ACCEL_CLAMP(speed, 0, 50000);
     } else {
         // Edge case: use previous speed or estimate
         speed = data->stable_speed;
         if (speed == 0) {
-            speed = abs_input * 100; // Simple estimate
+            speed = abs_input * 10; // Conservative estimate
         }
     }
     
     // Simple smoothing: 75% old + 25% new
     uint32_t old_speed = data->stable_speed;
+    
+    // Safety check for old_speed
+    if (old_speed > 50000) {
+        LOG_ERR("Invalid old_speed %u, resetting", old_speed);
+        old_speed = 0;
+    }
+    
     speed = (old_speed * 3 + speed) / 4;
+    
+    // Final safety clamp
+    speed = ACCEL_CLAMP(speed, 0, 50000);
     
     // Update state (single-threaded, no atomic operations needed)
     data->last_time_ms = current_time_ms;

@@ -188,7 +188,19 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     // Configuration sanity check
     if (cfg->level < 1 || cfg->level > 2) {
         LOG_ERR("Invalid configuration level %u for device %s", cfg->level, dev->name);
-        return 1;
+        return 0; // Pass through instead of blocking
+    }
+    
+    // Periodic data structure health check (every 1000 events)
+    static uint32_t health_check_counter = 0;
+    if ((++health_check_counter % 1000) == 0) {
+        if (data->stable_speed > 100000 || abs(data->remainder_x) > 10000 || abs(data->remainder_y) > 10000) {
+            LOG_WRN("Data corruption detected, resetting acceleration state");
+            data->stable_speed = 0;
+            data->remainder_x = 0;
+            data->remainder_y = 0;
+            data->last_time_ms = 0;
+        }
     }
 
     // Pass through if not the specified type

@@ -353,6 +353,12 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
             new_remainder = new_remainder % SENSITIVITY_SCALE;
         }
         
+        // Safety check before assignment
+        if (abs(new_remainder) > SENSITIVITY_SCALE * 10) {
+            LOG_ERR("Remainder value %d is too large, resetting", new_remainder);
+            new_remainder = 0;
+        }
+        
         // Direct assignment (no atomic operation needed in single-threaded context)
         *remainder_ptr = new_remainder;
     }
