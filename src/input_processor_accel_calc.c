@@ -164,6 +164,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     if (abs(result) >= SENSITIVITY_SCALE) {
         result = result / SENSITIVITY_SCALE;
         LOG_DBG("Level1 Debug: After sensitivity scaling: %lld", result);
+    } else {
+        LOG_DBG("Level1 Debug: No sensitivity scaling needed (result=%lld < %d)", result, SENSITIVITY_SCALE);
     }
     
     int32_t abs_input = abs(input_value);
@@ -218,7 +220,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     int32_t safe_result = safe_int64_to_int32(result);
     int16_t final_result = safe_int32_to_int16(safe_result);
     
-    LOG_DBG("Level1 Debug: Final conversion: %lld -> %d -> %d", result, safe_result, final_result);
+    LOG_DBG("Level1 Debug: Final conversion: %lld -> %d -> %d (input was %d)", 
+            result, safe_result, final_result, input_value);
     
     return final_result;
 #endif

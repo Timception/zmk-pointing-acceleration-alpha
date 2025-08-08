@@ -220,10 +220,10 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
-        // Log only significant changes for debugging
-        if (abs(input_value - accelerated_value) > 5) {
-            LOG_DBG("Accel: %s %d->%d", event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
-        }
+        // Enhanced debug logging for troubleshooting
+        LOG_DBG("Accel: %s %d->%d (level=%d, max_factor=%d, sensitivity=%d)", 
+                event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value,
+                cfg->level, cfg->max_factor, cfg->sensitivity);
         
         return 0;
     }
