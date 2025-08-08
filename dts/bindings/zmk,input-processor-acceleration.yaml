@@ -14,12 +14,8 @@ properties:
     required: true
     description: Array of event code values to accelerate (e.g. REL_X, REL_Y)
 
-  track-remainders:
-    type: boolean
-    description: |
-      Accumulate and apply fractional movement remainders for higher precision.
-      This is a boolean property - include it to enable, omit it to disable.
-      Usage: track-remainders; (not track-remainders = <1>;)
+  # track-remainders removed for safety and simplicity
+  # The precision loss (1/1000) is negligible for practical mouse usage
 
   # =============================================================================
   # LEVEL 1: SIMPLE PROPERTIES (Available when CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL=1)

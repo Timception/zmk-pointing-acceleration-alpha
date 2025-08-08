@@ -133,16 +133,26 @@ static inline int32_t accel_clamp_input_value(int32_t input_value) {
 }
 
 uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier);
-uint32_t accel_calculate_speed(struct accel_data *data, int32_t input_value);
 int32_t accel_safe_fallback_calculate(int32_t input_value, uint32_t max_factor);
 
 int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
                       struct zmk_input_processor_state *state);
 
+// Level-specific calculation functions
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code);
 int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_data *data, 
                                 int32_t input_value, uint16_t code);
+
+// Common calculation functions (shared between levels)
+int64_t safe_multiply_64(int64_t a, int64_t b, int64_t max_result);
+int32_t safe_int64_to_int32(int64_t value);
+int16_t safe_int32_to_int16(int32_t value);
+uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg);
+
+#if defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)
+uint32_t calculate_exponential_curve(uint32_t t, uint8_t exponent);
+#endif
 
 // Simplified speed calculation functions
 uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value);

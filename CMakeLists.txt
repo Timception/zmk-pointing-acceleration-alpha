@@ -6,10 +6,23 @@ zephyr_library()
 zephyr_library_sources(
   src/input_processor_accel_main.c
   src/input_processor_accel_utils.c
-  src/input_processor_accel_calc.c
+  src/input_processor_accel_calc_common.c
   src/config/accel_config.c
   src/validation/accel_validation.c
   src/presets/accel_presets.c
+)
+
+# Level-specific source files (conditionally included)
+# Note: Both levels can be compiled simultaneously for runtime selection
+
+# Always include Level 1 (Simple) - it's used as fallback
+zephyr_library_sources(
+  src/input_processor_accel_calc_level1.c
+)
+
+# Include Level 2 (Standard) only if enabled
+zephyr_library_sources_ifdef(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
+  src/input_processor_accel_calc_level2.c
 )
 
 # Include directories
