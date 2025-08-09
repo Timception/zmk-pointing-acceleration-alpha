@@ -225,7 +225,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         }
     }
     if (!code_matched) {
-        LOG_DBG("Event code %u not in configured codes for device %s", event->code, dev->name);
+        // LOG_DBG("Event code %u not in configured codes for device %s", event->code, dev->name); // DISABLED for production
         return 0;
     }
 
@@ -236,25 +236,26 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Pass through zero values as-is
     if (event->value == 0) {
-        LOG_DBG("Zero value event: type=%u code=%u", event->type, event->code);
+        // LOG_DBG("Zero value event: type=%u code=%u", event->type, event->code); // DISABLED for production
         return 0;
     }
     
     // Check if acceleration is effectively disabled
     if (cfg->max_factor <= 1000) {
-        LOG_DBG("Acceleration disabled (max_factor=%u) for device %s", cfg->max_factor, dev->name);
+        // LOG_DBG("Acceleration disabled (max_factor=%u) for device %s", cfg->max_factor, dev->name); // DISABLED for production
         return 0;
     }
 
     // Pointing device movement event acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
-        // DIAGNOSTIC: Log all input events for debugging cursor freeze
+        // DIAGNOSTIC: Log all input events for debugging cursor freeze (DISABLED)
         static uint32_t event_counter = 0;
         event_counter++;
-        if ((event_counter % 50) == 0) {
-            LOG_INF("DIAG: Event #%u - type=%u code=%u value=%d", 
-                    event_counter, event->type, event->code, event->value);
-        }
+        // Temporarily disabled to test if logging affects cursor movement
+        // if ((event_counter % 50) == 0) {
+        //     LOG_INF("DIAG: Event #%u - type=%u code=%u value=%d", 
+        //             event_counter, event->type, event->code, event->value);
+        // }
         
         // Clamp input value to prevent overflow
         int32_t input_value = accel_clamp_input_value(event->value);
@@ -311,40 +312,46 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Sanity check: ensure we don't have zero movement from non-zero input
         if (input_value != 0 && accelerated_value == 0) {
             accelerated_value = (input_value > 0) ? 1 : -1;
-            LOG_DBG("Zero acceleration corrected to: %d", accelerated_value);
+            // LOG_DBG("Zero acceleration corrected to: %d", accelerated_value); // DISABLED for production
         }
 
         // Analysis logging disabled for performance
         // LOG_DBG("Main: input=%d -> final_output=%d (level=%u)", 
         //         input_value, accelerated_value, cfg->level);
         
-        // DIAGNOSTIC: Log final output for debugging cursor freeze
+        // DIAGNOSTIC: Log final output for debugging cursor freeze (DISABLED)
         static uint32_t output_counter = 0;
+        static int32_t last_output_time = 0;
         output_counter++;
-        if ((output_counter % 20) == 0 || abs(accelerated_value) > 50) {
-            LOG_INF("DIAG: Output #%u - Final value=%d (from input=%d)", 
-                    output_counter, accelerated_value, input_value);
-        }
+        
+        // Get current time for timing analysis
+        int32_t current_time = k_uptime_get_32();
+        int32_t time_diff = current_time - last_output_time;
+        
+        // Temporarily disabled to test if logging affects cursor movement
+        // if ((output_counter % 20) == 0 || abs(accelerated_value) > 50 || time_diff > 100) {
+        //     LOG_INF("DIAG: Output #%u - Final value=%d (from input=%d) [time_diff=%dms]", 
+        //             output_counter, accelerated_value, input_value, time_diff);
+        // }
+        last_output_time = current_time;
         
         // Update event value
         event->value = accelerated_value;
         
-        // Production-ready logging (minimal overhead)
-        #if CONFIG_ZMK_LOG_LEVEL >= LOG_LEVEL_DBG
+        // Production-ready logging (DISABLED for performance testing)
+        #if 0 // Temporarily disabled to test if logging affects cursor movement
         static uint32_t log_counter = 0;
         static int32_t last_input = 0, last_output = 0;
         
         // Only log significant acceleration events or errors
         bool acceleration_applied = (abs(accelerated_value) > abs(input_value) * 1.1);
-        bool periodic_log = (log_counter++ % 2000) == 0; // Reduced frequency
+        bool periodic_log = (log_counter++ % 10000) == 0; // Much reduced frequency
         
-        if (acceleration_applied || periodic_log) {
+        if (periodic_log) { // Only periodic logs, no acceleration logs
             const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
-            if (acceleration_applied) {
-                LOG_DBG("Accel: %s %d->%d (%.1fx)", 
-                        axis, input_value, accelerated_value,
-                        (float)accelerated_value / (float)input_value);
-            }
+            LOG_DBG("Accel: %s %d->%d (%.1fx)", 
+                    axis, input_value, accelerated_value,
+                    (float)accelerated_value / (float)input_value);
             last_input = input_value;
             last_output = accelerated_value;
         }
