@@ -78,8 +78,9 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         return input_value;
     }
     
-    int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
-                                     (int64_t)INT32_MAX * SENSITIVITY_SCALE);
+    // CRITICAL FIX: The DPI adjustment was being applied incorrectly
+    // We need to apply sensitivity as a multiplier, not a direct multiplication
+    int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
     
     // ANALYSIS: Always log multiplication result for debugging
     LOG_INF("ANALYSIS Level1: input=%d * adj_sens=%u = raw_result=%lld", 
@@ -91,12 +92,11 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         result = result / 2; // Emergency scaling
     }
     
-    if (abs(result) >= SENSITIVITY_SCALE) {
-        int64_t before_scale = result;
-        result = result / SENSITIVITY_SCALE;
-        LOG_INF("ANALYSIS Level1: scaled %lld -> %lld (div by %d)", 
-                before_scale, result, SENSITIVITY_SCALE);
-    }
+    // CRITICAL FIX: Always apply sensitivity scaling
+    int64_t before_scale = result;
+    result = result / SENSITIVITY_SCALE;
+    LOG_INF("ANALYSIS Level1: scaled %lld -> %lld (div by %d)", 
+            before_scale, result, SENSITIVITY_SCALE);
     
     // Level 1 curve processing
     int32_t abs_input = abs(input_value);

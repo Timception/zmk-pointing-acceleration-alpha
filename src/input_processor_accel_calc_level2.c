@@ -64,18 +64,23 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         return accel_safe_fallback_calculate(input_value, cfg->max_factor);
     }
     
-    int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
-                                     (int64_t)INT32_MAX * SENSITIVITY_SCALE);
+    // CRITICAL FIX: Apply sensitivity correctly
+    int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+    
+    LOG_INF("ANALYSIS Level2: input=%d * adj_sens=%u = raw_result=%lld", 
+            input_value, dpi_adjusted_sensitivity, result);
     
     // Enhanced safety: Check intermediate result
-    if (abs(result) > (int64_t)INT32_MAX * SENSITIVITY_SCALE / 4) {
+    if (abs(result) > (int64_t)INT32_MAX) {
         LOG_WRN("Level2: Intermediate result %lld too large, using fallback", result);
         return accel_safe_fallback_calculate(input_value, cfg->max_factor);
     }
     
-    if (abs(result) >= SENSITIVITY_SCALE) {
-        result = result / SENSITIVITY_SCALE;
-    }
+    // CRITICAL FIX: Always apply sensitivity scaling
+    int64_t before_scale = result;
+    result = result / SENSITIVITY_SCALE;
+    LOG_INF("ANALYSIS Level2: scaled %lld -> %lld (div by %d)", 
+            before_scale, result, SENSITIVITY_SCALE);
     
     // Enhanced safety: Speed-based acceleration with comprehensive protection
     uint32_t factor = cfg->min_factor;
