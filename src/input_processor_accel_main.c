@@ -272,18 +272,15 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                 return 1;
         }
 
-        // CRITICAL: Emergency brake for cursor jump prevention
-        if (abs(accelerated_value) > 50) {
-            LOG_ERR("EMERGENCY BRAKE: Accelerated value %d causes cursor jump (input=%d), using minimal fallback", 
+        // CRITICAL: Emergency brake for extreme cursor jump prevention
+        // Adjusted to match new input limits (±200 reasonable, ±600 max)
+        if (abs(accelerated_value) > 150) {
+            LOG_ERR("EMERGENCY BRAKE: Accelerated value %d too extreme (input=%d), using conservative fallback", 
                     accelerated_value, input_value);
-            // Use minimal acceleration to prevent cursor jumping
-            if (input_value != 0) {
-                accelerated_value = (input_value > 0) ? 
-                    ACCEL_CLAMP(input_value, 1, 10) : 
-                    ACCEL_CLAMP(input_value, -10, -1);
-            } else {
-                accelerated_value = 0;
-            }
+            // Use conservative scaling instead of minimal values
+            accelerated_value = (accelerated_value > 0) ? 
+                ACCEL_CLAMP(accelerated_value / 3, 1, 150) : 
+                ACCEL_CLAMP(accelerated_value / 3, -150, -1);
         }
 
         // Check for calculation errors
@@ -299,8 +296,8 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             accelerated_value = (accelerated_value > 0) ? 32767 : -32767;
         }
         
-        // Final safety check with very conservative limits
-        accelerated_value = ACCEL_CLAMP(accelerated_value, -100, 100);
+        // Final safety check with reasonable limits
+        accelerated_value = ACCEL_CLAMP(accelerated_value, -150, 150);
         
         // Sanity check: ensure we don't have zero movement from non-zero input
         if (input_value != 0 && accelerated_value == 0) {
