@@ -57,28 +57,85 @@ choice INPUT_PROCESSOR_ACCEL_PRESET
     prompt "Acceleration Preset"
     default INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     help
-      Choose a preset configuration or customize manually.
+      Choose a preset configuration based on usage and device type.
 
 config INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     bool "Custom (configure manually)"
 
-config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE
-    bool "Office (conservative acceleration)"
+# Office presets
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL
+    bool "Office - Optical Mouse (800 DPI)"
     help
-      Conservative acceleration suitable for office work and general use.
-      Sensitivity: 1.0x, Max acceleration: 2.0x, Linear curve.
+      Conservative acceleration for office work with standard optical mouse.
+      DPI: 800, Sensitivity: 1.0x, Max acceleration: 2.2x
 
-config INPUT_PROCESSOR_ACCEL_PRESET_GAMING
-    bool "Gaming (aggressive acceleration)"
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER
+    bool "Office - Laser Mouse (1600 DPI)"
     help
-      Aggressive acceleration suitable for gaming and fast movements.
-      Sensitivity: 1.5x, Max acceleration: 3.5x, Strong curve.
+      Conservative acceleration for office work with laser mouse.
+      DPI: 1600, Sensitivity: 0.8x, Max acceleration: 2.2x
 
-config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS
-    bool "High Sensitivity (enhanced responsiveness)"
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL
+    bool "Office - Trackball (400 DPI)"
     help
-      High sensitivity configuration for enhanced responsiveness.
-      Sensitivity: 1.8x, Max acceleration: 4.0x, Mild curve.
+      Conservative acceleration for office work with trackball.
+      DPI: 400, Sensitivity: 1.5x, Max acceleration: 2.0x
+
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD
+    bool "Office - Trackpad/Touchpad (1000 DPI)"
+    help
+      Conservative acceleration for office work with trackpad/touchpad.
+      DPI: 1000, Sensitivity: 1.2x, Max acceleration: 1.8x
+
+# Gaming presets
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL
+    bool "Gaming - Optical Mouse (1200 DPI)"
+    help
+      Balanced acceleration for gaming with optical mouse.
+      DPI: 1200, Sensitivity: 1.0x, Max acceleration: 2.5x
+
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER
+    bool "Gaming - Laser Mouse (3200 DPI)"
+    help
+      Balanced acceleration for gaming with high-DPI laser mouse.
+      DPI: 3200, Sensitivity: 0.6x, Max acceleration: 2.5x
+
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL
+    bool "Gaming - Trackball (800 DPI)"
+    help
+      Balanced acceleration for gaming with trackball.
+      DPI: 800, Sensitivity: 1.2x, Max acceleration: 2.3x
+
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD
+    bool "Gaming - Trackpad/Touchpad (1200 DPI)"
+    help
+      Balanced acceleration for gaming with trackpad/touchpad.
+      DPI: 1200, Sensitivity: 1.1x, Max acceleration: 2.2x
+
+# High sensitivity presets
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL
+    bool "High Sensitivity - Optical Mouse (1600 DPI)"
+    help
+      High sensitivity for fast movements with optical mouse.
+      DPI: 1600, Sensitivity: 1.1x, Max acceleration: 2.8x
+
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER
+    bool "High Sensitivity - Laser Mouse (6400 DPI)"
+    help
+      High sensitivity for fast movements with high-DPI laser mouse.
+      DPI: 6400, Sensitivity: 0.5x, Max acceleration: 2.8x
+
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL
+    bool "High Sensitivity - Trackball (800 DPI)"
+    help
+      High sensitivity for fast movements with trackball.
+      DPI: 800, Sensitivity: 1.4x, Max acceleration: 2.6x
+
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD
+    bool "High Sensitivity - Trackpad/Touchpad (1200 DPI)"
+    help
+      High sensitivity for fast movements with trackpad/touchpad.
+      DPI: 1200, Sensitivity: 1.3x, Max acceleration: 2.4x
 
 endchoice
 
@@ -131,25 +188,73 @@ choice INPUT_PROCESSOR_ACCEL_PRESET
     prompt "Acceleration Preset"
     default INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     help
-      Choose a preset configuration or customize manually.
+      Choose a preset configuration based on usage and device type.
 
 config INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     bool "Custom (configure manually)"
 
-config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE
-    bool "Office (conservative acceleration)"
+# Office presets
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL
+    bool "Office - Optical Mouse (800 DPI)"
     help
-      Conservative acceleration suitable for office work and general use.
+      Conservative acceleration for office work with standard optical mouse.
 
-config INPUT_PROCESSOR_ACCEL_PRESET_GAMING
-    bool "Gaming (aggressive acceleration)"
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER
+    bool "Office - Laser Mouse (1600 DPI)"
     help
-      Aggressive acceleration suitable for gaming and fast movements.
+      Conservative acceleration for office work with laser mouse.
 
-config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS
-    bool "High Sensitivity (enhanced responsiveness)"
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL
+    bool "Office - Trackball (400 DPI)"
     help
-      High sensitivity configuration for enhanced responsiveness.
+      Conservative acceleration for office work with trackball.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD
+    bool "Office - Trackpad/Touchpad (1000 DPI)"
+    help
+      Conservative acceleration for office work with trackpad/touchpad.
+
+# Gaming presets
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL
+    bool "Gaming - Optical Mouse (1200 DPI)"
+    help
+      Balanced acceleration for gaming with optical mouse.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER
+    bool "Gaming - Laser Mouse (3200 DPI)"
+    help
+      Balanced acceleration for gaming with high-DPI laser mouse.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL
+    bool "Gaming - Trackball (800 DPI)"
+    help
+      Balanced acceleration for gaming with trackball.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD
+    bool "Gaming - Trackpad/Touchpad (1200 DPI)"
+    help
+      Balanced acceleration for gaming with trackpad/touchpad.
+
+# High sensitivity presets
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL
+    bool "High Sensitivity - Optical Mouse (1600 DPI)"
+    help
+      High sensitivity for fast movements with optical mouse.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER
+    bool "High Sensitivity - Laser Mouse (6400 DPI)"
+    help
+      High sensitivity for fast movements with high-DPI laser mouse.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL
+    bool "High Sensitivity - Trackball (800 DPI)"
+    help
+      High sensitivity for fast movements with trackball.
+
+config INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD
+    bool "High Sensitivity - Trackpad/Touchpad (1200 DPI)"
+    help
+      High sensitivity for fast movements with trackpad/touchpad.
 
 endchoice
 
