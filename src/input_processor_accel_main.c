@@ -297,12 +297,26 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
-        // Minimal logging to prevent system overload
+        // Production-ready logging (minimal overhead)
+        #if CONFIG_ZMK_LOG_LEVEL >= LOG_LEVEL_DBG
         static uint32_t log_counter = 0;
-        if ((log_counter++ % 100) == 0) {
-            LOG_DBG("Accel: %s %d->%d", 
-                    event->code == INPUT_REL_X ? "X" : "Y", input_value, accelerated_value);
+        static int32_t last_input = 0, last_output = 0;
+        
+        // Only log significant acceleration events or errors
+        bool acceleration_applied = (abs(accelerated_value) > abs(input_value) * 1.1);
+        bool periodic_log = (log_counter++ % 2000) == 0; // Reduced frequency
+        
+        if (acceleration_applied || periodic_log) {
+            const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
+            if (acceleration_applied) {
+                LOG_DBG("Accel: %s %d->%d (%.1fx)", 
+                        axis, input_value, accelerated_value,
+                        (float)accelerated_value / (float)input_value);
+            }
+            last_input = input_value;
+            last_output = accelerated_value;
         }
+        #endif
         
         return 0;
     }
