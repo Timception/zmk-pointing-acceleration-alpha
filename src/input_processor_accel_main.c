@@ -236,6 +236,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Pass through zero values as-is
     if (event->value == 0) {
+        LOG_DBG("Zero value event: type=%u code=%u", event->type, event->code);
         return 0;
     }
     
@@ -247,6 +248,14 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Pointing device movement event acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
+        // DIAGNOSTIC: Log all input events for debugging cursor freeze
+        static uint32_t event_counter = 0;
+        event_counter++;
+        if ((event_counter % 50) == 0) {
+            LOG_INF("DIAG: Event #%u - type=%u code=%u value=%d", 
+                    event_counter, event->type, event->code, event->value);
+        }
+        
         // Clamp input value to prevent overflow
         int32_t input_value = accel_clamp_input_value(event->value);
         int32_t accelerated_value;
@@ -308,6 +317,14 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Analysis logging disabled for performance
         // LOG_DBG("Main: input=%d -> final_output=%d (level=%u)", 
         //         input_value, accelerated_value, cfg->level);
+        
+        // DIAGNOSTIC: Log final output for debugging cursor freeze
+        static uint32_t output_counter = 0;
+        output_counter++;
+        if ((output_counter % 20) == 0 || abs(accelerated_value) > 50) {
+            LOG_INF("DIAG: Output #%u - Final value=%d (from input=%d)", 
+                    output_counter, accelerated_value, input_value);
+        }
         
         // Update event value
         event->value = accelerated_value;
