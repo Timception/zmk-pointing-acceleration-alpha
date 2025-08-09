@@ -56,19 +56,47 @@ uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
     
     uint32_t dpi_adjusted_sensitivity;
     
+    // CRITICAL FIX: DPI adjustment was causing extreme sensitivity changes
+    // The original calculation was mathematically correct but caused cursor freeze
+    // For middleware stability, we'll use a more conservative approach
+    
     if (cfg->sensor_dpi > 0 && cfg->sensor_dpi <= MAX_SENSOR_DPI) {
-        uint64_t temp = (uint64_t)cfg->sensitivity * STANDARD_DPI_REFERENCE;
-        uint64_t calculated = temp / cfg->sensor_dpi;
-        
-        if (calculated > MAX_SAFE_SENSITIVITY) {
-            dpi_adjusted_sensitivity = MAX_SAFE_SENSITIVITY;
+        // Conservative DPI scaling to prevent extreme values
+        if (cfg->sensor_dpi > STANDARD_DPI_REFERENCE) {
+            // High DPI sensor: reduce sensitivity proportionally but conservatively
+            uint32_t dpi_ratio = cfg->sensor_dpi / STANDARD_DPI_REFERENCE;
+            if (dpi_ratio > 4) dpi_ratio = 4; // Cap at 4x reduction
+            dpi_adjusted_sensitivity = cfg->sensitivity / dpi_ratio;
+            
+            // Ensure minimum sensitivity
+            if (dpi_adjusted_sensitivity < MIN_SAFE_SENSITIVITY) {
+                dpi_adjusted_sensitivity = MIN_SAFE_SENSITIVITY;
+            }
+        } else if (cfg->sensor_dpi < STANDARD_DPI_REFERENCE) {
+            // Low DPI sensor: increase sensitivity proportionally but conservatively
+            uint32_t dpi_ratio = STANDARD_DPI_REFERENCE / cfg->sensor_dpi;
+            if (dpi_ratio > 3) dpi_ratio = 3; // Cap at 3x increase
+            dpi_adjusted_sensitivity = cfg->sensitivity * dpi_ratio;
+            
+            // Ensure maximum sensitivity
+            if (dpi_adjusted_sensitivity > MAX_SAFE_SENSITIVITY) {
+                dpi_adjusted_sensitivity = MAX_SAFE_SENSITIVITY;
+            }
         } else {
-            dpi_adjusted_sensitivity = (uint32_t)calculated;
+            // Standard DPI: use as-is
+            dpi_adjusted_sensitivity = cfg->sensitivity;
         }
+        
+        LOG_DBG("DPI adjustment: %u DPI, sensitivity %u -> %u", 
+                cfg->sensor_dpi, cfg->sensitivity, dpi_adjusted_sensitivity);
     } else {
+        // Invalid or missing DPI: use original sensitivity
         dpi_adjusted_sensitivity = cfg->sensitivity;
+        LOG_WRN("Invalid sensor DPI %u, using original sensitivity %u", 
+                cfg->sensor_dpi, cfg->sensitivity);
     }
     
+    // Final safety clamp
     dpi_adjusted_sensitivity = ACCEL_CLAMP(dpi_adjusted_sensitivity, MIN_SAFE_SENSITIVITY, MAX_SAFE_SENSITIVITY);
     return dpi_adjusted_sensitivity;
 }

@@ -39,13 +39,13 @@ static const preset_config_t presets[] = {
     },
     {
         .name = "office_laser",
-        .sensitivity = 800,       // 0.8x (高DPI補正)
-        .max_factor = 2200,       // 2.2x 適度な加速度
-        .curve_type = 1,          // Mild
-        .y_boost = 1080,          // 1.08x Y軸改善
-        .speed_threshold = 700,   // 早めの加速度開始
-        .speed_max = 2600,        // 適度な最大速度
-        .min_factor = 980,        // 0.98x 精密操作
+        .sensitivity = 1000,      // 1.0x (DPI調整を保守的に変更したため基準値に戻す)
+        .max_factor = 1500,       // 1.5x 保守的な加速度（カーソル停止防止）
+        .curve_type = 0,          // Linear（最も予測可能）
+        .y_boost = 1000,          // 1.0x Y軸標準（問題を避けるため）
+        .speed_threshold = 1000,  // 高い閾値で安定性重視
+        .speed_max = 2000,        // 低い最大速度で安定性重視
+        .min_factor = 1000,       // 1.0x 標準（問題を避けるため）
         .sensor_dpi = 1600        // 高精度レーザー
     },
     {
