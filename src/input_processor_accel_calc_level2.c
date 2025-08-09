@@ -31,11 +31,19 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     LOG_DBG("Standard level not enabled, fallback to simple calculation");
     return accel_simple_calculate(cfg, input_value, code);
 #else
-    // Enhanced safety: Input value validation with detailed logging
-    if (abs(input_value) > MAX_SAFE_INPUT_VALUE) {
-        LOG_WRN("Level2: Input value %d exceeds safe limit %d, clamping", 
-                input_value, MAX_SAFE_INPUT_VALUE);
-        input_value = accel_clamp_input_value(input_value);
+    // Enhanced safety: Input value validation for reasonable range
+    const int32_t MAX_REASONABLE_INPUT = 200;  // Covers most legitimate use cases
+    
+    if (abs(input_value) > MAX_REASONABLE_INPUT) {
+        if (abs(input_value) > MAX_REASONABLE_INPUT * 3) {
+            // Extremely large values (>600) are likely sensor noise - ignore them
+            LOG_WRN("Level2: Input value %d too extreme, ignoring", input_value);
+            return 0;
+        } else {
+            // Large but reasonable values (200-600) - clamp to limit
+            LOG_DBG("Level2: Input value %d clamped to %d", input_value, MAX_REASONABLE_INPUT);
+            input_value = (input_value > 0) ? MAX_REASONABLE_INPUT : -MAX_REASONABLE_INPUT;
+        }
     }
     
     // Enhanced safety: Data structure validation (simplified)
@@ -222,8 +230,8 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         accelerated_value = (input_value > 0) ? 1 : -1;
     }
     
-    // ANALYSIS: Log final calculation result
-    LOG_INF("ANALYSIS Level2: input=%d -> accelerated=%d", input_value, accelerated_value);
+    // Analysis logging disabled for performance
+    // LOG_DBG("Level2: input=%d -> accelerated=%d", input_value, accelerated_value);
     
     // Enhanced safety: Final comprehensive validation
     int16_t final_result = safe_int32_to_int16(accelerated_value);

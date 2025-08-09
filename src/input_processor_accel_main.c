@@ -308,9 +308,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             LOG_DBG("Zero acceleration corrected to: %d", accelerated_value);
         }
 
-        // ANALYSIS: Log final event value
-        LOG_INF("ANALYSIS MAIN: input=%d -> final_output=%d (level=%u)", 
-                input_value, accelerated_value, cfg->level);
+        // Analysis logging disabled for performance
+        // LOG_DBG("Main: input=%d -> final_output=%d (level=%u)", 
+        //         input_value, accelerated_value, cfg->level);
         
         // Update event value
         event->value = accelerated_value;

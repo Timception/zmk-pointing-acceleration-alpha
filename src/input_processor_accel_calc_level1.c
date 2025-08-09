@@ -52,11 +52,19 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     int32_t safe_result = safe_int64_to_int32(result);
     return safe_int32_to_int16(safe_result);
 #else
-    // Enhanced safety: Input value validation with detailed logging
-    if (abs(input_value) > MAX_SAFE_INPUT_VALUE) {
-        LOG_WRN("Level1: Input value %d exceeds safe limit %d, clamping", 
-                input_value, MAX_SAFE_INPUT_VALUE);
-        input_value = accel_clamp_input_value(input_value);
+    // Enhanced safety: Input value validation for reasonable range
+    const int32_t MAX_REASONABLE_INPUT = 200;  // Covers most legitimate use cases
+    
+    if (abs(input_value) > MAX_REASONABLE_INPUT) {
+        if (abs(input_value) > MAX_REASONABLE_INPUT * 3) {
+            // Extremely large values (>600) are likely sensor noise - ignore them
+            LOG_WRN("Level1: Input value %d too extreme, ignoring", input_value);
+            return 0;
+        } else {
+            // Large but reasonable values (200-600) - clamp to limit
+            LOG_DBG("Level1: Input value %d clamped to %d", input_value, MAX_REASONABLE_INPUT);
+            input_value = (input_value > 0) ? MAX_REASONABLE_INPUT : -MAX_REASONABLE_INPUT;
+        }
     }
     
     // Enhanced safety: Configuration validation
@@ -67,9 +75,9 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     
     uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
     
-    // ANALYSIS: Always log DPI adjustment for debugging
-    LOG_INF("ANALYSIS Level1: input=%d, orig_sens=%u, sensor_dpi=%u, adj_sens=%u", 
-            input_value, cfg->sensitivity, cfg->sensor_dpi, dpi_adjusted_sensitivity);
+    // Analysis logging disabled for performance
+    // LOG_DBG("Level1: input=%d, orig_sens=%u, sensor_dpi=%u, adj_sens=%u", 
+    //         input_value, cfg->sensitivity, cfg->sensor_dpi, dpi_adjusted_sensitivity);
     
     // Enhanced safety: Check sensitivity bounds
     if (dpi_adjusted_sensitivity == 0 || dpi_adjusted_sensitivity > MAX_SAFE_SENSITIVITY) {
@@ -82,9 +90,9 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     // We need to apply sensitivity as a multiplier, not a direct multiplication
     int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
     
-    // ANALYSIS: Always log multiplication result for debugging
-    LOG_INF("ANALYSIS Level1: input=%d * adj_sens=%u = raw_result=%lld", 
-            input_value, dpi_adjusted_sensitivity, result);
+    // Analysis logging disabled for performance
+    // LOG_DBG("Level1: input=%d * adj_sens=%u = raw_result=%lld", 
+    //         input_value, dpi_adjusted_sensitivity, result);
     
     // Enhanced safety: Check intermediate result
     if (abs(result) > (int64_t)INT32_MAX * SENSITIVITY_SCALE / 2) {
@@ -93,10 +101,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     }
     
     // CRITICAL FIX: Always apply sensitivity scaling
-    int64_t before_scale = result;
     result = result / SENSITIVITY_SCALE;
-    LOG_INF("ANALYSIS Level1: scaled %lld -> %lld (div by %d)", 
-            before_scale, result, SENSITIVITY_SCALE);
     
     // Level 1 curve processing
     int32_t abs_input = abs(input_value);
@@ -156,13 +161,9 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         curve_factor = ACCEL_CLAMP(curve_factor, SENSITIVITY_SCALE, safe_max_factor);
         
         if (curve_factor > SENSITIVITY_SCALE) {
-            int64_t before_curve = result;
             int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, 
                                                  (int64_t)INT16_MAX * SENSITIVITY_SCALE);
             result = temp_result / SENSITIVITY_SCALE;
-            
-            LOG_INF("ANALYSIS Level1: curve applied %lld * %u = %lld -> %lld", 
-                    before_curve, curve_factor, temp_result, result);
             
             // Enhanced safety: Multiple range checks for Level 1 result
             if (abs(result) > INT16_MAX) {
