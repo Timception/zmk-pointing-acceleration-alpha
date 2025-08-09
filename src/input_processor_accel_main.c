@@ -272,6 +272,20 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                 return 1;
         }
 
+        // CRITICAL: Emergency brake for cursor jump prevention
+        if (abs(accelerated_value) > 50) {
+            LOG_ERR("EMERGENCY BRAKE: Accelerated value %d causes cursor jump (input=%d), using minimal fallback", 
+                    accelerated_value, input_value);
+            // Use minimal acceleration to prevent cursor jumping
+            if (input_value != 0) {
+                accelerated_value = (input_value > 0) ? 
+                    ACCEL_CLAMP(input_value, 1, 10) : 
+                    ACCEL_CLAMP(input_value, -10, -1);
+            } else {
+                accelerated_value = 0;
+            }
+        }
+
         // Check for calculation errors
         if (abs(accelerated_value) > INT16_MAX) {
             LOG_ERR("Calculation error: result %d exceeds safe range, clamping and continuing", accelerated_value);
@@ -285,8 +299,8 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             accelerated_value = (accelerated_value > 0) ? 32767 : -32767;
         }
         
-        // Final safety check
-        accelerated_value = ACCEL_CLAMP(accelerated_value, INT16_MIN, INT16_MAX);
+        // Final safety check with very conservative limits
+        accelerated_value = ACCEL_CLAMP(accelerated_value, -100, 100);
         
         // Sanity check: ensure we don't have zero movement from non-zero input
         if (input_value != 0 && accelerated_value == 0) {
@@ -294,6 +308,10 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             LOG_DBG("Zero acceleration corrected to: %d", accelerated_value);
         }
 
+        // ANALYSIS: Log final event value
+        LOG_INF("ANALYSIS MAIN: input=%d -> final_output=%d (level=%u)", 
+                input_value, accelerated_value, cfg->level);
+        
         // Update event value
         event->value = accelerated_value;
         

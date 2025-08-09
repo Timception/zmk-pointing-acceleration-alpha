@@ -87,7 +87,7 @@ uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
             dpi_adjusted_sensitivity = cfg->sensitivity;
         }
         
-        LOG_DBG("DPI adjustment: %u DPI, sensitivity %u -> %u", 
+        LOG_INF("ANALYSIS DPI: %u DPI, sensitivity %u -> %u (ratio calculation)", 
                 cfg->sensor_dpi, cfg->sensitivity, dpi_adjusted_sensitivity);
     } else {
         // Invalid or missing DPI: use original sensitivity

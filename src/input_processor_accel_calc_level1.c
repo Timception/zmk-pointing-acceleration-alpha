@@ -67,6 +67,10 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     
     uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
     
+    // ANALYSIS: Always log DPI adjustment for debugging
+    LOG_INF("ANALYSIS Level1: input=%d, orig_sens=%u, sensor_dpi=%u, adj_sens=%u", 
+            input_value, cfg->sensitivity, cfg->sensor_dpi, dpi_adjusted_sensitivity);
+    
     // Enhanced safety: Check sensitivity bounds
     if (dpi_adjusted_sensitivity == 0 || dpi_adjusted_sensitivity > MAX_SAFE_SENSITIVITY) {
         LOG_ERR("Level1: Invalid DPI-adjusted sensitivity %u, using passthrough", 
@@ -77,12 +81,9 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
                                      (int64_t)INT32_MAX * SENSITIVITY_SCALE);
     
-    // Minimal logging for Level 1
-    static uint32_t level1_log_counter = 0;
-    if ((level1_log_counter++ % 100) == 0) { // Reduced logging frequency
-        LOG_DBG("Level1: Input=%d, Sensitivity=%u, Raw result=%lld", 
-                input_value, dpi_adjusted_sensitivity, result);
-    }
+    // ANALYSIS: Always log multiplication result for debugging
+    LOG_INF("ANALYSIS Level1: input=%d * adj_sens=%u = raw_result=%lld", 
+            input_value, dpi_adjusted_sensitivity, result);
     
     // Enhanced safety: Check intermediate result
     if (abs(result) > (int64_t)INT32_MAX * SENSITIVITY_SCALE / 2) {
@@ -91,7 +92,10 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     }
     
     if (abs(result) >= SENSITIVITY_SCALE) {
+        int64_t before_scale = result;
         result = result / SENSITIVITY_SCALE;
+        LOG_INF("ANALYSIS Level1: scaled %lld -> %lld (div by %d)", 
+                before_scale, result, SENSITIVITY_SCALE);
     }
     
     // Level 1 curve processing
@@ -152,9 +156,13 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         curve_factor = ACCEL_CLAMP(curve_factor, SENSITIVITY_SCALE, safe_max_factor);
         
         if (curve_factor > SENSITIVITY_SCALE) {
+            int64_t before_curve = result;
             int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, 
                                                  (int64_t)INT16_MAX * SENSITIVITY_SCALE);
             result = temp_result / SENSITIVITY_SCALE;
+            
+            LOG_INF("ANALYSIS Level1: curve applied %lld * %u = %lld -> %lld", 
+                    before_curve, curve_factor, temp_result, result);
             
             // Enhanced safety: Multiple range checks for Level 1 result
             if (abs(result) > INT16_MAX) {

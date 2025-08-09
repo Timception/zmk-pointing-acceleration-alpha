@@ -217,6 +217,9 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         accelerated_value = (input_value > 0) ? 1 : -1;
     }
     
+    // ANALYSIS: Log final calculation result
+    LOG_INF("ANALYSIS Level2: input=%d -> accelerated=%d", input_value, accelerated_value);
+    
     // Enhanced safety: Final comprehensive validation
     int16_t final_result = safe_int32_to_int16(accelerated_value);
     
