@@ -52,11 +52,19 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     int32_t safe_result = safe_int64_to_int32(result);
     return safe_int32_to_int16(safe_result);
 #else
-    // Enhanced safety: Input value validation with detailed logging
-    if (abs(input_value) > MAX_SAFE_INPUT_VALUE) {
-        LOG_WRN("Level1: Input value %d exceeds safe limit %d, clamping", 
-                input_value, MAX_SAFE_INPUT_VALUE);
-        input_value = accel_clamp_input_value(input_value);
+    // Enhanced safety: Input value validation for reasonable range
+    const int32_t MAX_REASONABLE_INPUT = 200;  // Covers most legitimate use cases
+    
+    if (abs(input_value) > MAX_REASONABLE_INPUT) {
+        if (abs(input_value) > MAX_REASONABLE_INPUT * 3) {
+            // Extremely large values (>600) are likely sensor noise - ignore them
+            LOG_WRN("Level1: Input value %d too extreme, ignoring", input_value);
+            return 0;
+        } else {
+            // Large but reasonable values (200-600) - clamp to limit
+            LOG_DBG("Level1: Input value %d clamped to %d", input_value, MAX_REASONABLE_INPUT);
+            input_value = (input_value > 0) ? MAX_REASONABLE_INPUT : -MAX_REASONABLE_INPUT;
+        }
     }
     
     // Enhanced safety: Configuration validation
@@ -67,6 +75,10 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     
     uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
     
+    // Analysis logging disabled for performance
+    // LOG_DBG("Level1: input=%d, orig_sens=%u, sensor_dpi=%u, adj_sens=%u", 
+    //         input_value, cfg->sensitivity, cfg->sensor_dpi, dpi_adjusted_sensitivity);
+    
     // Enhanced safety: Check sensitivity bounds
     if (dpi_adjusted_sensitivity == 0 || dpi_adjusted_sensitivity > MAX_SAFE_SENSITIVITY) {
         LOG_ERR("Level1: Invalid DPI-adjusted sensitivity %u, using passthrough", 
@@ -74,15 +86,13 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         return input_value;
     }
     
-    int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
-                                     (int64_t)INT32_MAX * SENSITIVITY_SCALE);
+    // CRITICAL FIX: The DPI adjustment was being applied incorrectly
+    // We need to apply sensitivity as a multiplier, not a direct multiplication
+    int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
     
-    // Minimal logging for Level 1
-    static uint32_t level1_log_counter = 0;
-    if ((level1_log_counter++ % 100) == 0) { // Reduced logging frequency
-        LOG_DBG("Level1: Input=%d, Sensitivity=%u, Raw result=%lld", 
-                input_value, dpi_adjusted_sensitivity, result);
-    }
+    // Analysis logging disabled for performance
+    // LOG_DBG("Level1: input=%d * adj_sens=%u = raw_result=%lld", 
+    //         input_value, dpi_adjusted_sensitivity, result);
     
     // Enhanced safety: Check intermediate result
     if (abs(result) > (int64_t)INT32_MAX * SENSITIVITY_SCALE / 2) {
@@ -90,9 +100,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         result = result / 2; // Emergency scaling
     }
     
-    if (abs(result) >= SENSITIVITY_SCALE) {
-        result = result / SENSITIVITY_SCALE;
-    }
+    // CRITICAL FIX: Always apply sensitivity scaling
+    result = result / SENSITIVITY_SCALE;
     
     // Level 1 curve processing
     int32_t abs_input = abs(input_value);

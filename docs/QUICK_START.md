@@ -44,11 +44,11 @@ manifest:
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y      # Level 1
 # CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y  # Level 2
 
-# Choose a preset (optional, works for both levels)
+# Choose a device-specific preset (works for both levels)
 # For Level 1 (Simple):
-CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y
 # For Level 2 (Standard):
-# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y
 ```
 
 ## 3. Add to Input Chain

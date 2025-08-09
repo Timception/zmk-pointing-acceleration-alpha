@@ -31,11 +31,19 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     LOG_DBG("Standard level not enabled, fallback to simple calculation");
     return accel_simple_calculate(cfg, input_value, code);
 #else
-    // Enhanced safety: Input value validation with detailed logging
-    if (abs(input_value) > MAX_SAFE_INPUT_VALUE) {
-        LOG_WRN("Level2: Input value %d exceeds safe limit %d, clamping", 
-                input_value, MAX_SAFE_INPUT_VALUE);
-        input_value = accel_clamp_input_value(input_value);
+    // Enhanced safety: Input value validation for reasonable range
+    const int32_t MAX_REASONABLE_INPUT = 200;  // Covers most legitimate use cases
+    
+    if (abs(input_value) > MAX_REASONABLE_INPUT) {
+        if (abs(input_value) > MAX_REASONABLE_INPUT * 3) {
+            // Extremely large values (>600) are likely sensor noise - ignore them
+            LOG_WRN("Level2: Input value %d too extreme, ignoring", input_value);
+            return 0;
+        } else {
+            // Large but reasonable values (200-600) - clamp to limit
+            LOG_DBG("Level2: Input value %d clamped to %d", input_value, MAX_REASONABLE_INPUT);
+            input_value = (input_value > 0) ? MAX_REASONABLE_INPUT : -MAX_REASONABLE_INPUT;
+        }
     }
     
     // Enhanced safety: Data structure validation (simplified)
@@ -64,18 +72,23 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         return accel_safe_fallback_calculate(input_value, cfg->max_factor);
     }
     
-    int64_t result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
-                                     (int64_t)INT32_MAX * SENSITIVITY_SCALE);
+    // CRITICAL FIX: Apply sensitivity correctly
+    int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+    
+    LOG_INF("ANALYSIS Level2: input=%d * adj_sens=%u = raw_result=%lld", 
+            input_value, dpi_adjusted_sensitivity, result);
     
     // Enhanced safety: Check intermediate result
-    if (abs(result) > (int64_t)INT32_MAX * SENSITIVITY_SCALE / 4) {
+    if (abs(result) > (int64_t)INT32_MAX) {
         LOG_WRN("Level2: Intermediate result %lld too large, using fallback", result);
         return accel_safe_fallback_calculate(input_value, cfg->max_factor);
     }
     
-    if (abs(result) >= SENSITIVITY_SCALE) {
-        result = result / SENSITIVITY_SCALE;
-    }
+    // CRITICAL FIX: Always apply sensitivity scaling
+    int64_t before_scale = result;
+    result = result / SENSITIVITY_SCALE;
+    LOG_INF("ANALYSIS Level2: scaled %lld -> %lld (div by %d)", 
+            before_scale, result, SENSITIVITY_SCALE);
     
     // Enhanced safety: Speed-based acceleration with comprehensive protection
     uint32_t factor = cfg->min_factor;
@@ -216,6 +229,9 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     if (input_value != 0 && accelerated_value == 0) {
         accelerated_value = (input_value > 0) ? 1 : -1;
     }
+    
+    // Analysis logging disabled for performance
+    // LOG_DBG("Level2: input=%d -> accelerated=%d", input_value, accelerated_value);
     
     // Enhanced safety: Final comprehensive validation
     int16_t final_result = safe_int32_to_int16(accelerated_value);
