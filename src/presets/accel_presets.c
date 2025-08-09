@@ -27,32 +27,32 @@ static const preset_config_t presets[] = {
     {
         .name = "office",
         .sensitivity = 1000,
-        .max_factor = 2000,
+        .max_factor = 2200,   // 2.0x -> 2.2x (より効果的)
         .curve_type = 1,      // Mild
-        .y_boost = 1050,
-        .speed_threshold = 800,
-        .speed_max = 2500,
-        .min_factor = 1000
+        .y_boost = 1080,      // 1.05x -> 1.08x (Y軸改善)
+        .speed_threshold = 700, // 800 -> 700 (より早い加速度開始)
+        .speed_max = 2600,    // 2500 -> 2600 (適度な調整)
+        .min_factor = 980     // 1000 -> 980 (精密操作時の改善)
     },
     {
         .name = "gaming",
-        .sensitivity = 1000,
-        .max_factor = 2300,
+        .sensitivity = 1050,  // 1.0x -> 1.05x (ゲーミング用感度向上)
+        .max_factor = 2500,   // 2.3x -> 2.5x (より積極的な加速度)
         .curve_type = 2,      // Strong
-        .y_boost = 1150,
-        .speed_threshold = 600,
-        .speed_max = 2600,
-        .min_factor = 1000
+        .y_boost = 1120,      // 1.15x -> 1.12x (バランス調整)
+        .speed_threshold = 550, // 600 -> 550 (より早い反応)
+        .speed_max = 2800,    // 2600 -> 2800 (高速移動対応)
+        .min_factor = 950     // 1000 -> 950 (精密エイム改善)
     },
     {
         .name = "high_sens",
-        .sensitivity = 1000,
-        .max_factor = 2700,
-        .curve_type = 2,      // Strong
-        .y_boost = 1200,
-        .speed_threshold = 500,
-        .speed_max = 2500,
-        .min_factor = 1100
+        .sensitivity = 1150,  // 1.0x -> 1.15x (高感度用)
+        .max_factor = 2800,   // 2.7x -> 2.8x (より強力な加速度)
+        .curve_type = 1,      // Strong -> Mild (制御しやすく)
+        .y_boost = 1150,      // 1.2x -> 1.15x (バランス調整)
+        .speed_threshold = 450, // 500 -> 450 (即座に加速度適用)
+        .speed_max = 2400,    // 2500 -> 2400 (適度な調整)
+        .min_factor = 900     // 1100 -> 900 (精密操作重視)
     }
 };
 
