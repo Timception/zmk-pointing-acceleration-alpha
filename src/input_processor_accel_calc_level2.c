@@ -90,8 +90,15 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     LOG_INF("ANALYSIS Level2: scaled %lld -> %lld (div by %d)", 
             before_scale, result, SENSITIVITY_SCALE);
     
+    // CRITICAL DEBUG: 速度と加速係数を確認
+    LOG_INF("DEBUG Level2: speed=%u, threshold=%u, max=%u", 
+            speed, cfg->speed_threshold, cfg->speed_max);
+    
     // Enhanced safety: Speed-based acceleration with comprehensive protection
     uint32_t factor = cfg->min_factor;
+    
+    // CRITICAL DEBUG: 加速処理の開始
+    LOG_INF("DEBUG Level2: Starting acceleration - factor=%u (min)", factor);
     
     // Enhanced safety: Validate speed thresholds
     if (cfg->speed_threshold >= cfg->speed_max) {
@@ -160,6 +167,10 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         // Enhanced safety: Final factor validation
         factor = ACCEL_CLAMP(factor, cfg->min_factor, 
                            ACCEL_CLAMP(cfg->max_factor, SENSITIVITY_SCALE, MAX_SAFE_FACTOR));
+        
+        // CRITICAL DEBUG: 加速係数を確認
+        LOG_INF("DEBUG Level2: factor=%u, min=%u, max=%u", 
+                factor, cfg->min_factor, cfg->max_factor);
         
         // Enhanced safety: Apply acceleration with comprehensive overflow protection
         if (factor > SENSITIVITY_SCALE) {
