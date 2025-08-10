@@ -8,30 +8,29 @@ I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-poi
 
 # ZMK MULTI-LEVEL POINTING ACCELERATION
 
-This repository contains a **2-level** pointer acceleration implementation for pointing devices in ZMK, designed to accommodate users from beginners to advanced enthusiasts.
+This repository features a **two-level** pointer acceleration system for ZMK, suitable for both beginners and advanced users.
 
-The acceleration makes fine cursor control more precise at slow speeds while allowing faster cursor movement when moving quickly. It supports customizable acceleration curves and can be configured for different input devices.
+The acceleration enhances precise cursor movement at slow speeds and enables rapid movement at higher speeds. Acceleration curves are customizable, and settings can be tailored for various input devices.
 
 ## 🎯 **Choose Your Level**
 
 ### **Level 1: Simple** (Recommended for most users)
 
-- **3 basic settings** + **12 device-specific presets**
-- Perfect for getting started quickly
-- Automatic DPI compensation for different sensors
-- Presets: Office/Gaming/High-Sens × Optical/Laser/Trackball/Trackpad
+- **5 configurable settings for 3 pointing-device types** and **4 sensitivity levels**
+- Quick and easy setup
+- Automatic DPI adjustment for different sensors
+- Presets for Office, Gaming, High Sensitivity, with options for Optical, Laser, Trackball, and Trackpad
 
 ### **Level 2: Standard** (Advanced features)
 
-- **7 configurable settings** + **12 device-specific presets**
-- Speed-based acceleration with Y-axis boost
-- Advanced exponential curves (1-5)
-- Perfect for users who want full control with device optimization
+- **8 configurable settings for 3 pointing-device types** and **4 sensitivity levels**
+- Speed-dependent acceleration and Y-axis boost
+- Advanced exponential curve options (1–5)
+- Ideal for users seeking full customization and device-specific tuning
 
-**Device Compatibility Note:** This module has been tested with a trackball using the PAW3222 pointing device sensor and a trackpad using the Azoteq IQS7211E touch sensor. It should work with other pointing devices (trackpads, trackpoints, etc.). There may be risks you face due to differences in sensors and other factors.
+**Device Compatibility:** Tested with PAW3222 trackball and Azoteq IQS7211E trackpad sensors. Should work with other devices, but sensor differences may affect performance.
 
-**Before you start, you should make sure that you have a working
-input device by following this: https://zmk.dev/docs/features/pointing**
+**Before starting, confirm your input device works using: https://zmk.dev/docs/features/pointing**
 
 ## ✨ Features by Level
 

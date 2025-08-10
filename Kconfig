@@ -25,17 +25,17 @@ choice INPUT_PROCESSOR_ACCEL_LEVEL
     default INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
     help
       Choose the complexity level for pointing device acceleration configuration:
-      - Simple: 3 basic settings with presets (recommended for most users)
-      - Standard: 7 settings with speed-based acceleration, Y-axis boost, and advanced curves
+      - Simple: 5 basic settings with presets (recommended for most users)
+      - Standard: 8 settings with speed-based acceleration, Y-axis boost, and advanced curves
 
 config INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE
-    bool "Simple (3 settings + presets)"
+    bool "Simple (5 types of settings with presets)"
     help
       Simple configuration with basic sensitivity, maximum acceleration,
       and curve type. Includes preset configurations for common use cases.
 
 config INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
-    bool "Standard (7 settings)"
+    bool "Standard (8 types of settings with presets)"
     help
       Standard configuration with speed-based acceleration, Y-axis boost,
       configurable speed thresholds, and advanced curve customization.
@@ -282,15 +282,6 @@ config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
     range 1000 3000
     help
       Maximum acceleration factor at high speeds. 2000 = 2.0x (moderate acceleration).
-
-config INPUT_PROCESSOR_ACCEL_CURVE_TYPE
-    int "Acceleration curve type"
-    default 1
-    depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
-    range 0 2
-    help
-      Acceleration curve type:
-      0 = Linear, 1 = Mild [DEFAULT], 2 = Strong
 
 config INPUT_PROCESSOR_ACCEL_Y_BOOST
     int "Y-axis sensitivity boost (scaled by 1000)"
