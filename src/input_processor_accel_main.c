@@ -1,5 +1,5 @@
 // input_processor_accel_main.c - ZMK Input Processor for Pointing Device Acceleration
-// Refactored for better maintainability and modularity
+// Main event handler and device registration
 // 
 // Copyright (c) 2024 The ZMK Contributors
 // Modifications (c) 2025 NUOVOTAKA
@@ -10,6 +10,7 @@
 #include <string.h>
 #include "../include/drivers/input_processor_accel.h"
 #include "config/accel_config.h"
+#include "config/accel_device_init.h"
 
 LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 
@@ -47,80 +48,15 @@ static int accel_init_device(const struct device *dev) {
 // DEVICE INSTANCE CREATION USING DT_INST_FOREACH_STATUS_OKAY
 // =============================================================================
 
-// Common codes array for all instances
-static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEEL, INPUT_REL_HWHEEL };
-
 // Macro to create device instance initialization function
 #define ACCEL_INIT_FUNC(inst)                                                                     \
     static int accel_init_##inst(const struct device *dev) {                                     \
-        struct accel_config *cfg = (struct accel_config *)dev->config;                          \
-        LOG_INF("Accel init: instance %d", inst); \
-                                                                                                  \
-        /* Determine configuration level from Kconfig */                                       \
-        uint8_t config_level = 1; /* Default to Level 1 */                                     \
-        if (IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)) {                         \
-            config_level = 2;                                                                   \
-        } else if (IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)) {                    \
-            config_level = 1;                                                                   \
-        }                                                                                       \
-        LOG_INF("Detected configuration level: %u", config_level);                             \
-                                                                                                \
-        /* Initialize configuration with level and instance */                                  \
-        int ret = accel_config_init(cfg, config_level, inst);                                  \
-        if (ret < 0) {                                                                          \
-            LOG_ERR("Configuration initialization failed: %d", ret);                            \
+        /* Initialize device instance configuration */                                           \
+        int ret = accel_device_init_instance(dev, inst);                                        \
+        if (ret < 0) {                                                                           \
             return ret;                                                                          \
         }                                                                                        \
-                                                                                                  \
-        /* Set input type and codes - these are always the same */                              \
-        cfg->input_type = INPUT_EV_REL;                                                          \
-        cfg->codes = accel_codes;                                                                \
-        cfg->codes_count = ARRAY_SIZE(accel_codes);                                             \
-                                                                                                  \
-        /* Check configuration source: Custom DTS vs Preset based on Kconfig */                \
-        bool use_custom_config = IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM);       \
-                                                                                                  \
-        if (use_custom_config) {                                                                  \
-            LOG_INF("Instance %d: Using CUSTOM configuration (Kconfig enabled)", inst);       \
-            /* Apply DTS custom properties with validation */                                   \
-            if (DT_INST_NODE_HAS_PROP(inst, sensitivity)) {                                     \
-                cfg->sensitivity = ACCEL_CLAMP(DT_INST_PROP(inst, sensitivity), 200, 2000);    \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, max_factor)) {                                      \
-                cfg->max_factor = ACCEL_CLAMP(DT_INST_PROP(inst, max_factor), 1000, 5000);     \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, curve_type)) {                                      \
-                cfg->curve_type = ACCEL_CLAMP(DT_INST_PROP(inst, curve_type), 0, 2);           \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, y_boost)) {                                         \
-                cfg->y_boost = ACCEL_CLAMP(DT_INST_PROP(inst, y_boost), 500, 3000);            \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, speed_threshold)) {                                 \
-                cfg->speed_threshold = DT_INST_PROP(inst, speed_threshold);                     \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, speed_max)) {                                       \
-                cfg->speed_max = DT_INST_PROP(inst, speed_max);                                 \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, min_factor)) {                                      \
-                cfg->min_factor = ACCEL_CLAMP(DT_INST_PROP(inst, min_factor), 200, 2000);      \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, acceleration_exponent)) {                           \
-                cfg->acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP(inst, acceleration_exponent), 1, 5); \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, sensor_dpi)) {                                      \
-                cfg->sensor_dpi = ACCEL_CLAMP(DT_INST_PROP(inst, sensor_dpi), 400, 8000);      \
-            }                                                                                    \
-        } else {                                                                                 \
-            LOG_INF("Instance %d: Using PRESET configuration (Kconfig selected)", inst);                       \
-            /* Apply preset configuration - level is already set correctly */                   \
-            accel_config_apply_kconfig_preset(cfg);                                             \
-        }                                                                                        \
-                                                                                                  \
-        /* Log final configuration for debugging */                                             \
-        LOG_INF("Final config: level=%u, max_factor=%u, sensitivity=%u, threshold=%u",         \
-                cfg->level, cfg->max_factor, cfg->sensitivity, cfg->speed_threshold);           \
-                                                                                                  \
-        /* Single validation and device initialization */                                       \
+        /* Final device initialization and validation */                                        \
         return accel_init_device(dev);                                                          \
     }
 

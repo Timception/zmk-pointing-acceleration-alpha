@@ -10,6 +10,7 @@ zephyr_library_sources(
   src/input_processor_accel_calc_level1.c
   src/input_processor_accel_calc_level2.c
   src/config/accel_config.c
+  src/config/accel_device_init.c
   src/validation/accel_validation.c
   src/presets/accel_presets.c
 )

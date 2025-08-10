@@ -61,8 +61,21 @@ int accel_validate_config(const struct accel_config *cfg) {
         return -EINVAL;
     }
     
-    // Level 2 specific validation
-    if (cfg->level == 2) {
+    // Validate Y-axis boost (common to both levels)
+    if (cfg->y_boost < 500 || cfg->y_boost > 3000) {
+        LOG_ERR("Y-axis boost %u out of reasonable range (500-3000)", cfg->y_boost);
+        return -EINVAL;
+    }
+    
+    // Level-specific validation
+    if (cfg->level == 1) {
+        LOG_DBG("Level 1 (Simple) validation: basic checks only");
+        // Level 1では基本的な検証のみ
+        // speed_threshold, speed_max, min_factor, acceleration_exponentは使用されない
+        
+    } else if (cfg->level == 2) {
+        LOG_DBG("Level 2 (Standard) validation: comprehensive checks");
+        
         // Prevent division by zero in speed calculation
         if (cfg->speed_max <= cfg->speed_threshold) {
             LOG_ERR("Speed max (%u) must be greater than speed threshold (%u)", 
@@ -92,12 +105,6 @@ int accel_validate_config(const struct accel_config *cfg) {
         // Validate factor ranges
         if (cfg->min_factor < 200 || cfg->min_factor > 2000) {
             LOG_ERR("Min factor %u out of reasonable range (200-2000)", cfg->min_factor);
-            return -EINVAL;
-        }
-        
-        // Validate Y-axis boost
-        if (cfg->y_boost < 500 || cfg->y_boost > 3000) {
-            LOG_ERR("Y-axis boost %u out of reasonable range (500-3000)", cfg->y_boost);
             return -EINVAL;
         }
         
