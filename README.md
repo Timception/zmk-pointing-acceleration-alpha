@@ -58,6 +58,20 @@ input device by following this: https://zmk.dev/docs/features/pointing**
 - ✅ **7 configurable parameters** for complete customization
 - ✅ Compatible with any relative input device (pointing devices, trackball, touchpad)
 
+## 🔍 **Understanding Level Differences**
+
+**IMPORTANT:** Level 1 and Level 2 use completely different calculation methods. The same preset name will behave differently between levels.
+
+📖 **[Read the detailed Level Comparison Guide →](docs/LEVEL_COMPARISON.md)**  
+📋 **[View all Preset Configurations →](docs/PRESETS.md)**
+
+### **Quick Summary**
+
+- **Level 1**: Input-based, immediate response, gaming-style acceleration
+- **Level 2**: Speed-based, gradual response, natural smooth acceleration
+
+Choose Level 1 for predictable instant acceleration, or Level 2 for adaptive smooth acceleration.
+
 ## Installation & Usage
 
 To use pointer acceleration, there are several steps necessary:
