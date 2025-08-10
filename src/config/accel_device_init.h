@@ -24,6 +24,7 @@ int accel_device_init_instance(const struct device *dev, int inst);
 
 /**
  * @brief Apply device tree custom properties to configuration
+ * Note: This is a placeholder. Actual DT property access must be done in macros.
  * @param cfg Configuration structure to modify
  * @param config_level Configuration level (1 or 2)
  * @param inst Device tree instance number

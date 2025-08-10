@@ -56,6 +56,45 @@ static int accel_init_device(const struct device *dev) {
         if (ret < 0) {                                                                           \
             return ret;                                                                          \
         }                                                                                        \
+                                                                                                  \
+        /* Apply DT custom properties if enabled (must be done in macro context) */            \
+        struct accel_config *cfg = (struct accel_config *)dev->config;                          \
+        bool use_custom_config = IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM);       \
+        if (use_custom_config) {                                                                  \
+            /* Apply common DTS properties for both levels */                                   \
+            if (DT_INST_NODE_HAS_PROP(inst, sensitivity)) {                                     \
+                cfg->sensitivity = ACCEL_CLAMP(DT_INST_PROP(inst, sensitivity), 200, 2000);    \
+            }                                                                                    \
+            if (DT_INST_NODE_HAS_PROP(inst, max_factor)) {                                      \
+                cfg->max_factor = ACCEL_CLAMP(DT_INST_PROP(inst, max_factor), 1000, 5000);     \
+            }                                                                                    \
+            if (DT_INST_NODE_HAS_PROP(inst, curve_type)) {                                      \
+                cfg->curve_type = ACCEL_CLAMP(DT_INST_PROP(inst, curve_type), 0, 2);           \
+            }                                                                                    \
+            if (DT_INST_NODE_HAS_PROP(inst, y_boost)) {                                         \
+                cfg->y_boost = ACCEL_CLAMP(DT_INST_PROP(inst, y_boost), 500, 3000);            \
+            }                                                                                    \
+            if (DT_INST_NODE_HAS_PROP(inst, sensor_dpi)) {                                      \
+                cfg->sensor_dpi = ACCEL_CLAMP(DT_INST_PROP(inst, sensor_dpi), 400, 8000);      \
+            }                                                                                    \
+                                                                                                  \
+            /* Apply Level 2 specific DTS properties only for Standard level */                \
+            if (cfg->level == 2) {                                                              \
+                if (DT_INST_NODE_HAS_PROP(inst, speed_threshold)) {                             \
+                    cfg->speed_threshold = ACCEL_CLAMP(DT_INST_PROP(inst, speed_threshold), 100, 2000); \
+                }                                                                                \
+                if (DT_INST_NODE_HAS_PROP(inst, speed_max)) {                                   \
+                    cfg->speed_max = ACCEL_CLAMP(DT_INST_PROP(inst, speed_max), 1000, 8000);   \
+                }                                                                                \
+                if (DT_INST_NODE_HAS_PROP(inst, min_factor)) {                                  \
+                    cfg->min_factor = ACCEL_CLAMP(DT_INST_PROP(inst, min_factor), 200, 1500);  \
+                }                                                                                \
+                if (DT_INST_NODE_HAS_PROP(inst, acceleration_exponent)) {                       \
+                    cfg->acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP(inst, acceleration_exponent), 1, 5); \
+                }                                                                                \
+            }                                                                                    \
+        }                                                                                        \
+                                                                                                  \
         /* Final device initialization and validation */                                        \
         return accel_init_device(dev);                                                          \
     }
@@ -239,7 +278,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         
         // Get current time for timing analysis
         int32_t current_time = k_uptime_get_32();
-        int32_t time_diff = current_time - last_output_time;
+        // int32_t time_diff = current_time - last_output_time;  // Unused, commented out
         
         // Temporarily disabled to test if logging affects cursor movement
         // if ((output_counter % 20) == 0 || abs(accelerated_value) > 50 || time_diff > 100) {

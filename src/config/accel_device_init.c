@@ -18,65 +18,18 @@ LOG_MODULE_DECLARE(input_processor_accel);
 // DEVICE TREE CUSTOM PROPERTIES APPLICATION
 // =============================================================================
 
+// DT property application must be done via macros, not functions
+// This function is a placeholder for future non-DT custom properties
 int accel_apply_dt_custom_properties(struct accel_config *cfg, uint8_t config_level, int inst) {
     if (!cfg) {
         return -EINVAL;
     }
 
-    LOG_INF("Instance %d: Using CUSTOM configuration (Level %u)", inst, config_level);
-
-    // Apply common DTS properties for both levels
-    if (DT_INST_NODE_HAS_PROP(inst, sensitivity)) {
-        cfg->sensitivity = ACCEL_CLAMP(DT_INST_PROP(inst, sensitivity), 200, 2000);
-        LOG_DBG("Custom sensitivity: %u", cfg->sensitivity);
-    }
-    if (DT_INST_NODE_HAS_PROP(inst, max_factor)) {
-        cfg->max_factor = ACCEL_CLAMP(DT_INST_PROP(inst, max_factor), 1000, 5000);
-        LOG_DBG("Custom max_factor: %u", cfg->max_factor);
-    }
-    if (DT_INST_NODE_HAS_PROP(inst, curve_type)) {
-        cfg->curve_type = ACCEL_CLAMP(DT_INST_PROP(inst, curve_type), 0, 2);
-        LOG_DBG("Custom curve_type: %u", cfg->curve_type);
-    }
-    if (DT_INST_NODE_HAS_PROP(inst, y_boost)) {
-        cfg->y_boost = ACCEL_CLAMP(DT_INST_PROP(inst, y_boost), 500, 3000);
-        LOG_DBG("Custom y_boost: %u", cfg->y_boost);
-    }
-    if (DT_INST_NODE_HAS_PROP(inst, sensor_dpi)) {
-        cfg->sensor_dpi = ACCEL_CLAMP(DT_INST_PROP(inst, sensor_dpi), 400, 8000);
-        LOG_DBG("Custom sensor_dpi: %u", cfg->sensor_dpi);
-    }
-
-    // Apply Level 2 specific DTS properties only for Standard level
-    if (config_level == 2) {
-        LOG_DBG("Applying Level 2 (Standard) custom properties");
-        if (DT_INST_NODE_HAS_PROP(inst, speed_threshold)) {
-            cfg->speed_threshold = ACCEL_CLAMP(DT_INST_PROP(inst, speed_threshold), 100, 2000);
-            LOG_DBG("Custom speed_threshold: %u", cfg->speed_threshold);
-        }
-        if (DT_INST_NODE_HAS_PROP(inst, speed_max)) {
-            cfg->speed_max = ACCEL_CLAMP(DT_INST_PROP(inst, speed_max), 1000, 8000);
-            LOG_DBG("Custom speed_max: %u", cfg->speed_max);
-        }
-        if (DT_INST_NODE_HAS_PROP(inst, min_factor)) {
-            cfg->min_factor = ACCEL_CLAMP(DT_INST_PROP(inst, min_factor), 200, 1500);
-            LOG_DBG("Custom min_factor: %u", cfg->min_factor);
-        }
-        if (DT_INST_NODE_HAS_PROP(inst, acceleration_exponent)) {
-            cfg->acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP(inst, acceleration_exponent), 1, 5);
-            LOG_DBG("Custom acceleration_exponent: %u", cfg->acceleration_exponent);
-        }
-    } else {
-        LOG_DBG("Level 1 (Simple): Skipping Level 2 specific properties");
-        // Level 1では Level 2専用設定を無視し、警告を出す
-        if (DT_INST_NODE_HAS_PROP(inst, speed_threshold) ||
-            DT_INST_NODE_HAS_PROP(inst, speed_max) ||
-            DT_INST_NODE_HAS_PROP(inst, min_factor) ||
-            DT_INST_NODE_HAS_PROP(inst, acceleration_exponent)) {
-            LOG_WRN("Level 1 ignoring Level 2 properties (speed_threshold, speed_max, min_factor, acceleration_exponent)");
-        }
-    }
-
+    LOG_INF("Instance %d: Custom configuration applied via macro (Level %u)", inst, config_level);
+    
+    // Note: DT property access must be done in macros, not functions
+    // The actual DT property application is handled in the main.c macro
+    
     return 0;
 }
 
@@ -138,18 +91,12 @@ int accel_device_init_instance(const struct device *dev, int inst) {
     // Check configuration source: Custom DTS vs Preset based on Kconfig
     bool use_custom_config = IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM);
 
-    if (use_custom_config) {
-        // Apply DTS custom properties with validation
-        ret = accel_apply_dt_custom_properties(cfg, config_level, inst);
-        if (ret < 0) {
-            LOG_ERR("Failed to apply custom DT properties: %d", ret);
-            return ret;
-        }
-    } else {
+    if (!use_custom_config) {
         LOG_INF("Instance %d: Using PRESET configuration (Kconfig selected)", inst);
         // Apply preset configuration - level is already set correctly
         accel_config_apply_kconfig_preset(cfg);
     }
+    // Note: Custom DT properties are applied in the main.c macro context
 
     // Log final configuration for debugging
     accel_log_final_config(cfg, config_level);
