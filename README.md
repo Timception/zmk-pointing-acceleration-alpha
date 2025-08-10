@@ -219,7 +219,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y       # Gaming laser mouse
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
     // Preset values are automatically applied for all Level 2 settings!
-    // Including: sensitivity, max-factor, curve-type, y-boost,
+    // Including: sensitivity, max-factor, acceleration-exponent, y-boost,
     // speed-threshold, speed-max, min-factor
 };
 ```
@@ -238,7 +238,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     codes = <INPUT_REL_X INPUT_REL_Y>;
     sensitivity = <1200>;         // 1.2x base sensitivity
     max-factor = <3000>;          // 3.0x maximum acceleration
-    curve-type = <1>;             // Basic curve (0=Linear, 1=Mild, 2=Strong)
+    acceleration-exponent = <2>; // Advanced exponential curve (1-5)
     y-boost = <1300>;             // 1.3x Y-axis boost for widescreen
     speed-threshold = <600>;      // Start acceleration at 600 counts/sec
     speed-max = <3500>;           // Max acceleration at 3500 counts/sec
@@ -376,7 +376,6 @@ The configurations under are just starting points - every person's perfect point
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
     sensitivity = <1200>;      // 1.2x base sensitivity
     max-factor = <3000>;       // Good acceleration for large movements
-    curve-type = <1>;          // Basic mild curve
     y-boost = <1200>;          // 1.2x Y-axis boost
     speed-threshold = <1200>;  // Balanced acceleration point
     speed-max = <6000>;        // Max acceleration at 6000 counts/sec
@@ -394,7 +393,6 @@ The configurations under are just starting points - every person's perfect point
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
     sensitivity = <1100>;      // 1.1x base sensitivity
     max-factor = <2000>;       // 2.0x maximum
-    curve-type = <0>;          // Linear basic curve
     y-boost = <1100>;          // 1.1x Y-axis boost
     speed-threshold = <1500>;  // Start accelerating later
     speed-max = <5000>;        // 5000 counts/sec for max accel
@@ -411,7 +409,6 @@ The configurations under are just starting points - every person's perfect point
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
     sensitivity = <1000>;      // 1.0x base sensitivity
     max-factor = <4000>;       // 4.0x maximum
-    curve-type = <2>;          // Strong basic curve
     y-boost = <1000>;          // 1.0x Y-axis boost
     speed-threshold = <1000>;  // Start accelerating earlier
     speed-max = <6000>;        // 6000 counts/sec for max accel
@@ -431,7 +428,6 @@ The configurations under are just starting points - every person's perfect point
     codes = <INPUT_REL_X INPUT_REL_Y>; // X and Y axis events
     sensitivity = <800>;       // 0.8x base sensitivity
     max-factor = <2500>;       // 2.5x maximum acceleration
-    curve-type = <1>;          // Mild curve for responsive feel
     y-boost = <1000>;          // 2.5x Y-axis boost for widescreen
     speed-threshold = <300>;   // Early acceleration start
     speed-max = <3000>;        // Lower speed for max acceleration
@@ -455,7 +451,6 @@ The configurations under are just starting points - every person's perfect point
     sensitivity           = <600>;   /* 0.6 × base sensitivity */
     min-factor            = <700>;   /* Starts at 0.7× */
     max-factor            = <1500>;  /* Maximum 1.5× acceleration */
-    curve-type            = <0>;     /* Linear: input is directly mapped to output */
     speed-threshold       = <400>;   /* Acceleration starts at 400 cnt/s */
     speed-max             = <2500>;  /* Reaches max-factor at 2500 cnt/s */
     y-boost               = <1000>;  /* Same multiplier for X and Y axes */
@@ -477,7 +472,6 @@ The configurations under are just starting points - every person's perfect point
     sensitivity           = <1000>;   /* 1.0 × base sensitivity (no gain at low speed) */
     min-factor            = <1000>;   /* 1.0× at low speed (no acceleration) */
     max-factor            = <4000>;   /* Up to 4.0× at high speed */
-    curve-type            = <2>;      /* Strong curve for aggressive acceleration */
     speed-threshold       = <300>;    /* Acceleration starts above 300 cnt/s */
     speed-max             = <1200>;   /* Reaches max-factor at 1200 cnt/s */
     y-boost               = <1300>;   /* 1.3× for Y axis (matches X) */
