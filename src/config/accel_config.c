@@ -50,31 +50,52 @@ static const struct accel_config level2_defaults = {
 
 const struct accel_config *accel_config_get_defaults(uint8_t level) {
     switch (level) {
-        case 1: return &level1_defaults;
-        case 2: return &level2_defaults;
+        case 1: 
+            LOG_DBG("Using Level 1 (Simple) defaults");
+            return &level1_defaults;
+        case 2: 
+            LOG_DBG("Using Level 2 (Standard) defaults");
+            return &level2_defaults;
         default:
-            LOG_ERR("Invalid configuration level: %u", level);
+            LOG_ERR("Invalid configuration level: %u, falling back to Level 1", level);
             return &level1_defaults;
     }
 }
 
 int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
     if (!cfg) {
+        LOG_ERR("Configuration pointer is NULL");
         return -EINVAL;
     }
 
-    LOG_INF("Initializing acceleration config with level: %u", level);
+    if (level < 1 || level > 2) {
+        LOG_ERR("Invalid configuration level: %u (must be 1 or 2)", level);
+        return -EINVAL;
+    }
+
+    LOG_INF("Initializing acceleration config: level=%u, instance=%d", level, inst);
+    
+    // Clear configuration structure first
+    memset(cfg, 0, sizeof(struct accel_config));
     
     // Start with defaults for the specified level
     const struct accel_config *defaults = accel_config_get_defaults(level);
+    if (!defaults) {
+        LOG_ERR("Failed to get default configuration for level %u", level);
+        return -ENOENT;
+    }
+    
     memcpy(cfg, defaults, sizeof(struct accel_config));
     
-    // Set level from configuration
+    // Ensure level is correctly set
     cfg->level = level;
     
-    // NOTE: DTS property handling is now controlled by the main initialization function
-    // This allows proper preset vs custom mode handling
-    // DTS properties will only be applied in custom mode
+    // Validate basic configuration
+    if (cfg->sensitivity == 0 || cfg->max_factor == 0) {
+        LOG_ERR("Invalid default configuration: sensitivity=%u, max_factor=%u", 
+                cfg->sensitivity, cfg->max_factor);
+        return -EINVAL;
+    }
     
     LOG_INF("Base configuration initialized: level=%u, max_factor=%u, sensitivity=%u", 
             cfg->level, cfg->max_factor, cfg->sensitivity);

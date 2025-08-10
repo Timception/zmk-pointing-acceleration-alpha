@@ -54,11 +54,20 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
 #define ACCEL_INIT_FUNC(inst)                                                                     \
     static int accel_init_##inst(const struct device *dev) {                                     \
         struct accel_config *cfg = (struct accel_config *)dev->config;                          \
-        LOG_INF("Accel init: instance %d, level %d", inst, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL); \
+        LOG_INF("Accel init: instance %d", inst); \
                                                                                                   \
+        /* Determine configuration level from Kconfig */                                       \
+        uint8_t config_level = 1; /* Default to Level 1 */                                     \
+        if (IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)) {                         \
+            config_level = 2;                                                                   \
+        } else if (IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)) {                    \
+            config_level = 1;                                                                   \
+        }                                                                                       \
+        LOG_INF("Detected configuration level: %u", config_level);                             \
+                                                                                                \
         /* Initialize configuration with level and instance */                                  \
-        int ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, inst);             \
-        if (ret < 0) {                                                                           \
+        int ret = accel_config_init(cfg, config_level, inst);                                  \
+        if (ret < 0) {                                                                          \
             LOG_ERR("Configuration initialization failed: %d", ret);                            \
             return ret;                                                                          \
         }                                                                                        \
@@ -108,7 +117,7 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
         }                                                                                        \
                                                                                                   \
         /* Log final configuration for debugging */                                             \
-        LOG_INF("Final: level=%d, max_factor=%u, sensitivity=%u, threshold=%u",                \
+        LOG_INF("Final config: level=%u, max_factor=%u, sensitivity=%u, threshold=%u",         \
                 cfg->level, cfg->max_factor, cfg->sensitivity, cfg->speed_threshold);           \
                                                                                                   \
         /* Single validation and device initialization */                                       \

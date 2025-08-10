@@ -216,39 +216,54 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
 // =============================================================================
 
 void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
+    if (!cfg) {
+        LOG_ERR("Configuration pointer is NULL");
+        return;
+    }
+
+    int ret = 0;
+    
     // オフィス用プリセット
     #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL
-    accel_config_apply_preset(cfg, "office_optical");
+    ret = accel_config_apply_preset(cfg, "office_optical");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER)
-    accel_config_apply_preset(cfg, "office_laser");
+    ret = accel_config_apply_preset(cfg, "office_laser");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL)
-    accel_config_apply_preset(cfg, "office_trackball");
+    ret = accel_config_apply_preset(cfg, "office_trackball");
     
     // ゲーミング用プリセット
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL)
-    accel_config_apply_preset(cfg, "gaming_optical");
+    ret = accel_config_apply_preset(cfg, "gaming_optical");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER)
-    accel_config_apply_preset(cfg, "gaming_laser");
+    ret = accel_config_apply_preset(cfg, "gaming_laser");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL)
-    accel_config_apply_preset(cfg, "gaming_trackball");
+    ret = accel_config_apply_preset(cfg, "gaming_trackball");
     
     // 高感度用プリセット
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL)
-    accel_config_apply_preset(cfg, "high_sens_optical");
+    ret = accel_config_apply_preset(cfg, "high_sens_optical");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER)
-    accel_config_apply_preset(cfg, "high_sens_laser");
+    ret = accel_config_apply_preset(cfg, "high_sens_laser");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL)
-    accel_config_apply_preset(cfg, "high_sens_trackball");
+    ret = accel_config_apply_preset(cfg, "high_sens_trackball");
     
     // トラックパッド/タッチパッド用プリセット
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD)
-    accel_config_apply_preset(cfg, "office_trackpad");
+    ret = accel_config_apply_preset(cfg, "office_trackpad");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD)
-    accel_config_apply_preset(cfg, "gaming_trackpad");
+    ret = accel_config_apply_preset(cfg, "gaming_trackpad");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD)
-    accel_config_apply_preset(cfg, "high_sens_trackpad");
+    ret = accel_config_apply_preset(cfg, "high_sens_trackpad");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM)
     // カスタム設定の場合は何もしない（デバイスツリー値を使用）
     LOG_INF("Using custom configuration from device tree");
+    ret = 0; // カスタム設定は正常
+    #else
+    LOG_WRN("No preset configuration selected, using defaults");
+    ret = 0; // デフォルト設定を使用
     #endif
+    
+    if (ret < 0) {
+        LOG_ERR("Failed to apply preset configuration: %d", ret);
+    }
 }
