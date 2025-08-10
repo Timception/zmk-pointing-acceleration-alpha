@@ -43,6 +43,8 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y
 
 ### Custom Simple Settings
 
+> **Important**: Level 1 custom settings are designed for beginners with conservative acceleration limits. The system prevents excessive cursor movement by capping maximum acceleration at 3.0x and using moderate speed thresholds. For more aggressive acceleration, try Level 2 presets first, then consider Level 2 custom settings.
+
 ```ini
 # In prj.conf
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y
@@ -54,7 +56,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
     sensitivity = <1300>;     // 1.3x base sensitivity
-    max-factor = <2800>;      // 2.8x maximum acceleration
+    max-factor = <2800>;      // 2.8x maximum acceleration (capped at 3.0x)
     curve-type = <1>;         // Mild curve
     y-boost = <1200>;         // 1.2x Y-axis boost (optional)
     sensor-dpi = <800>;       // 800 DPI sensor (optional)
