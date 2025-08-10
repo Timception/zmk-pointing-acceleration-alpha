@@ -72,19 +72,19 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
         bool use_custom_config = IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM);       \
                                                                                                   \
         if (use_custom_config) {                                                                  \
-            LOG_INF("Instance %d: Using CUSTOM configuration (Kconfig enabled)", inst);                   \
-            /* Apply DTS custom properties */                                                   \
+            LOG_INF("Instance %d: Using CUSTOM configuration (Kconfig enabled)", inst);       \
+            /* Apply DTS custom properties with validation */                                   \
             if (DT_INST_NODE_HAS_PROP(inst, sensitivity)) {                                     \
-                cfg->sensitivity = DT_INST_PROP(inst, sensitivity);                             \
+                cfg->sensitivity = ACCEL_CLAMP(DT_INST_PROP(inst, sensitivity), 200, 2000);    \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, max_factor)) {                                      \
-                cfg->max_factor = DT_INST_PROP(inst, max_factor);                               \
+                cfg->max_factor = ACCEL_CLAMP(DT_INST_PROP(inst, max_factor), 1000, 5000);     \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, curve_type)) {                                      \
-                cfg->curve_type = DT_INST_PROP(inst, curve_type);                               \
+                cfg->curve_type = ACCEL_CLAMP(DT_INST_PROP(inst, curve_type), 0, 2);           \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, y_boost)) {                                         \
-                cfg->y_boost = DT_INST_PROP(inst, y_boost);                                     \
+                cfg->y_boost = ACCEL_CLAMP(DT_INST_PROP(inst, y_boost), 500, 3000);            \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, speed_threshold)) {                                 \
                 cfg->speed_threshold = DT_INST_PROP(inst, speed_threshold);                     \
@@ -93,13 +93,13 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
                 cfg->speed_max = DT_INST_PROP(inst, speed_max);                                 \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, min_factor)) {                                      \
-                cfg->min_factor = DT_INST_PROP(inst, min_factor);                               \
+                cfg->min_factor = ACCEL_CLAMP(DT_INST_PROP(inst, min_factor), 200, 2000);      \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, acceleration_exponent)) {                           \
-                cfg->acceleration_exponent = DT_INST_PROP(inst, acceleration_exponent);         \
+                cfg->acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP(inst, acceleration_exponent), 1, 5); \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, sensor_dpi)) {                                      \
-                cfg->sensor_dpi = DT_INST_PROP(inst, sensor_dpi);                               \
+                cfg->sensor_dpi = ACCEL_CLAMP(DT_INST_PROP(inst, sensor_dpi), 400, 8000);      \
             }                                                                                    \
         } else {                                                                                 \
             LOG_INF("Instance %d: Using PRESET configuration (Kconfig selected)", inst);                       \
