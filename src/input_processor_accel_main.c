@@ -29,19 +29,17 @@ static int accel_init_device(const struct device *dev) {
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
 
-    // Validate configuration
+    // Validate final configuration
     int ret = accel_validate_config(cfg);
     if (ret < 0) {
-        LOG_ERR("Configuration validation failed: %d", ret);
+        LOG_ERR("Device %s: Configuration validation failed: %d", dev->name, ret);
         return ret;
     }
     
-    // Initialize simplified data structures
-    data->last_time_ms = 0;
-    data->recent_speed = 0;
-    data->speed_samples = 0;
+    // Initialize runtime data structures
+    memset(data, 0, sizeof(struct accel_data));
     
-    LOG_INF("Acceleration processor initialized (Level %d)", cfg->level);
+    LOG_INF("Device %s: Acceleration processor ready (Level %d)", dev->name, cfg->level);
     return 0;
 }
 
@@ -56,24 +54,21 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
 #define ACCEL_INIT_FUNC(inst)                                                                     \
     static int accel_init_##inst(const struct device *dev) {                                     \
         struct accel_config *cfg = (struct accel_config *)dev->config;                          \
-        LOG_INF("Accel init: instance %d", inst);                                              \
+        LOG_INF("Accel init: instance %d, level %d", inst, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL); \
                                                                                                   \
-        /* Initialize configuration with defaults */                                             \
+        /* Initialize configuration with level and instance */                                  \
         int ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, inst);             \
         if (ret < 0) {                                                                           \
             LOG_ERR("Configuration initialization failed: %d", ret);                            \
             return ret;                                                                          \
         }                                                                                        \
                                                                                                   \
-        /* Set input type and codes */                                                           \
+        /* Set input type and codes - these are always the same */                              \
         cfg->input_type = INPUT_EV_REL;                                                          \
         cfg->codes = accel_codes;                                                                \
         cfg->codes_count = ARRAY_SIZE(accel_codes);                                             \
-        /* Read track_remainders property for compatibility but ignore it */                    \
-        bool track_remainders_ignored = DT_INST_NODE_HAS_PROP(inst, track_remainders);         \
-        (void)track_remainders_ignored; /* Suppress unused variable warning */                  \
                                                                                                   \
-        /* Check if this is custom configuration (has DTS properties) */                        \
+        /* Check configuration source: Custom DTS vs Preset */                                  \
         bool has_custom_props = DT_INST_NODE_HAS_PROP(inst, sensitivity) ||                     \
                                DT_INST_NODE_HAS_PROP(inst, max_factor) ||                       \
                                DT_INST_NODE_HAS_PROP(inst, speed_threshold) ||                  \
@@ -81,64 +76,46 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
                                DT_INST_NODE_HAS_PROP(inst, min_factor);                         \
                                                                                                   \
         if (has_custom_props) {                                                                  \
-            LOG_INF("Instance %d: Using CUSTOM configuration from DTS", inst);                 \
-            /* Apply all DTS values for custom configuration */                                 \
+            LOG_INF("Instance %d: Applying CUSTOM DTS configuration", inst);                   \
+            /* Apply DTS custom properties */                                                   \
             if (DT_INST_NODE_HAS_PROP(inst, sensitivity)) {                                     \
                 cfg->sensitivity = DT_INST_PROP(inst, sensitivity);                             \
-                LOG_INF("Custom: sensitivity = %u", cfg->sensitivity);                          \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, max_factor)) {                                      \
                 cfg->max_factor = DT_INST_PROP(inst, max_factor);                               \
-                LOG_INF("Custom: max_factor = %u", cfg->max_factor);                            \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, curve_type)) {                                      \
                 cfg->curve_type = DT_INST_PROP(inst, curve_type);                               \
-                LOG_INF("Custom: curve_type = %u", cfg->curve_type);                            \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, y_boost)) {                                         \
                 cfg->y_boost = DT_INST_PROP(inst, y_boost);                                     \
-                LOG_INF("Custom: y_boost = %u", cfg->y_boost);                                  \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, speed_threshold)) {                                 \
                 cfg->speed_threshold = DT_INST_PROP(inst, speed_threshold);                     \
-                LOG_INF("Custom: speed_threshold = %u", cfg->speed_threshold);                  \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, speed_max)) {                                       \
                 cfg->speed_max = DT_INST_PROP(inst, speed_max);                                 \
-                LOG_INF("Custom: speed_max = %u", cfg->speed_max);                              \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, min_factor)) {                                      \
                 cfg->min_factor = DT_INST_PROP(inst, min_factor);                               \
-                LOG_INF("Custom: min_factor = %u", cfg->min_factor);                            \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, acceleration_exponent)) {                           \
                 cfg->acceleration_exponent = DT_INST_PROP(inst, acceleration_exponent);         \
-                LOG_INF("Custom: acceleration_exponent = %u", cfg->acceleration_exponent);      \
             }                                                                                    \
             if (DT_INST_NODE_HAS_PROP(inst, sensor_dpi)) {                                      \
                 cfg->sensor_dpi = DT_INST_PROP(inst, sensor_dpi);                               \
-                LOG_INF("Custom: sensor_dpi = %u", cfg->sensor_dpi);                            \
             }                                                                                    \
         } else {                                                                                 \
-            LOG_INF("Instance %d: Using PRESET configuration from accel_presets.c", inst);     \
-            /* Apply Kconfig presets from accel_presets.c */                                    \
+            LOG_INF("Instance %d: Applying PRESET configuration", inst);                       \
+            /* Apply preset configuration - level is already set correctly */                   \
             accel_config_apply_kconfig_preset(cfg);                                             \
         }                                                                                        \
                                                                                                   \
-        /* CRITICAL: Ensure level remains unchanged after preset application */                \
-        cfg->level = CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL;                                        \
-                                                                                                  \
-        /* Log final configuration */                                                            \
-        LOG_INF("Final config: level=%d, max_factor=%u, sensitivity=%u, threshold=%u",         \
+        /* Log final configuration for debugging */                                             \
+        LOG_INF("Final: level=%d, max_factor=%u, sensitivity=%u, threshold=%u",                \
                 cfg->level, cfg->max_factor, cfg->sensitivity, cfg->speed_threshold);           \
                                                                                                   \
-        /* Validate final configuration */                                                      \
-        ret = accel_validate_config(cfg);                                                       \
-        if (ret < 0) {                                                                          \
-            LOG_ERR("Configuration validation failed: %d", ret);                               \
-            return ret;                                                                         \
-        }                                                                                       \
-                                                                                                 \
+        /* Single validation and device initialization */                                       \
         return accel_init_device(dev);                                                          \
     }
 
@@ -160,133 +137,6 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
 
 // Create device instances for all enabled DT nodes
 DT_INST_FOREACH_STATUS_OKAY(ACCEL_DEVICE_DEFINE)
-
-// Alternative: Direct node reference for &pointer_accel style definitions
-#if DT_NODE_EXISTS(DT_ALIAS(pointer_accel)) && DT_NODE_HAS_STATUS(DT_ALIAS(pointer_accel), okay)
-#define POINTER_ACCEL_NODE DT_ALIAS(pointer_accel)
-
-static struct accel_data pointer_accel_data = {0};
-static struct accel_config pointer_accel_config = {0};
-
-static int pointer_accel_init(const struct device *dev) {
-    struct accel_config *cfg = (struct accel_config *)dev->config;
-    LOG_INF("Pointer accel init: direct node reference");
-    
-    // Set input type and codes first
-    cfg->input_type = INPUT_EV_REL;
-    cfg->codes = accel_codes;
-    cfg->codes_count = ARRAY_SIZE(accel_codes);
-    /* Read track_remainders property for compatibility but ignore it */
-    bool track_remainders_ignored = DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, track_remainders);
-    (void)track_remainders_ignored; /* Suppress unused variable warning */
-    
-    // Initialize configuration based on preset vs custom
-    int ret;
-    
-    // CRITICAL DEBUG: Check which configuration path is taken
-    #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
-    LOG_INF("COMPILE-TIME: CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM is DEFINED");
-    #else
-    LOG_INF("COMPILE-TIME: CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM is NOT DEFINED");
-    #endif
-    
-    #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
-    // CUSTOM CONFIGURATION PATH
-    LOG_INF("Initializing CUSTOM configuration");
-    
-    // 1. Start with defaults
-    ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
-    if (ret < 0) {
-        LOG_ERR("Default configuration initialization failed: %d", ret);
-        return ret;
-    }
-    
-    // 2. Apply device tree values for custom configuration
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, sensitivity)) {
-        cfg->sensitivity = DT_PROP(POINTER_ACCEL_NODE, sensitivity);
-        LOG_INF("Custom: sensitivity = %u", cfg->sensitivity);
-    }
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, max_factor)) {
-        cfg->max_factor = DT_PROP(POINTER_ACCEL_NODE, max_factor);
-        LOG_INF("Custom: max_factor = %u", cfg->max_factor);
-    }
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, curve_type)) {
-        cfg->curve_type = DT_PROP(POINTER_ACCEL_NODE, curve_type);
-        LOG_INF("Custom: curve_type = %u", cfg->curve_type);
-    }
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, y_boost)) {
-        cfg->y_boost = DT_PROP(POINTER_ACCEL_NODE, y_boost);
-        LOG_INF("Custom: y_boost = %u", cfg->y_boost);
-    }
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, speed_threshold)) {
-        cfg->speed_threshold = DT_PROP(POINTER_ACCEL_NODE, speed_threshold);
-        LOG_INF("Custom: speed_threshold = %u", cfg->speed_threshold);
-    }
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, speed_max)) {
-        cfg->speed_max = DT_PROP(POINTER_ACCEL_NODE, speed_max);
-        LOG_INF("Custom: speed_max = %u", cfg->speed_max);
-    }
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, min_factor)) {
-        cfg->min_factor = DT_PROP(POINTER_ACCEL_NODE, min_factor);
-        LOG_INF("Custom: min_factor = %u", cfg->min_factor);
-    }
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, acceleration_exponent)) {
-        cfg->acceleration_exponent = DT_PROP(POINTER_ACCEL_NODE, acceleration_exponent);
-        LOG_INF("Custom: acceleration_exponent = %u", cfg->acceleration_exponent);
-    }
-    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, sensor_dpi)) {
-        cfg->sensor_dpi = DT_PROP(POINTER_ACCEL_NODE, sensor_dpi);
-        LOG_INF("Custom: sensor_dpi = %u", cfg->sensor_dpi);
-    }
-    
-    #else
-    // PRESET CONFIGURATION PATH
-    LOG_INF("Initializing PRESET configuration");
-    
-    // 1. Start with defaults
-    ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
-    if (ret < 0) {
-        LOG_ERR("Default configuration initialization failed: %d", ret);
-        return ret;
-    }
-    
-    // 2. Apply Kconfig preset
-    accel_config_apply_kconfig_preset(cfg);
-    LOG_INF("Preset applied - checking values:");
-    LOG_INF("Preset: sensitivity=%u, max_factor=%u, curve_type=%u", 
-            cfg->sensitivity, cfg->max_factor, cfg->curve_type);
-    LOG_INF("Preset: y_boost=%u, sensor_dpi=%u", cfg->y_boost, cfg->sensor_dpi);
-    if (cfg->level == 2) {
-        LOG_INF("Preset L2: speed_threshold=%u, speed_max=%u, min_factor=%u", 
-                cfg->speed_threshold, cfg->speed_max, cfg->min_factor);
-    }
-    
-    #endif
-    
-    // CRITICAL: Ensure level remains unchanged
-    cfg->level = CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL;
-    
-    // Log configuration
-    LOG_INF("Pointer accel config: level=%d, max_factor=%d, sensitivity=%d",
-            cfg->level, cfg->max_factor, cfg->sensitivity);
-    
-    // Validate configuration
-    ret = accel_validate_config(cfg);
-    if (ret < 0) {
-        LOG_ERR("Configuration validation failed: %d", ret);
-        return ret;
-    }
-    
-    return accel_init_device(dev);
-}
-
-DEVICE_DT_DEFINE(POINTER_ACCEL_NODE, pointer_accel_init, NULL,
-                 &pointer_accel_data, &pointer_accel_config,
-                 POST_KERNEL, CONFIG_INPUT_PROCESSOR_ACCELERATION_INIT_PRIORITY,
-                 &(const struct zmk_input_processor_driver_api){
-                     .handle_event = accel_handle_event
-                 });
-#endif
 
 // =============================================================================
 // MAIN EVENT HANDLER
