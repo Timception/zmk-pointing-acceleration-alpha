@@ -68,15 +68,11 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
         cfg->codes = accel_codes;                                                                \
         cfg->codes_count = ARRAY_SIZE(accel_codes);                                             \
                                                                                                   \
-        /* Check configuration source: Custom DTS vs Preset */                                  \
-        bool has_custom_props = DT_INST_NODE_HAS_PROP(inst, sensitivity) ||                     \
-                               DT_INST_NODE_HAS_PROP(inst, max_factor) ||                       \
-                               DT_INST_NODE_HAS_PROP(inst, speed_threshold) ||                  \
-                               DT_INST_NODE_HAS_PROP(inst, speed_max) ||                        \
-                               DT_INST_NODE_HAS_PROP(inst, min_factor);                         \
+        /* Check configuration source: Custom DTS vs Preset based on Kconfig */                \
+        bool use_custom_config = IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM);       \
                                                                                                   \
-        if (has_custom_props) {                                                                  \
-            LOG_INF("Instance %d: Applying CUSTOM DTS configuration", inst);                   \
+        if (use_custom_config) {                                                                  \
+            LOG_INF("Instance %d: Using CUSTOM configuration (Kconfig enabled)", inst);                   \
             /* Apply DTS custom properties */                                                   \
             if (DT_INST_NODE_HAS_PROP(inst, sensitivity)) {                                     \
                 cfg->sensitivity = DT_INST_PROP(inst, sensitivity);                             \
@@ -106,7 +102,7 @@ static const uint16_t accel_codes[] = { INPUT_REL_X, INPUT_REL_Y, INPUT_REL_WHEE
                 cfg->sensor_dpi = DT_INST_PROP(inst, sensor_dpi);                               \
             }                                                                                    \
         } else {                                                                                 \
-            LOG_INF("Instance %d: Applying PRESET configuration", inst);                       \
+            LOG_INF("Instance %d: Using PRESET configuration (Kconfig selected)", inst);                       \
             /* Apply preset configuration - level is already set correctly */                   \
             accel_config_apply_kconfig_preset(cfg);                                             \
         }                                                                                        \
