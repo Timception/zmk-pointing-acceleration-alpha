@@ -2,8 +2,11 @@
 
 ## 1. Choose Your Level
 
-- **Level 1 (Simple)**: 3 basic settings + presets - recommended for most users
+- **Level 1 (Simple)**: 5 basic settings + presets - recommended for most users
+  - **Conservative acceleration limits** for predictable behavior
+  - **Beginner-friendly** with safety caps to prevent excessive movement
 - **Level 2 (Standard)**: 7 settings with speed-based acceleration and advanced curves
+  - **Full control** with aggressive acceleration options available
 
 ## Key Settings Overview
 
@@ -14,6 +17,8 @@
   - **Higher values**: Faster movements for large displays
 - `max-factor`: Maximum acceleration at high speeds
 - `curve-type`: Acceleration curve (0=Linear, 1=Mild, 2=Strong)
+- `y-boost`: Y-axis sensitivity multiplier (1000 = 1.0x, 1200 = 1.2x Y-axis)
+  - **Useful for widescreen displays** where vertical movement needs boosting
 
 ## 2. Basic Setup
 
@@ -44,11 +49,11 @@ manifest:
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y      # Level 1
 # CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y  # Level 2
 
-# Choose a preset (optional, works for both levels)
+# Choose a device-specific preset (works for both levels)
 # For Level 1 (Simple):
-CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y
 # For Level 2 (Standard):
-# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING=y
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y
 ```
 
 ## 3. Add to Input Chain
