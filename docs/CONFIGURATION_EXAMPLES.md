@@ -56,6 +56,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     sensitivity = <1300>;     // 1.3x base sensitivity
     max-factor = <2800>;      // 2.8x maximum acceleration
     curve-type = <1>;         // Mild curve
+    y-boost = <1200>;         // 1.2x Y-axis boost (optional)
     sensor-dpi = <800>;       // 800 DPI sensor (optional)
 };
 ```
@@ -149,10 +150,18 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
   - Example: `max-factor = <3000>` means fast movements are up to 3x faster
 
 - `curve-type`: (Default: 1)
+
   - Controls the acceleration curve shape
   - **0 = Linear**: Constant acceleration rate - predictable but less natural
   - **1 = Mild**: Balanced curve - good for most users
   - **2 = Strong**: Aggressive curve - more responsive feel
+
+- `y-boost`: (Default: 1000) **[Available in both Level 1 and Level 2]**
+  - Y-axis sensitivity multiplier
+  - Values are in thousandths (e.g., 1200 = 1.2x Y-axis speed)
+  - **1000**: Same as X-axis (no boost)
+  - **Higher values (e.g., 1300)**: Faster vertical movement - useful for widescreen displays
+  - Example: `y-boost = <1200>` makes vertical movements 20% faster
 
 ## Troubleshooting
 

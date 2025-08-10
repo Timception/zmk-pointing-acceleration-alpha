@@ -40,6 +40,7 @@ input device by following this: https://zmk.dev/docs/features/pointing**
 - ✅ **Preset configurations** (Office, Gaming, High Sensitivity)
 - ✅ **Basic sensitivity** adjustment
 - ✅ **3 curve types** (Linear, Mild, Strong)
+- ✅ **Y-axis boost** for display optimization
 - ✅ **Plug-and-play** setup
 
 ### **Level 2: Standard Features**
@@ -180,6 +181,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     sensitivity = <1300>;     // 1.3x base sensitivity
     max-factor = <2800>;      // 2.8x maximum acceleration
     curve-type = <1>;         // 0=Linear, 1=Mild, 2=Strong
+    y-boost = <1200>;         // 1.2x Y-axis boost (optional, defaults to 1000)
     sensor-dpi = <800>;       // 800 DPI sensor (optional, defaults to 800)
 };
 ```
@@ -478,6 +480,7 @@ The configurations under are just starting points - every person's perfect point
     sensitivity = <800>;       // 0.8x for fine control
     max-factor = <1500>;       // 1.5x maximum
     curve-type = <0>;          // Linear curve
+    y-boost = <1000>;          // 1.0x Y-axis (no boost for precision)
     sensor-dpi = <800>;        // 800 DPI sensor
 };
 ```

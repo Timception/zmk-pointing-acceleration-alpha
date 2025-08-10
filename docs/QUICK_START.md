@@ -14,6 +14,8 @@
   - **Higher values**: Faster movements for large displays
 - `max-factor`: Maximum acceleration at high speeds
 - `curve-type`: Acceleration curve (0=Linear, 1=Mild, 2=Strong)
+- `y-boost`: Y-axis sensitivity multiplier (1000 = 1.0x, 1200 = 1.2x Y-axis)
+  - **Useful for widescreen displays** where vertical movement needs boosting
 
 ## 2. Basic Setup
 
