@@ -5,7 +5,7 @@
 - **Level 1 (Simple)**: 5 basic settings + presets - recommended for most users
   - **Conservative acceleration limits** for predictable behavior
   - **Beginner-friendly** with safety caps to prevent excessive movement
-- **Level 2 (Standard)**: 7 settings with speed-based acceleration and advanced curves
+- **Level 2 (Standard)**: 8 settings with speed-based acceleration and advanced curves
   - **Full control** with aggressive acceleration options available
 
 ## Key Settings Overview
