@@ -202,7 +202,6 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y       # Gaming laser mouse
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
-    // track-remainders removed for safety
     // Preset values are automatically applied for all Level 2 settings!
     // Including: sensitivity, max-factor, curve-type, y-boost,
     // speed-threshold, speed-max, min-factor

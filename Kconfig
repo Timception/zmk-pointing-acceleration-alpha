@@ -348,9 +348,6 @@ config INPUT_PROCESSOR_ACCEL_SENSOR_DPI
       DPI/CPI setting of the pointing device sensor. Used for sensitivity scaling.
       Standard values: 400, 800, 1200, 1600, 3200 DPI.
 
-# Remainder tracking removed for safety and simplicity
-# The precision loss (1/1000) is negligible for practical mouse usage
-
 endif # INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
 
 
