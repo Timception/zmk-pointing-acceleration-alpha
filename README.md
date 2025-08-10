@@ -54,7 +54,7 @@ The acceleration enhances precise cursor movement at slow speeds and enables rap
     - Moderate exponential (3): `f(t) = e^(3t) - 1` - More responsive
     - Strong exponential (4): `f(t) = e^(4t) - 1` - Aggressive acceleration
     - Aggressive exponential (5): `f(t) = e^(5t) - 1` - Maximum responsiveness
-- ✅ **7 configurable parameters** for complete customization
+- ✅ **8 configurable parameters** for complete customization
 - ✅ Compatible with any relative input device (pointing devices, trackball, touchpad)
 
 ## 🔍 **Understanding Level Differences**
