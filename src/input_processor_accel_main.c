@@ -123,14 +123,7 @@ static int pointer_accel_init(const struct device *dev) {
     struct accel_config *cfg = (struct accel_config *)dev->config;
     LOG_INF("Pointer accel init: direct node reference");
     
-    // Initialize configuration
-    int ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
-    if (ret < 0) {
-        LOG_ERR("Configuration initialization failed: %d", ret);
-        return ret;
-    }
-    
-    // Set input type and codes
+    // Set input type and codes first
     cfg->input_type = INPUT_EV_REL;
     cfg->codes = accel_codes;
     cfg->codes_count = ARRAY_SIZE(accel_codes);
@@ -138,10 +131,83 @@ static int pointer_accel_init(const struct device *dev) {
     bool track_remainders_ignored = DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, track_remainders);
     (void)track_remainders_ignored; /* Suppress unused variable warning */
     
-    // Apply Kconfig presets
-    accel_config_apply_kconfig_preset(cfg);
+    // Initialize configuration based on preset vs custom
+    int ret;
     
-    // CRITICAL: Ensure level remains unchanged after preset application
+    #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
+    // CUSTOM CONFIGURATION PATH
+    LOG_INF("Initializing CUSTOM configuration");
+    
+    // 1. Start with defaults
+    ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
+    if (ret < 0) {
+        LOG_ERR("Default configuration initialization failed: %d", ret);
+        return ret;
+    }
+    
+    // 2. Apply device tree values for custom configuration
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, sensitivity)) {
+        cfg->sensitivity = DT_PROP(POINTER_ACCEL_NODE, sensitivity);
+        LOG_INF("Custom: sensitivity = %u", cfg->sensitivity);
+    }
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, max_factor)) {
+        cfg->max_factor = DT_PROP(POINTER_ACCEL_NODE, max_factor);
+        LOG_INF("Custom: max_factor = %u", cfg->max_factor);
+    }
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, curve_type)) {
+        cfg->curve_type = DT_PROP(POINTER_ACCEL_NODE, curve_type);
+        LOG_INF("Custom: curve_type = %u", cfg->curve_type);
+    }
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, y_boost)) {
+        cfg->y_boost = DT_PROP(POINTER_ACCEL_NODE, y_boost);
+        LOG_INF("Custom: y_boost = %u", cfg->y_boost);
+    }
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, speed_threshold)) {
+        cfg->speed_threshold = DT_PROP(POINTER_ACCEL_NODE, speed_threshold);
+        LOG_INF("Custom: speed_threshold = %u", cfg->speed_threshold);
+    }
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, speed_max)) {
+        cfg->speed_max = DT_PROP(POINTER_ACCEL_NODE, speed_max);
+        LOG_INF("Custom: speed_max = %u", cfg->speed_max);
+    }
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, min_factor)) {
+        cfg->min_factor = DT_PROP(POINTER_ACCEL_NODE, min_factor);
+        LOG_INF("Custom: min_factor = %u", cfg->min_factor);
+    }
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, acceleration_exponent)) {
+        cfg->acceleration_exponent = DT_PROP(POINTER_ACCEL_NODE, acceleration_exponent);
+        LOG_INF("Custom: acceleration_exponent = %u", cfg->acceleration_exponent);
+    }
+    if (DT_NODE_HAS_PROP(POINTER_ACCEL_NODE, sensor_dpi)) {
+        cfg->sensor_dpi = DT_PROP(POINTER_ACCEL_NODE, sensor_dpi);
+        LOG_INF("Custom: sensor_dpi = %u", cfg->sensor_dpi);
+    }
+    
+    #else
+    // PRESET CONFIGURATION PATH
+    LOG_INF("Initializing PRESET configuration");
+    
+    // 1. Start with defaults
+    ret = accel_config_init(cfg, CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL, 0);
+    if (ret < 0) {
+        LOG_ERR("Default configuration initialization failed: %d", ret);
+        return ret;
+    }
+    
+    // 2. Apply Kconfig preset
+    accel_config_apply_kconfig_preset(cfg);
+    LOG_INF("Preset applied - checking values:");
+    LOG_INF("Preset: sensitivity=%u, max_factor=%u, curve_type=%u", 
+            cfg->sensitivity, cfg->max_factor, cfg->curve_type);
+    LOG_INF("Preset: y_boost=%u, sensor_dpi=%u", cfg->y_boost, cfg->sensor_dpi);
+    if (cfg->level == 2) {
+        LOG_INF("Preset L2: speed_threshold=%u, speed_max=%u, min_factor=%u", 
+                cfg->speed_threshold, cfg->speed_max, cfg->min_factor);
+    }
+    
+    #endif
+    
+    // CRITICAL: Ensure level remains unchanged
     cfg->level = CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL;
     
     // Log configuration

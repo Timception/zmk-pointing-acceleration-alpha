@@ -247,5 +247,8 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
     accel_config_apply_preset(cfg, "gaming_trackpad");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD)
     accel_config_apply_preset(cfg, "high_sens_trackpad");
+    #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM)
+    // カスタム設定の場合は何もしない（デバイスツリー値を使用）
+    LOG_INF("Using custom configuration from device tree");
     #endif
 }

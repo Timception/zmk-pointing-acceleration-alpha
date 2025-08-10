@@ -97,6 +97,9 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // Enhanced safety: Speed-based acceleration with comprehensive protection
     uint32_t factor = cfg->min_factor;
     
+    // CRITICAL DEBUG: 加速処理の開始
+    LOG_INF("DEBUG Level2: Starting acceleration - factor=%u (min)", factor);
+    
     // Enhanced safety: Validate speed thresholds
     if (cfg->speed_threshold >= cfg->speed_max) {
         LOG_ERR("Level2: Invalid speed configuration (threshold=%u >= max=%u), using linear", 
