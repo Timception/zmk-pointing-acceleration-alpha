@@ -134,6 +134,13 @@ static int pointer_accel_init(const struct device *dev) {
     // Initialize configuration based on preset vs custom
     int ret;
     
+    // CRITICAL DEBUG: Check which configuration path is taken
+    #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
+    LOG_INF("COMPILE-TIME: CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM is DEFINED");
+    #else
+    LOG_INF("COMPILE-TIME: CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM is NOT DEFINED");
+    #endif
+    
     #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
     // CUSTOM CONFIGURATION PATH
     LOG_INF("Initializing CUSTOM configuration");
