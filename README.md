@@ -237,12 +237,11 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     codes = <INPUT_REL_X INPUT_REL_Y>;
     sensitivity = <1200>;         // 1.2x base sensitivity
     max-factor = <3000>;          // 3.0x maximum acceleration
-    acceleration-exponent = <2>; // Advanced exponential curve (1-5)
+    acceleration-exponent = <2>;  // Advanced exponential curve (1-5)
     y-boost = <1300>;             // 1.3x Y-axis boost for widescreen
     speed-threshold = <600>;      // Start acceleration at 600 counts/sec
     speed-max = <3500>;           // Max acceleration at 3500 counts/sec
     min-factor = <1000>;          // 1.0x minimum (no deceleration)
-    acceleration-exponent = <2>;  // Advanced exponential curve (1-5)
     sensor-dpi = <800>;           // 800 DPI sensor (optional, defaults to 800)
 };
 ```
