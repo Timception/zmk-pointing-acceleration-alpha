@@ -62,36 +62,18 @@ static int accel_init_device(const struct device *dev) {
         bool use_custom_config = IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM);       \
         if (use_custom_config) {                                                                  \
             /* Apply common DTS properties for both levels */                                   \
-            if (DT_INST_NODE_HAS_PROP(inst, sensitivity)) {                                     \
-                cfg->sensitivity = ACCEL_CLAMP(DT_INST_PROP(inst, sensitivity), 200, 2000);    \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, max_factor)) {                                      \
-                cfg->max_factor = ACCEL_CLAMP(DT_INST_PROP(inst, max_factor), 1000, 5000);     \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, curve_type)) {                                      \
-                cfg->curve_type = ACCEL_CLAMP(DT_INST_PROP(inst, curve_type), 0, 2);           \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, y_boost)) {                                         \
-                cfg->y_boost = ACCEL_CLAMP(DT_INST_PROP(inst, y_boost), 500, 3000);            \
-            }                                                                                    \
-            if (DT_INST_NODE_HAS_PROP(inst, sensor_dpi)) {                                      \
-                cfg->sensor_dpi = ACCEL_CLAMP(DT_INST_PROP(inst, sensor_dpi), 400, 8000);      \
-            }                                                                                    \
+            cfg->sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->sensitivity), 200, 2000); \
+            cfg->max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->max_factor), 1000, 5000); \
+            cfg->curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, cfg->curve_type), 0, 2); \
+            cfg->y_boost = ACCEL_CLAMP(DT_INST_PROP_OR(inst, y_boost, cfg->y_boost), 500, 3000); \
+            cfg->sensor_dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, cfg->sensor_dpi), 400, 8000); \
                                                                                                   \
             /* Apply Level 2 specific DTS properties only for Standard level */                \
             if (cfg->level == 2) {                                                              \
-                if (DT_INST_NODE_HAS_PROP(inst, speed_threshold)) {                             \
-                    cfg->speed_threshold = ACCEL_CLAMP(DT_INST_PROP(inst, speed_threshold), 100, 2000); \
-                }                                                                                \
-                if (DT_INST_NODE_HAS_PROP(inst, speed_max)) {                                   \
-                    cfg->speed_max = ACCEL_CLAMP(DT_INST_PROP(inst, speed_max), 1000, 8000);   \
-                }                                                                                \
-                if (DT_INST_NODE_HAS_PROP(inst, min_factor)) {                                  \
-                    cfg->min_factor = ACCEL_CLAMP(DT_INST_PROP(inst, min_factor), 200, 1500);  \
-                }                                                                                \
-                if (DT_INST_NODE_HAS_PROP(inst, acceleration_exponent)) {                       \
-                    cfg->acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP(inst, acceleration_exponent), 1, 5); \
-                }                                                                                \
+                cfg->speed_threshold = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_threshold, cfg->speed_threshold), 100, 2000); \
+                cfg->speed_max = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_max, cfg->speed_max), 1000, 8000); \
+                cfg->min_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, min_factor, cfg->min_factor), 200, 1500); \
+                cfg->acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, cfg->acceleration_exponent), 1, 5); \
             }                                                                                    \
         }                                                                                        \
                                                                                                   \
