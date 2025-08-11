@@ -80,22 +80,22 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
 uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value) {
     if (!data) {
         LOG_ERR("Data pointer is NULL in speed calculation");
-        return abs(input_value) * 10; // 簡単なフォールバック
+        return abs(input_value) * ACCEL_SPEED_SCALE_FACTOR; // Simple fallback
     }
     
     uint32_t current_time_ms = k_uptime_get_32();
     uint32_t last_time_ms = data->last_time_ms;
     
-    // 入力値の検証
+    // Input value validation
     int32_t abs_input = abs(input_value);
     if (abs_input > MAX_SAFE_INPUT_VALUE) {
         abs_input = MAX_SAFE_INPUT_VALUE;
     }
     
-    // 初回または時間オーバーフロー処理
+    // Handle first call or time overflow
     if (last_time_ms == 0 || current_time_ms < last_time_ms) {
         data->last_time_ms = current_time_ms;
-        data->recent_speed = abs_input * 10; // 初期速度推定
+        data->recent_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR; // Initial speed estimation
         data->speed_samples = 1;
         return data->recent_speed;
     }
@@ -103,26 +103,26 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     uint32_t time_delta_ms = current_time_ms - last_time_ms;
     uint16_t current_speed;
     
-    // **修正**: 正しい速度計算 (counts per second)
-    if (time_delta_ms > 0 && time_delta_ms < 1000) { // 1秒以内
-        // 速度 = 移動量 / 時間 * 1000 (counts/sec)
+    // **Fixed**: Correct speed calculation (counts per second)
+    if (time_delta_ms > 0 && time_delta_ms < 1000) { // Within 1 second
+        // Speed = movement / time * 1000 (counts/sec)
         uint32_t temp_speed = (abs_input * 1000) / time_delta_ms;
         current_speed = (temp_speed > UINT16_MAX) ? UINT16_MAX : (uint16_t)temp_speed;
     } else {
-        // 時間が長すぎる場合は入力ベースの推定
-        current_speed = abs_input * 10;
+        // Input-based estimation when time is too long
+        current_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR;
     }
     
-    // **修正**: より安定した平均化
+    // **Fixed**: More stable averaging
     if (data->speed_samples < ACCEL_MAX_SPEED_SAMPLES) {
         data->speed_samples++;
     }
     
-    // 指数移動平均 (より滑らかな速度変化)
+    // Exponential moving average (smoother speed changes)
     uint16_t alpha = 300; // 0.3 in thousandths
     uint16_t averaged_speed = (data->recent_speed * (1000 - alpha) + current_speed * alpha) / 1000;
     
-    // 状態更新
+    // Update state
     data->last_time_ms = current_time_ms;
     data->recent_speed = averaged_speed;
     
