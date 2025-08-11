@@ -56,11 +56,6 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     uint32_t speed = accel_calculate_simple_speed(data, input_value);
     
-    // **追加**: 速度計算の詳細ログ
-    LOG_INF("DEBUG Level2: time_delta=%ums, abs_input=%d, calculated_speed=%u", 
-            (data->last_time_ms > 0) ? k_uptime_get_32() - data->last_time_ms : 0, 
-            abs(input_value), speed);
-    
     // Enhanced safety: Speed validation
     if (speed > MAX_REASONABLE_SPEED) {
         LOG_ERR("Level2: Calculated speed %u exceeds maximum %u, using fallback", 
@@ -125,10 +120,6 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                 // Safe calculation of normalized speed (0-1000)
                 uint64_t t_temp = ((uint64_t)speed_offset * SPEED_NORMALIZATION) / speed_range;
                 uint32_t t = (t_temp > SPEED_NORMALIZATION) ? SPEED_NORMALIZATION : (uint32_t)t_temp;
-                
-                // **追加**: 加速度計算の詳細ログ
-                LOG_INF("DEBUG Level2: speed_range=%u, speed_offset=%u, t=%u", 
-                        speed_range, speed_offset, t);
                 
                 // Enhanced safety: Validate acceleration exponent
                 uint8_t safe_exponent = ACCEL_CLAMP(cfg->acceleration_exponent, 1, 5);
