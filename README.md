@@ -1,3 +1,5 @@
+[ English | [Japanese](README-j.md) ]
+
 I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-pointing-acceleration).
 **Please create a template based on the original source.**
 **If necessary, please feel free to create a repository from `Use this Template`.**
@@ -136,7 +138,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y      # Level 1: Simple
 
 ### Configure Acceleration
 
-Add the acceleration configuration to your device overlay. This configuration should go BEFORE your _input-listener_.
+Add the acceleration configuration to your device overlay. This configuration should your prj.conf.
 
 #### **Level 1: Simple Configuration**
 
@@ -144,32 +146,26 @@ Add the acceleration configuration to your device overlay. This configuration sh
 
 Available presets work for both Level 1 and Level 2 (12 device-specific presets):
 
-**Office Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL=y` - Optical mouse (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER=y` - Laser mouse (1600 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL=y` - Trackball (400 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD=y` - Trackpad (1000 DPI)
-
-**Gaming Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y` - Optical mouse (1200 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y` - Laser mouse (3200 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL=y` - Trackball (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD=y` - Trackpad (1200 DPI)
-
-**High Sensitivity Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL=y` - Optical mouse (1600 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER=y` - Laser mouse (6400 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL=y` - Trackball (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD=y` - Trackpad (1200 DPI)
-
 ```ini
 # In your prj.conf, choose a device-specific preset:
-CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y     # Gaming optical mouse
-# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER=y     # Office laser mouse
-# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD=y # High sensitivity trackpad
+
+# Office Presets:
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL=y     # Optical mouse (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER=y     # Laser mouse (1600 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL=y # Trackball (400 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD=y  # Trackpad (1000 DPI)
+
+# Gaming Presets:
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y   # Optical mouse (1200 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y     # Laser mouse (3200 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL=y # Trackball (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD=y  # Trackpad (1200 DPI)
+
+# High Sensitivity Presets:
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL=y   # Optical mouse (1600 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER=y     # Laser mouse (6400 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL=y # Trackball (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD=y  # Trackpad (1200 DPI)
 ```
 
 ```devicetree
