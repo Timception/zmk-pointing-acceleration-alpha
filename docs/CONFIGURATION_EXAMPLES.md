@@ -1,3 +1,5 @@
+[ English | [Japanese](CONFIGURATION_EXAMPLES-j.md) ]
+
 # Configuration Examples
 
 ## Level 1: Simple Configuration
@@ -6,31 +8,29 @@
 
 Available device-specific presets:
 
-**Office Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL=y` - Optical mouse (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER=y` - Laser mouse (1600 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL=y` - Trackball (400 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD=y` - Trackpad (1000 DPI)
-
-**Gaming Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y` - Optical mouse (1200 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y` - Laser mouse (3200 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL=y` - Trackball (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD=y` - Trackpad (1200 DPI)
-
-**High Sensitivity Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL=y` - Optical mouse (1600 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER=y` - Laser mouse (6400 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL=y` - Trackball (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD=y` - Trackpad (1200 DPI)
-
 ```ini
 # In prj.conf
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y
-CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y
+
+# Choose a device-specific preset (enable only one):
+
+# Office Presets:
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL=y     # Optical mouse (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER=y     # Laser mouse (1600 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL=y # Trackball (400 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD=y  # Trackpad (1000 DPI)
+
+# Gaming Presets:
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y   # Optical mouse (1200 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y     # Laser mouse (3200 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL=y # Trackball (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD=y  # Trackpad (1200 DPI)
+
+# High Sensitivity Presets:
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL=y   # Optical mouse (1600 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER=y     # Laser mouse (6400 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL=y # Trackball (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD=y  # Trackpad (1200 DPI)
 ```
 
 ```devicetree
@@ -69,31 +69,29 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 
 Available device-specific presets for Level 2:
 
-**Office Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL=y` - Optical mouse (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER=y` - Laser mouse (1600 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL=y` - Trackball (400 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD=y` - Trackpad (1000 DPI)
-
-**Gaming Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y` - Optical mouse (1200 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y` - Laser mouse (3200 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL=y` - Trackball (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD=y` - Trackpad (1200 DPI)
-
-**High Sensitivity Presets:**
-
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL=y` - Optical mouse (1600 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER=y` - Laser mouse (6400 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL=y` - Trackball (800 DPI)
-- `CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD=y` - Trackpad (1200 DPI)
-
 ```ini
 # In prj.conf
 CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD=y
-CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y
+
+# Choose a device-specific preset (enable only one):
+
+# Office Presets:
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL=y   # Optical mouse (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER=y     # Laser mouse (1600 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL=y # Trackball (400 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD=y  # Trackpad (1000 DPI)
+
+# Gaming Presets:
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL=y   # Optical mouse (1200 DPI)
+CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y       # Laser mouse (3200 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL=y # Trackball (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD=y  # Trackpad (1200 DPI)
+
+# High Sensitivity Presets:
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL=y   # Optical mouse (1600 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER=y     # Laser mouse (6400 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL=y # Trackball (800 DPI)
+# CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD=y  # Trackpad (1200 DPI)
 ```
 
 ```devicetree
@@ -101,7 +99,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y
     input-type = <INPUT_EV_REL>;
     codes = <INPUT_REL_X INPUT_REL_Y>;
     // Preset values are automatically applied for all Level 2 settings
-    // Including: sensitivity, max-factor, curve-type, y-boost,
+    // Including: sensitivity, max-factor, acceleration-exponent, y-boost,
     // speed-threshold, speed-max, min-factor
 };
 ```
@@ -120,12 +118,11 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     codes = <INPUT_REL_X INPUT_REL_Y>;
     sensitivity = <1200>;         // 1.2x base sensitivity
     max-factor = <3000>;          // 3.0x maximum acceleration
-    curve-type = <1>;             // Basic mild curve
+    acceleration-exponent = <2>;  // Exponential curve (1-5)
     y-boost = <1300>;             // 1.3x Y-axis boost
     speed-threshold = <600>;      // Start acceleration at 600 counts/sec
     speed-max = <3500>;           // Max acceleration at 3500 counts/sec
     min-factor = <1000>;          // 1.0x minimum (no deceleration)
-    acceleration-exponent = <2>;  // Advanced exponential curve (1-5)
     sensor-dpi = <800>;           // 800 DPI sensor (optional)
 };
 ```
@@ -182,7 +179,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 ### Jerky Movement
 
 - Reduce `max-factor`
-- Use mild curve (`curve-type = <1>`)
+- Use mild curve (`curve-type = <1>`) in Level 1
 - Use linear exponential curve (`acceleration-exponent = <1>`) in Level 2
 - Use simplified processing for better stability
 

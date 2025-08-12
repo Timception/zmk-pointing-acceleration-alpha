@@ -1,3 +1,5 @@
+[ English | [Japanese](QUICK_START-j.md) ]
+
 # Quick Start Guide
 
 ## 1. Choose Your Level

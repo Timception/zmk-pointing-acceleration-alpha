@@ -1,3 +1,5 @@
+[ English | [Japanese](LEVEL_COMPARISON-j.md) ]
+
 # Level 1 vs Level 2: Detailed Comparison Guide
 
 This guide explains the fundamental differences between Level 1 (Simple) and Level 2 (Standard) acceleration systems.

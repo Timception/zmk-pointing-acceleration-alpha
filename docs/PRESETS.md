@@ -1,3 +1,5 @@
+[ English | [Japanese](PRESETS-j.md) ]
+
 # Preset Configuration Reference
 
 This document provides detailed information about all available presets and their settings for both Level 1 and Level 2.
