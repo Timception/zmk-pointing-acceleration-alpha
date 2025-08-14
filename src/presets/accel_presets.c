@@ -191,12 +191,18 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
         return -ENOENT;
     }
 
+    LOG_DBG("Found preset: %s", preset_name);
+    LOG_DBG("Preset values: sens=%u, max=%u, curve=%u, dpi=%u", 
+            preset->sensitivity, preset->max_factor, preset->curve_type, preset->sensor_dpi);
+    
     // Apply preset values (works for both level 1 and 2)
     cfg->sensitivity = preset->sensitivity;
     cfg->max_factor = preset->max_factor;
     cfg->curve_type = preset->curve_type;
     cfg->y_boost = preset->y_boost;
     cfg->sensor_dpi = preset->sensor_dpi;  // センサーDPI設定
+    
+    LOG_DBG("Applied preset values to config");
     
     // Level 2 specific settings
     if (cfg->level == 2) {
@@ -223,8 +229,11 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
 
     int ret = 0;
     
+    LOG_DBG("Applying Kconfig preset...");
+    
     // オフィス用プリセット
     #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL
+    LOG_DBG("Applying office_optical preset");
     ret = accel_config_apply_preset(cfg, "office_optical");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_LASER)
     ret = accel_config_apply_preset(cfg, "office_laser");

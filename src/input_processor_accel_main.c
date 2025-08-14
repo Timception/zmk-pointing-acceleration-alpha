@@ -278,12 +278,22 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             int32_t accel_ratio_x10 = (input_value != 0) ? 
                 (accelerated_value * 10) / input_value : 10;
             
-            // Log configuration on first significant movement
+            // Always log configuration on first event (regardless of movement size)
             static bool config_logged = false;
-            if (significant_movement && !config_logged) {
-                LOG_DBG("Config: L%u sens=%u max=%u curve=%u", 
-                        cfg->level, cfg->sensitivity, cfg->max_factor, cfg->curve_type);
+            if (!config_logged) {
+                LOG_DBG("=== RUNTIME CONFIG CHECK ===");
+                LOG_DBG("Config: L%u sens=%u max=%u curve=%u dpi=%u", 
+                        cfg->level, cfg->sensitivity, cfg->max_factor, cfg->curve_type, cfg->sensor_dpi);
+                LOG_DBG("Config: y_boost=%u speed_thresh=%u speed_max=%u min_factor=%u", 
+                        cfg->y_boost, cfg->speed_threshold, cfg->speed_max, cfg->min_factor);
+                LOG_DBG("=== END CONFIG CHECK ===");
                 config_logged = true;
+            }
+            
+            // Emergency debug: Log every significant movement for troubleshooting
+            if (significant_movement) {
+                LOG_DBG("DEBUG: input=%d, accel=%d, sens=%u, max=%u", 
+                        input_value, accelerated_value, cfg->sensitivity, cfg->max_factor);
             }
             
             LOG_DBG("Accel: L%u %s %d->%d (%d.%dx)%s", 

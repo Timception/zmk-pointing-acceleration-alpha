@@ -101,10 +101,16 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     }
     
     // CRITICAL FIX: Always apply sensitivity scaling
+    int64_t before_scale = result;
     result = result / SENSITIVITY_SCALE;
+    LOG_DBG("Level1: before_scale=%lld, after_scale=%lld, SENSITIVITY_SCALE=%d", 
+            before_scale, result, SENSITIVITY_SCALE);
     
     // Level 1 curve processing
     int32_t abs_input = abs(input_value);
+    LOG_DBG("Level1: abs_input=%d, condition=%s", abs_input, 
+            (abs_input > 1 && abs_input <= MAX_SAFE_INPUT_VALUE) ? "TRUE" : "FALSE");
+    
     if (abs_input > 1 && abs_input <= MAX_SAFE_INPUT_VALUE) {
         uint32_t curve_factor = SENSITIVITY_SCALE; // Start with 1.0x
         
@@ -170,10 +176,15 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         // Enhanced safety: Double-check curve factor bounds
         curve_factor = ACCEL_CLAMP(curve_factor, SENSITIVITY_SCALE, safe_max_factor);
         
+        LOG_DBG("Level1: curve_factor=%u, SENSITIVITY_SCALE=%d", curve_factor, SENSITIVITY_SCALE);
+        
         if (curve_factor > SENSITIVITY_SCALE) {
+            int64_t before_curve = result;
             int64_t temp_result = safe_multiply_64(result, (int64_t)curve_factor, 
                                                  (int64_t)INT16_MAX * SENSITIVITY_SCALE);
             result = temp_result / SENSITIVITY_SCALE;
+            
+            LOG_DBG("Level1: Applied curve - before=%lld, after=%lld", before_curve, result);
             
             // Enhanced safety: Multiple range checks for Level 1 result
             if (abs(result) > INT16_MAX) {
@@ -181,6 +192,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                         result, INT16_MAX);
                 result = (result > 0) ? INT16_MAX : INT16_MIN;
             }
+        } else {
+            LOG_DBG("Level1: No curve applied (factor <= SENSITIVITY_SCALE)");
         }
     }
     
