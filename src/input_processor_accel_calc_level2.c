@@ -56,6 +56,11 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     uint32_t speed = accel_calculate_simple_speed(data, input_value);
     
+    #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
+    LOG_INF("DEBUG Level2: speed=%u, threshold=%u, max=%u", 
+            speed, cfg->speed_threshold, cfg->speed_max);
+    #endif
+    
     // Enhanced safety: Speed validation
     if (speed > MAX_REASONABLE_SPEED) {
         LOG_ERR("Level2: Calculated speed %u exceeds maximum %u, using fallback", 
@@ -75,30 +80,17 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // CRITICAL FIX: Apply sensitivity correctly
     int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
     
-    LOG_INF("ANALYSIS Level2: input=%d * adj_sens=%u = raw_result=%lld", 
-            input_value, dpi_adjusted_sensitivity, result);
-    
     // Enhanced safety: Check intermediate result
     if (abs(result) > (int64_t)INT32_MAX) {
         LOG_WRN("Level2: Intermediate result %lld too large, using fallback", result);
         return accel_safe_fallback_calculate(input_value, cfg->max_factor);
     }
     
-    // CRITICAL FIX: Always apply sensitivity scaling
-    int64_t before_scale = result;
+    // Apply sensitivity scaling
     result = result / SENSITIVITY_SCALE;
-    LOG_INF("ANALYSIS Level2: scaled %lld -> %lld (div by %d)", 
-            before_scale, result, SENSITIVITY_SCALE);
-    
-    // CRITICAL DEBUG: 速度と加速係数を確認
-    LOG_INF("DEBUG Level2: speed=%u, threshold=%u, max=%u", 
-            speed, cfg->speed_threshold, cfg->speed_max);
     
     // Enhanced safety: Speed-based acceleration with comprehensive protection
     uint32_t factor = cfg->min_factor;
-    
-    // CRITICAL DEBUG: 加速処理の開始
-    LOG_INF("DEBUG Level2: Starting acceleration - factor=%u (min)", factor);
     
     // Enhanced safety: Validate speed thresholds
     if (cfg->speed_threshold >= cfg->speed_max) {
@@ -168,8 +160,8 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         factor = ACCEL_CLAMP(factor, cfg->min_factor, 
                            ACCEL_CLAMP(cfg->max_factor, SENSITIVITY_SCALE, MAX_SAFE_FACTOR));
         
-        // CRITICAL DEBUG: 加速係数を確認
-        LOG_INF("DEBUG Level2: factor=%u, min=%u, max=%u", 
+        // Debug: Log acceleration factor calculation
+        LOG_DBG("Level2: factor=%u, min=%u, max=%u", 
                 factor, cfg->min_factor, cfg->max_factor);
         
         // Enhanced safety: Apply acceleration with comprehensive overflow protection
