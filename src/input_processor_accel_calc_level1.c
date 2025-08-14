@@ -90,9 +90,10 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     // We need to apply sensitivity as a multiplier, not a direct multiplication
     int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
     
-    // Analysis logging disabled for performance
-    // LOG_DBG("Level1: input=%d * adj_sens=%u = raw_result=%lld", 
-    //         input_value, dpi_adjusted_sensitivity, result);
+    #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
+    LOG_DBG("Level1: input=%d * adj_sens=%u = raw_result=%lld", 
+            input_value, dpi_adjusted_sensitivity, result);
+    #endif
     
     // Enhanced safety: Check intermediate result
     if (abs(result) > (int64_t)INT32_MAX * SENSITIVITY_SCALE / 2) {
@@ -100,11 +101,12 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         result = result / 2; // Emergency scaling
     }
     
-    // CRITICAL FIX: Always apply sensitivity scaling
+    // Apply sensitivity scaling
     result = result / SENSITIVITY_SCALE;
     
     // Level 1 curve processing
     int32_t abs_input = abs(input_value);
+    
     if (abs_input > 1 && abs_input <= MAX_SAFE_INPUT_VALUE) {
         uint32_t curve_factor = SENSITIVITY_SCALE; // Start with 1.0x
         
@@ -116,7 +118,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 {
                     uint64_t linear_add = safe_multiply_64((int64_t)abs_input, 
                                                          (int64_t)LINEAR_CURVE_MULTIPLIER, 
-                                                         (int64_t)safe_max_factor);
+                                                         (int64_t)UINT32_MAX);
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     if (linear_add > max_add) {
@@ -125,31 +127,41 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                     curve_factor = SENSITIVITY_SCALE + (uint32_t)linear_add;
                 }
                 break;
-            case 1: // Mild - Safe quadratic approximation
+            case 1: // Mild - Improved quadratic approximation
                 {
+                    // More effective calculation: input^2 * multiplier / divisor
                     uint64_t quad_add = safe_multiply_64((int64_t)abs_input * abs_input, 
-                                                       10LL, (int64_t)safe_max_factor);
+                                                       25LL, (int64_t)UINT32_MAX);
                     quad_add = quad_add / 100; // Scale down
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)quad_add, 0, max_add);
+                    
+                    // Debug log for curve calculation
+                    LOG_DBG("Level1 Mild: input=%d, quad_add=%llu, curve_factor=%u", 
+                            abs_input, quad_add, curve_factor);
                 }
                 break;
-            case 2: // Strong - Safe quadratic approximation
+            case 2: // Strong - Improved quadratic approximation
                 {
+                    // More aggressive calculation for strong curve
                     uint64_t quad_add = safe_multiply_64((int64_t)abs_input * abs_input, 
-                                                       20LL, (int64_t)safe_max_factor);
+                                                       50LL, (int64_t)UINT32_MAX);
                     quad_add = quad_add / 100; // Scale down
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)quad_add, 0, max_add);
+                    
+                    // Debug log for curve calculation
+                    LOG_DBG("Level1 Strong: input=%d, quad_add=%llu, curve_factor=%u", 
+                            abs_input, quad_add, curve_factor);
                 }
                 break;
             default: // Safe fallback
                 {
                     uint64_t default_add = safe_multiply_64((int64_t)abs_input, 
                                                           (int64_t)LINEAR_CURVE_MULTIPLIER, 
-                                                          (int64_t)safe_max_factor);
+                                                          (int64_t)UINT32_MAX);
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)default_add, 0, max_add);
@@ -174,9 +186,20 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         }
     }
     
-    // Enhanced safety: Minimum movement guarantee with bounds check
+    // Enhanced safety: Improved minimum movement guarantee based on calculation result
     if (input_value != 0 && result == 0) {
-        result = (input_value > 0) ? 1 : -1;
+        // Calculate what the raw result would have been before scaling
+        int64_t raw_result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+        
+        // Only output movement if the raw calculation was >= 0.5 (half of SENSITIVITY_SCALE)
+        if (abs(raw_result) >= SENSITIVITY_SCALE / 2) {
+            result = (raw_result > 0) ? 1 : -1;
+            LOG_DBG("Level1: Minimum movement applied - raw=%lld -> output=%lld", raw_result, result);
+        } else {
+            // Raw calculation was < 0.5, legitimately should be 0
+            result = 0;
+            LOG_DBG("Level1: Micro movement ignored - raw=%lld (< 0.5 threshold)", raw_result);
+        }
     }
     
     // Enhanced safety: Final result validation

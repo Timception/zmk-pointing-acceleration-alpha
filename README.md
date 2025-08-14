@@ -12,7 +12,7 @@ I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-poi
 
 This repository features a **two-level** pointer acceleration system for ZMK, suitable for both beginners and advanced users.
 
-The acceleration enhances precise cursor movement at slow speeds and enables rapid movement at higher speeds. Acceleration curves are customizable, and settings can be tailored for various input devices.
+The acceleration enhances precise cursor movement at slow speeds and enables rapid movement at higher speeds. Acceleration curves are customizable, and settings can be tailored for pointing devices.
 
 ## 🎯 **Choose Your Level**
 

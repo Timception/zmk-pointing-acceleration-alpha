@@ -243,15 +243,65 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Final safety check with reasonable limits - allow proper acceleration
         accelerated_value = ACCEL_CLAMP(accelerated_value, -400, 400);
         
-        // Sanity check: ensure we don't have zero movement from non-zero input
+        // Enhanced sanity check: intelligent minimum movement guarantee
         if (input_value != 0 && accelerated_value == 0) {
-            accelerated_value = (input_value > 0) ? 1 : -1;
-            // LOG_DBG("Zero acceleration corrected to: %d", accelerated_value); // DISABLED for production
+            // Get DPI-adjusted sensitivity for threshold calculation
+            uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
+            int64_t raw_result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+            
+            // Only force movement if the raw calculation was >= 0.5
+            if (abs(raw_result) >= SENSITIVITY_SCALE / 2) {
+                accelerated_value = (raw_result > 0) ? 1 : -1;
+                LOG_DBG("Main: Minimum movement applied - input=%d, raw=%lld -> output=%d", 
+                        input_value, raw_result, accelerated_value);
+            } else {
+                // Micro movement legitimately should be ignored
+                accelerated_value = 0;
+                LOG_DBG("Main: Micro movement ignored - input=%d, raw=%lld (< 0.5 threshold)", 
+                        input_value, raw_result);
+            }
         }
 
-        // Analysis logging disabled for performance
-        // LOG_DBG("Main: input=%d -> final_output=%d (level=%u)", 
-        //         input_value, accelerated_value, cfg->level);
+        // Enhanced debug logging - controlled by configuration
+        #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
+        static uint32_t debug_log_counter = 0;
+        // More frequent logging for debugging: every 10th event
+        uint32_t log_frequency = 10;
+        
+        // Always log significant movements or acceleration changes
+        bool significant_movement = (abs(input_value) > 5) || (abs(accelerated_value) != abs(input_value));
+        bool periodic_log = ((debug_log_counter++ % log_frequency) == 0);
+        
+        // Always log configuration on first event (regardless of movement size)
+        static bool config_logged = false;
+        if (!config_logged) {
+            LOG_DBG("=== RUNTIME CONFIG CHECK ===");
+            LOG_DBG("Config: L%u sens=%u max=%u curve=%u dpi=%u", 
+                    cfg->level, cfg->sensitivity, cfg->max_factor, cfg->curve_type, cfg->sensor_dpi);
+            LOG_DBG("Config: y_boost=%u speed_thresh=%u speed_max=%u min_factor=%u", 
+                    cfg->y_boost, cfg->speed_threshold, cfg->speed_max, cfg->min_factor);
+            LOG_DBG("=== END CONFIG CHECK ===");
+            config_logged = true;
+        }
+        
+        if (significant_movement || periodic_log) {
+            const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
+            // Avoid floating point calculation for better performance
+            int32_t accel_ratio_x10 = (input_value != 0) ? 
+                (accelerated_value * 10) / input_value : 10;
+            
+            // Emergency debug: Log every significant movement for troubleshooting
+            if (significant_movement) {
+                LOG_DBG("DEBUG: input=%d, accel=%d, sens=%u, max=%u", 
+                        input_value, accelerated_value, cfg->sensitivity, cfg->max_factor);
+            }
+            
+            LOG_DBG("Accel: L%u %s %d->%d (%d.%dx)%s", 
+                    cfg->level, axis, input_value, accelerated_value,
+                    accel_ratio_x10 / 10, abs(accel_ratio_x10 % 10),
+                    significant_movement ? " [SIG]" : "");
+        }
+        #endif
         
         // DIAGNOSTIC: Log final output for debugging cursor freeze (DISABLED)
         static uint32_t output_counter = 0;
@@ -272,24 +322,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
-        // Production-ready logging (DISABLED for performance testing)
-        #if 0 // Temporarily disabled to test if logging affects cursor movement
-        static uint32_t log_counter = 0;
-        static int32_t last_input = 0, last_output = 0;
-        
-        // Only log significant acceleration events or errors
-        bool acceleration_applied = (abs(accelerated_value) > abs(input_value) * 1.1);
-        bool periodic_log = (log_counter++ % 10000) == 0; // Much reduced frequency
-        
-        if (periodic_log) { // Only periodic logs, no acceleration logs
-            const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
-            LOG_DBG("Accel: %s %d->%d (%.1fx)", 
-                    axis, input_value, accelerated_value,
-                    (float)accelerated_value / (float)input_value);
-            last_input = input_value;
-            last_output = accelerated_value;
-        }
-        #endif
+        // Legacy debug logging removed - replaced with configurable version above
         
         return 0;
     }
