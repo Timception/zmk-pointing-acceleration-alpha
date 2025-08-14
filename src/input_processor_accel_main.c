@@ -265,17 +265,31 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Enhanced debug logging - controlled by configuration
         #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
         static uint32_t debug_log_counter = 0;
-        // Configurable frequency: 100 for detailed debug, 1000 for production debug
-        uint32_t log_frequency = 100;
+        // More frequent logging for debugging: every 10th event
+        uint32_t log_frequency = 10;
         
-        if ((debug_log_counter++ % log_frequency) == 0) {
+        // Always log significant movements or acceleration changes
+        bool significant_movement = (abs(input_value) > 5) || (abs(accelerated_value) != abs(input_value));
+        bool periodic_log = ((debug_log_counter++ % log_frequency) == 0);
+        
+        if (significant_movement || periodic_log) {
             const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
             // Avoid floating point calculation for better performance
             int32_t accel_ratio_x10 = (input_value != 0) ? 
                 (accelerated_value * 10) / input_value : 10;
-            LOG_DBG("Accel: L%u %s %d->%d (%d.%dx)", 
+            
+            // Log configuration on first significant movement
+            static bool config_logged = false;
+            if (significant_movement && !config_logged) {
+                LOG_DBG("Config: L%u sens=%u max=%u curve=%u", 
+                        cfg->level, cfg->sensitivity, cfg->max_factor, cfg->curve_type);
+                config_logged = true;
+            }
+            
+            LOG_DBG("Accel: L%u %s %d->%d (%d.%dx)%s", 
                     cfg->level, axis, input_value, accelerated_value,
-                    accel_ratio_x10 / 10, abs(accel_ratio_x10 % 10));
+                    accel_ratio_x10 / 10, abs(accel_ratio_x10 % 10),
+                    significant_movement ? " [SIG]" : "");
         }
         #endif
         

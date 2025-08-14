@@ -125,24 +125,34 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                     curve_factor = SENSITIVITY_SCALE + (uint32_t)linear_add;
                 }
                 break;
-            case 1: // Mild - Safe quadratic approximation
+            case 1: // Mild - Improved quadratic approximation
                 {
+                    // More effective calculation: input^2 * multiplier / divisor
                     uint64_t quad_add = safe_multiply_64((int64_t)abs_input * abs_input, 
-                                                       10LL, (int64_t)safe_max_factor);
+                                                       25LL, (int64_t)safe_max_factor);
                     quad_add = quad_add / 100; // Scale down
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)quad_add, 0, max_add);
+                    
+                    // Debug log for curve calculation
+                    LOG_DBG("Level1 Mild: input=%d, quad_add=%llu, curve_factor=%u", 
+                            abs_input, quad_add, curve_factor);
                 }
                 break;
-            case 2: // Strong - Safe quadratic approximation
+            case 2: // Strong - Improved quadratic approximation
                 {
+                    // More aggressive calculation for strong curve
                     uint64_t quad_add = safe_multiply_64((int64_t)abs_input * abs_input, 
-                                                       20LL, (int64_t)safe_max_factor);
+                                                       50LL, (int64_t)safe_max_factor);
                     quad_add = quad_add / 100; // Scale down
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)quad_add, 0, max_add);
+                    
+                    // Debug log for curve calculation
+                    LOG_DBG("Level1 Strong: input=%d, quad_add=%llu, curve_factor=%u", 
+                            abs_input, quad_add, curve_factor);
                 }
                 break;
             default: // Safe fallback
