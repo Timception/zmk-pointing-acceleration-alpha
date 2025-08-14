@@ -272,23 +272,23 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         bool significant_movement = (abs(input_value) > 5) || (abs(accelerated_value) != abs(input_value));
         bool periodic_log = ((debug_log_counter++ % log_frequency) == 0);
         
+        // Always log configuration on first event (regardless of movement size)
+        static bool config_logged = false;
+        if (!config_logged) {
+            LOG_DBG("=== RUNTIME CONFIG CHECK ===");
+            LOG_DBG("Config: L%u sens=%u max=%u curve=%u dpi=%u", 
+                    cfg->level, cfg->sensitivity, cfg->max_factor, cfg->curve_type, cfg->sensor_dpi);
+            LOG_DBG("Config: y_boost=%u speed_thresh=%u speed_max=%u min_factor=%u", 
+                    cfg->y_boost, cfg->speed_threshold, cfg->speed_max, cfg->min_factor);
+            LOG_DBG("=== END CONFIG CHECK ===");
+            config_logged = true;
+        }
+        
         if (significant_movement || periodic_log) {
             const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
             // Avoid floating point calculation for better performance
             int32_t accel_ratio_x10 = (input_value != 0) ? 
                 (accelerated_value * 10) / input_value : 10;
-            
-            // Always log configuration on first event (regardless of movement size)
-            static bool config_logged = false;
-            if (!config_logged) {
-                LOG_DBG("=== RUNTIME CONFIG CHECK ===");
-                LOG_DBG("Config: L%u sens=%u max=%u curve=%u dpi=%u", 
-                        cfg->level, cfg->sensitivity, cfg->max_factor, cfg->curve_type, cfg->sensor_dpi);
-                LOG_DBG("Config: y_boost=%u speed_thresh=%u speed_max=%u min_factor=%u", 
-                        cfg->y_boost, cfg->speed_threshold, cfg->speed_max, cfg->min_factor);
-                LOG_DBG("=== END CONFIG CHECK ===");
-                config_logged = true;
-            }
             
             // Emergency debug: Log every significant movement for troubleshooting
             if (significant_movement) {
