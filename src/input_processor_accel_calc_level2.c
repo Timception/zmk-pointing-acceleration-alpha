@@ -236,9 +236,20 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // Remainder processing removed for safety and simplicity
     // The precision loss (1/1000) is negligible for practical mouse usage
     
-    // Enhanced safety: Minimum movement guarantee with bounds check
+    // Enhanced safety: Improved minimum movement guarantee based on calculation result
     if (input_value != 0 && accelerated_value == 0) {
-        accelerated_value = (input_value > 0) ? 1 : -1;
+        // Calculate what the raw result would have been before final scaling
+        int64_t raw_result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+        
+        // Only output movement if the raw calculation was >= 0.5 (half of SENSITIVITY_SCALE)
+        if (abs(raw_result) >= SENSITIVITY_SCALE / 2) {
+            accelerated_value = (raw_result > 0) ? 1 : -1;
+            LOG_DBG("Level2: Minimum movement applied - raw=%lld -> output=%d", raw_result, accelerated_value);
+        } else {
+            // Raw calculation was < 0.5, legitimately should be 0
+            accelerated_value = 0;
+            LOG_DBG("Level2: Micro movement ignored - raw=%lld (< 0.5 threshold)", raw_result);
+        }
     }
     
     // Analysis logging disabled for performance

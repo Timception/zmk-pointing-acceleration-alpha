@@ -174,9 +174,20 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         }
     }
     
-    // Enhanced safety: Minimum movement guarantee with bounds check
+    // Enhanced safety: Improved minimum movement guarantee based on calculation result
     if (input_value != 0 && result == 0) {
-        result = (input_value > 0) ? 1 : -1;
+        // Calculate what the raw result would have been before scaling
+        int64_t raw_result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+        
+        // Only output movement if the raw calculation was >= 0.5 (half of SENSITIVITY_SCALE)
+        if (abs(raw_result) >= SENSITIVITY_SCALE / 2) {
+            result = (raw_result > 0) ? 1 : -1;
+            LOG_DBG("Level1: Minimum movement applied - raw=%lld -> output=%lld", raw_result, result);
+        } else {
+            // Raw calculation was < 0.5, legitimately should be 0
+            result = 0;
+            LOG_DBG("Level1: Micro movement ignored - raw=%lld (< 0.5 threshold)", raw_result);
+        }
     }
     
     // Enhanced safety: Final result validation

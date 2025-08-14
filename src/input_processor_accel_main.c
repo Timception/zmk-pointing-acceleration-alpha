@@ -243,10 +243,23 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Final safety check with reasonable limits - allow proper acceleration
         accelerated_value = ACCEL_CLAMP(accelerated_value, -400, 400);
         
-        // Sanity check: ensure we don't have zero movement from non-zero input
+        // Enhanced sanity check: intelligent minimum movement guarantee
         if (input_value != 0 && accelerated_value == 0) {
-            accelerated_value = (input_value > 0) ? 1 : -1;
-            // LOG_DBG("Zero acceleration corrected to: %d", accelerated_value); // DISABLED for production
+            // Get DPI-adjusted sensitivity for threshold calculation
+            uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
+            int64_t raw_result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+            
+            // Only force movement if the raw calculation was >= 0.5
+            if (abs(raw_result) >= SENSITIVITY_SCALE / 2) {
+                accelerated_value = (raw_result > 0) ? 1 : -1;
+                LOG_DBG("Main: Minimum movement applied - input=%d, raw=%lld -> output=%d", 
+                        input_value, raw_result, accelerated_value);
+            } else {
+                // Micro movement legitimately should be ignored
+                accelerated_value = 0;
+                LOG_DBG("Main: Micro movement ignored - input=%d, raw=%lld (< 0.5 threshold)", 
+                        input_value, raw_result);
+            }
         }
 
         // Analysis logging disabled for performance
