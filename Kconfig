@@ -48,6 +48,25 @@ config INPUT_PROCESSOR_ACCEL_LEVEL
     default 2 if INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD
 
 # =============================================================================
+# DEBUG CONFIGURATION
+# =============================================================================
+
+config INPUT_PROCESSOR_ACCEL_DEBUG_LOG
+    bool "Enable acceleration debug logging"
+    depends on ZMK_INPUT_PROCESSOR_ACCELERATION
+    default n
+    help
+      Enable debug logging for acceleration processing. Logs level, axis, 
+      input value, and accelerated value every 100th event to minimize 
+      performance impact. 
+      
+      Note: Debug output will only appear when the system log level 
+      is set to DEBUG or higher (CONFIG_LOG_DEFAULT_LEVEL >= 4).
+      
+      This setting controls compilation of debug code, while the actual
+      log output is controlled by the runtime log level.
+
+# =============================================================================
 # LEVEL 1: SIMPLE CONFIGURATION
 # =============================================================================
 

@@ -262,9 +262,22 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
             }
         }
 
-        // Analysis logging disabled for performance
-        // LOG_DBG("Main: input=%d -> final_output=%d (level=%u)", 
-        //         input_value, accelerated_value, cfg->level);
+        // Enhanced debug logging - controlled by configuration
+        #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
+        static uint32_t debug_log_counter = 0;
+        // Configurable frequency: 100 for detailed debug, 1000 for production debug
+        uint32_t log_frequency = 100;
+        
+        if ((debug_log_counter++ % log_frequency) == 0) {
+            const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
+            // Avoid floating point calculation for better performance
+            int32_t accel_ratio_x10 = (input_value != 0) ? 
+                (accelerated_value * 10) / input_value : 10;
+            LOG_DBG("Accel: L%u %s %d->%d (%d.%dx)", 
+                    cfg->level, axis, input_value, accelerated_value,
+                    accel_ratio_x10 / 10, abs(accel_ratio_x10 % 10));
+        }
+        #endif
         
         // DIAGNOSTIC: Log final output for debugging cursor freeze (DISABLED)
         static uint32_t output_counter = 0;
@@ -285,24 +298,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         // Update event value
         event->value = accelerated_value;
         
-        // Production-ready logging (DISABLED for performance testing)
-        #if 0 // Temporarily disabled to test if logging affects cursor movement
-        static uint32_t log_counter = 0;
-        static int32_t last_input = 0, last_output = 0;
-        
-        // Only log significant acceleration events or errors
-        bool acceleration_applied = (abs(accelerated_value) > abs(input_value) * 1.1);
-        bool periodic_log = (log_counter++ % 10000) == 0; // Much reduced frequency
-        
-        if (periodic_log) { // Only periodic logs, no acceleration logs
-            const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
-            LOG_DBG("Accel: %s %d->%d (%.1fx)", 
-                    axis, input_value, accelerated_value,
-                    (float)accelerated_value / (float)input_value);
-            last_input = input_value;
-            last_output = accelerated_value;
-        }
-        #endif
+        // Legacy debug logging removed - replaced with configurable version above
         
         return 0;
     }
