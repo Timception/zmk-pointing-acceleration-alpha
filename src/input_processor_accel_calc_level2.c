@@ -57,7 +57,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     uint32_t speed = accel_calculate_simple_speed(data, input_value);
     
     #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
-    LOG_INF("DEBUG Level2: speed=%u, threshold=%u, max=%u", 
+    LOG_DBG("Level2: speed=%u, threshold=%u, max=%u", 
             speed, cfg->speed_threshold, cfg->speed_max);
     #endif
     
