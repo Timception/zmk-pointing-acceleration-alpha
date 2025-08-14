@@ -122,7 +122,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 {
                     uint64_t linear_add = safe_multiply_64((int64_t)abs_input, 
                                                          (int64_t)LINEAR_CURVE_MULTIPLIER, 
-                                                         (int64_t)safe_max_factor);
+                                                         (int64_t)UINT32_MAX);
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     if (linear_add > max_add) {
@@ -135,7 +135,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 {
                     // More effective calculation: input^2 * multiplier / divisor
                     uint64_t quad_add = safe_multiply_64((int64_t)abs_input * abs_input, 
-                                                       25LL, (int64_t)safe_max_factor);
+                                                       25LL, (int64_t)UINT32_MAX);
                     quad_add = quad_add / 100; // Scale down
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
@@ -150,7 +150,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 {
                     // More aggressive calculation for strong curve
                     uint64_t quad_add = safe_multiply_64((int64_t)abs_input * abs_input, 
-                                                       50LL, (int64_t)safe_max_factor);
+                                                       50LL, (int64_t)UINT32_MAX);
                     quad_add = quad_add / 100; // Scale down
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
@@ -165,7 +165,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 {
                     uint64_t default_add = safe_multiply_64((int64_t)abs_input, 
                                                           (int64_t)LINEAR_CURVE_MULTIPLIER, 
-                                                          (int64_t)safe_max_factor);
+                                                          (int64_t)UINT32_MAX);
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)default_add, 0, max_add);
