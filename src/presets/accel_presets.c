@@ -21,148 +21,148 @@ typedef struct {
     uint16_t speed_threshold;
     uint16_t speed_max;
     uint16_t min_factor;
-    uint16_t sensor_dpi;      // 追加：センサーDPI
+    uint16_t sensor_dpi;      // Sensor DPI setting
 } preset_config_t;
 
 static const preset_config_t presets[] = {
-    // オフィス用プリセット
+    // Office presets
     {
         .name = "office_optical",
-        .sensitivity = 1000,      // 1.0x (800 DPI基準)
-        .max_factor = 2200,       // 2.2x 適度な加速度
+        .sensitivity = 1000,      // 1.0x (800 DPI baseline)
+        .max_factor = 2200,       // 2.2x moderate acceleration
         .curve_type = 1,          // Mild
-        .y_boost = 1080,          // 1.08x Y軸改善
-        .speed_threshold = 700,   // 早めの加速度開始
-        .speed_max = 2600,        // 適度な最大速度
-        .min_factor = 980,        // 0.98x 精密操作
-        .sensor_dpi = 800         // 標準光学センサー
+        .y_boost = 1080,          // 1.08x Y-axis enhancement
+        .speed_threshold = 700,   // Early acceleration start
+        .speed_max = 2600,        // Moderate maximum speed
+        .min_factor = 980,        // 0.98x precision control
+        .sensor_dpi = 800         // Standard optical sensor
     },
     {
         .name = "office_laser",
-        .sensitivity = 1000,      // 1.0x (DPI調整を保守的に変更したため基準値に戻す)
-        .max_factor = 1500,       // 1.5x 保守的な加速度（カーソル停止防止）
-        .curve_type = 0,          // Linear（最も予測可能）
-        .y_boost = 1000,          // 1.0x Y軸標準（問題を避けるため）
-        .speed_threshold = 1000,  // 高い閾値で安定性重視
-        .speed_max = 2000,        // 低い最大速度で安定性重視
-        .min_factor = 1000,       // 1.0x 標準（問題を避けるため）
-        .sensor_dpi = 1600        // 高精度レーザー
+        .sensitivity = 1000,      // 1.0x (conservative DPI adjustment)
+        .max_factor = 1500,       // 1.5x conservative acceleration (prevent cursor freeze)
+        .curve_type = 0,          // Linear (most predictable)
+        .y_boost = 1000,          // 1.0x Y-axis standard (avoid issues)
+        .speed_threshold = 1000,  // High threshold for stability
+        .speed_max = 2000,        // Low max speed for stability
+        .min_factor = 1000,       // 1.0x standard (avoid issues)
+        .sensor_dpi = 1600        // High precision laser
     },
     {
         .name = "office_trackball",
-        .sensitivity = 1500,      // 1.5x (低DPI補正)
-        .max_factor = 2000,       // 2.0x 控えめな加速度
+        .sensitivity = 1500,      // 1.5x (low DPI compensation)
+        .max_factor = 2000,       // 2.0x conservative acceleration
         .curve_type = 1,          // Mild
-        .y_boost = 1100,          // 1.1x Y軸強化
-        .speed_threshold = 800,   // 安定した反応
-        .speed_max = 2400,        // 適度な最大速度
-        .min_factor = 950,        // 0.95x 精密操作重視
-        .sensor_dpi = 400         // 低DPIトラックボール
+        .y_boost = 1100,          // 1.1x Y-axis enhancement
+        .speed_threshold = 800,   // Stable response
+        .speed_max = 2400,        // Moderate maximum speed
+        .min_factor = 950,        // 0.95x precision focus
+        .sensor_dpi = 400         // Low DPI trackball
     },
     
-    // ゲーミング用プリセット
+    // Gaming presets
     {
         .name = "gaming_optical",
-        .sensitivity = 1000,      // 1.0x (1200 DPI基準調整)
-        .max_factor = 2500,       // 2.5x 積極的な加速度
+        .sensitivity = 1000,      // 1.0x (1200 DPI baseline adjustment)
+        .max_factor = 2500,       // 2.5x aggressive acceleration
         .curve_type = 2,          // Strong
-        .y_boost = 1120,          // 1.12x バランス調整
-        .speed_threshold = 550,   // 素早い反応
-        .speed_max = 2800,        // 高速移動対応
-        .min_factor = 950,        // 0.95x 精密エイム
-        .sensor_dpi = 1200        // ゲーミング光学センサー
+        .y_boost = 1120,          // 1.12x balance adjustment
+        .speed_threshold = 550,   // Quick response
+        .speed_max = 2800,        // High-speed movement support
+        .min_factor = 950,        // 0.95x precision aiming
+        .sensor_dpi = 1200        // Gaming optical sensor
     },
     {
         .name = "gaming_laser",
-        .sensitivity = 600,       // 0.6x (超高DPI補正)
-        .max_factor = 2500,       // 2.5x 積極的な加速度
+        .sensitivity = 600,       // 0.6x (ultra-high DPI compensation)
+        .max_factor = 2500,       // 2.5x aggressive acceleration
         .curve_type = 2,          // Strong
-        .y_boost = 1120,          // 1.12x バランス調整
-        .speed_threshold = 550,   // 素早い反応
-        .speed_max = 2800,        // 高速移動対応
-        .min_factor = 950,        // 0.95x 精密エイム
-        .sensor_dpi = 3200        // 高DPIレーザー
+        .y_boost = 1120,          // 1.12x balance adjustment
+        .speed_threshold = 550,   // Quick response
+        .speed_max = 2800,        // High-speed movement support
+        .min_factor = 950,        // 0.95x precision aiming
+        .sensor_dpi = 3200        // High DPI laser
     },
     {
         .name = "gaming_trackball",
-        .sensitivity = 1200,      // 1.2x (800 DPI調整)
-        .max_factor = 2300,       // 2.3x 適度な加速度
+        .sensitivity = 1200,      // 1.2x (800 DPI adjustment)
+        .max_factor = 2300,       // 2.3x moderate acceleration
         .curve_type = 2,          // Strong
-        .y_boost = 1150,          // 1.15x Y軸強化
-        .speed_threshold = 600,   // バランス反応
-        .speed_max = 2700,        // 高速移動
-        .min_factor = 940,        // 0.94x 精密操作
-        .sensor_dpi = 800         // 高精度トラックボール
+        .y_boost = 1150,          // 1.15x Y-axis enhancement
+        .speed_threshold = 600,   // Balanced response
+        .speed_max = 2700,        // High-speed movement
+        .min_factor = 940,        // 0.94x precision control
+        .sensor_dpi = 800         // High precision trackball
     },
     
-    // 高感度用プリセット
+    // High sensitivity presets
     {
         .name = "high_sens_optical",
-        .sensitivity = 1100,      // 1.1x (1600 DPI調整)
-        .max_factor = 2800,       // 2.8x 強力な加速度
-        .curve_type = 1,          // Mild (制御しやすく)
-        .y_boost = 1150,          // 1.15x Y軸強化
-        .speed_threshold = 450,   // 即座に反応
-        .speed_max = 2400,        // 適度な調整
-        .min_factor = 900,        // 0.9x 精密操作重視
-        .sensor_dpi = 1600        // 高精度光学センサー
+        .sensitivity = 1100,      // 1.1x (1600 DPI adjustment)
+        .max_factor = 2800,       // 2.8x strong acceleration
+        .curve_type = 1,          // Mild (easier to control)
+        .y_boost = 1150,          // 1.15x Y-axis enhancement
+        .speed_threshold = 450,   // Immediate response
+        .speed_max = 2400,        // Moderate adjustment
+        .min_factor = 900,        // 0.9x precision focus
+        .sensor_dpi = 1600        // High precision optical sensor
     },
     {
         .name = "high_sens_laser",
-        .sensitivity = 500,       // 0.5x (超高DPI補正)
-        .max_factor = 2800,       // 2.8x 強力な加速度
-        .curve_type = 1,          // Mild (制御しやすく)
-        .y_boost = 1150,          // 1.15x Y軸強化
-        .speed_threshold = 450,   // 即座に反応
-        .speed_max = 2400,        // 適度な調整
-        .min_factor = 900,        // 0.9x 精密操作重視
-        .sensor_dpi = 6400        // 超高DPIレーザー
+        .sensitivity = 500,       // 0.5x (ultra-high DPI compensation)
+        .max_factor = 2800,       // 2.8x strong acceleration
+        .curve_type = 1,          // Mild (easier to control)
+        .y_boost = 1150,          // 1.15x Y-axis enhancement
+        .speed_threshold = 450,   // Immediate response
+        .speed_max = 2400,        // Moderate adjustment
+        .min_factor = 900,        // 0.9x precision focus
+        .sensor_dpi = 6400        // Ultra-high DPI laser
     },
     {
         .name = "high_sens_trackball",
-        .sensitivity = 1400,      // 1.4x (800 DPI調整)
-        .max_factor = 2600,       // 2.6x 強力な加速度
-        .curve_type = 1,          // Mild (制御しやすく)
-        .y_boost = 1200,          // 1.2x Y軸強化
-        .speed_threshold = 500,   // 早い反応
-        .speed_max = 2500,        // 適度な調整
-        .min_factor = 880,        // 0.88x 精密操作重視
-        .sensor_dpi = 800         // 高精度トラックボール
+        .sensitivity = 1400,      // 1.4x (800 DPI adjustment)
+        .max_factor = 2600,       // 2.6x strong acceleration
+        .curve_type = 1,          // Mild (easier to control)
+        .y_boost = 1200,          // 1.2x Y-axis enhancement
+        .speed_threshold = 500,   // Quick response
+        .speed_max = 2500,        // Moderate adjustment
+        .min_factor = 880,        // 0.88x precision focus
+        .sensor_dpi = 800         // High precision trackball
     },
     
-    // トラックパッド/タッチパッド用プリセット
+    // Trackpad/Touchpad presets
     {
         .name = "office_trackpad",
-        .sensitivity = 1200,      // 1.2x (タッチパッド用調整)
-        .max_factor = 1800,       // 1.8x 控えめな加速度
-        .curve_type = 0,          // Linear (自然な操作感)
-        .y_boost = 1000,          // 1.0x Y軸標準
-        .speed_threshold = 600,   // 適度な反応
-        .speed_max = 2200,        // 控えめな最大速度
-        .min_factor = 900,        // 0.9x 精密操作重視
-        .sensor_dpi = 1000        // 標準タッチパッド
+        .sensitivity = 1200,      // 1.2x (trackpad adjustment)
+        .max_factor = 1800,       // 1.8x conservative acceleration
+        .curve_type = 0,          // Linear (natural feel)
+        .y_boost = 1000,          // 1.0x Y-axis standard
+        .speed_threshold = 600,   // Moderate response
+        .speed_max = 2200,        // Conservative max speed
+        .min_factor = 900,        // 0.9x precision focus
+        .sensor_dpi = 1000        // Standard trackpad
     },
     {
         .name = "gaming_trackpad",
-        .sensitivity = 1100,      // 1.1x (ゲーミング調整)
-        .max_factor = 2200,       // 2.2x 適度な加速度
-        .curve_type = 1,          // Mild (制御しやすく)
-        .y_boost = 1050,          // 1.05x Y軸軽微強化
-        .speed_threshold = 500,   // 素早い反応
-        .speed_max = 2400,        // 適度な最大速度
-        .min_factor = 920,        // 0.92x 精密操作
-        .sensor_dpi = 1200        // 高解像度タッチパッド
+        .sensitivity = 1100,      // 1.1x (gaming adjustment)
+        .max_factor = 2200,       // 2.2x moderate acceleration
+        .curve_type = 1,          // Mild (easier to control)
+        .y_boost = 1050,          // 1.05x Y-axis slight enhancement
+        .speed_threshold = 500,   // Quick response
+        .speed_max = 2400,        // Moderate max speed
+        .min_factor = 920,        // 0.92x precision control
+        .sensor_dpi = 1200        // High resolution trackpad
     },
     {
         .name = "high_sens_trackpad",
-        .sensitivity = 1300,      // 1.3x (高感度調整)
-        .max_factor = 2400,       // 2.4x 強めの加速度
-        .curve_type = 1,          // Mild (制御しやすく)
-        .y_boost = 1100,          // 1.1x Y軸強化
-        .speed_threshold = 400,   // 即座に反応
-        .speed_max = 2300,        // 適度な調整
-        .min_factor = 850,        // 0.85x 精密操作重視
-        .sensor_dpi = 1200        // 高解像度タッチパッド
+        .sensitivity = 1300,      // 1.3x (high sensitivity adjustment)
+        .max_factor = 2400,       // 2.4x strong acceleration
+        .curve_type = 1,          // Mild (easier to control)
+        .y_boost = 1100,          // 1.1x Y-axis enhancement
+        .speed_threshold = 400,   // Immediate response
+        .speed_max = 2300,        // Moderate adjustment
+        .min_factor = 850,        // 0.85x precision focus
+        .sensor_dpi = 1200        // High resolution trackpad
     }
 };
 
@@ -200,7 +200,7 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
     cfg->max_factor = preset->max_factor;
     cfg->curve_type = preset->curve_type;
     cfg->y_boost = preset->y_boost;
-    cfg->sensor_dpi = preset->sensor_dpi;  // センサーDPI設定
+    cfg->sensor_dpi = preset->sensor_dpi;  // Sensor DPI setting
     
     LOG_DBG("Applied preset values to config");
     
@@ -231,7 +231,7 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
     
     LOG_DBG("Applying Kconfig preset...");
     
-    // オフィス用プリセット
+    // Office presets
     #ifdef CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL
     LOG_DBG("Applying office_optical preset");
     ret = accel_config_apply_preset(cfg, "office_optical");
@@ -240,7 +240,7 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKBALL)
     ret = accel_config_apply_preset(cfg, "office_trackball");
     
-    // ゲーミング用プリセット
+    // Gaming presets
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_OPTICAL)
     ret = accel_config_apply_preset(cfg, "gaming_optical");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER)
@@ -248,7 +248,7 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKBALL)
     ret = accel_config_apply_preset(cfg, "gaming_trackball");
     
-    // 高感度用プリセット
+    // High sensitivity presets
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_OPTICAL)
     ret = accel_config_apply_preset(cfg, "high_sens_optical");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_LASER)
@@ -256,7 +256,7 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKBALL)
     ret = accel_config_apply_preset(cfg, "high_sens_trackball");
     
-    // トラックパッド/タッチパッド用プリセット
+    // Trackpad/Touchpad presets
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_TRACKPAD)
     ret = accel_config_apply_preset(cfg, "office_trackpad");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_TRACKPAD)
@@ -264,12 +264,12 @@ void accel_config_apply_kconfig_preset(struct accel_config *cfg) {
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_HIGH_SENS_TRACKPAD)
     ret = accel_config_apply_preset(cfg, "high_sens_trackpad");
     #elif defined(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM)
-    // カスタム設定の場合は何もしない（デバイスツリー値を使用）
+    // Custom configuration - use device tree values
     LOG_INF("Using custom configuration from device tree");
-    ret = 0; // カスタム設定は正常
+    ret = 0; // Custom configuration is valid
     #else
     LOG_WRN("No preset configuration selected, using defaults");
-    ret = 0; // デフォルト設定を使用
+    ret = 0; // Use default settings
     #endif
     
     if (ret < 0) {

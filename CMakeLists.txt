@@ -33,5 +33,5 @@ zephyr_compile_options(
 # Linker optimizations
 zephyr_link_libraries(
   -Wl,--gc-sections     # Remove unused sections
-  -Wl,--print-gc-sections  # Debug: show removed sections (optional)
+  -Wl,--print-gc-sections
 )

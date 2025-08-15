@@ -244,8 +244,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         }
     }
     
-    // Analysis logging disabled for performance
-    // LOG_DBG("Level2: input=%d -> accelerated=%d", input_value, accelerated_value);
+    // Level 2 calculation complete
     
     // Enhanced safety: Final comprehensive validation
     int16_t final_result = safe_int32_to_int16(accelerated_value);
