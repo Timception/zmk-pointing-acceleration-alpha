@@ -70,8 +70,8 @@ int accel_validate_config(const struct accel_config *cfg) {
     // Level-specific validation
     if (cfg->level == 1) {
         LOG_DBG("Level 1 (Simple) validation: basic checks only");
-        // Level 1では基本的な検証のみ
-        // speed_threshold, speed_max, min_factor, acceleration_exponentは使用されない
+        // Level 1 uses basic validation only
+        // speed_threshold, speed_max, min_factor, acceleration_exponent are not used
         
     } else if (cfg->level == 2) {
         LOG_DBG("Level 2 (Standard) validation: comprehensive checks");
