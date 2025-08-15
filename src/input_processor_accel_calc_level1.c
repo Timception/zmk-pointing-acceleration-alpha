@@ -75,9 +75,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     
     uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
     
-    // Analysis logging disabled for performance
-    // LOG_DBG("Level1: input=%d, orig_sens=%u, sensor_dpi=%u, adj_sens=%u", 
-    //         input_value, cfg->sensitivity, cfg->sensor_dpi, dpi_adjusted_sensitivity);
+    // Calculate DPI-adjusted sensitivity
     
     // Enhanced safety: Check sensitivity bounds
     if (dpi_adjusted_sensitivity == 0 || dpi_adjusted_sensitivity > MAX_SAFE_SENSITIVITY) {

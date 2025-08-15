@@ -185,4 +185,4 @@ int32_t accel_safe_fallback_calculate(int32_t input_value, uint32_t max_factor) 
     return result;
 }
 
-// Anti-accumulation protection functions removed - no longer needed with simplified design
+// Utility functions for acceleration calculations

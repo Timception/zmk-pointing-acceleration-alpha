@@ -22,8 +22,7 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 // DEVICE INITIALIZATION
 // =============================================================================
 
-// Forward declarations - moved to header
-// void accel_config_apply_kconfig_preset(struct accel_config *cfg);
+
 
 
 static int accel_init_device(const struct device *dev) {
@@ -159,7 +158,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         }
     }
     if (!code_matched) {
-        // LOG_DBG("Event code %u not in configured codes for device %s", event->code, dev->name); // DISABLED for production
+        // Event code not in configured codes - pass through
         return 0;
     }
 
@@ -170,26 +169,19 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
 
     // Pass through zero values as-is
     if (event->value == 0) {
-        // LOG_DBG("Zero value event: type=%u code=%u", event->type, event->code); // DISABLED for production
+        // Zero value events pass through unchanged
         return 0;
     }
     
     // Check if acceleration is effectively disabled
     if (cfg->max_factor <= 1000) {
-        // LOG_DBG("Acceleration disabled (max_factor=%u) for device %s", cfg->max_factor, dev->name); // DISABLED for production
+        // Acceleration effectively disabled
         return 0;
     }
 
     // Pointing device movement event acceleration processing
     if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
-        // DIAGNOSTIC: Log all input events for debugging cursor freeze (DISABLED)
-        static uint32_t event_counter = 0;
-        event_counter++;
-        // Temporarily disabled to test if logging affects cursor movement
-        // if ((event_counter % 50) == 0) {
-        //     LOG_INF("DIAG: Event #%u - type=%u code=%u value=%d", 
-        //             event_counter, event->type, event->code, event->value);
-        // }
+        // Process pointer movement events
         
         // Clamp input value to prevent overflow
         int32_t input_value = accel_clamp_input_value(event->value);
@@ -303,26 +295,11 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         }
         #endif
         
-        // DIAGNOSTIC: Log final output for debugging cursor freeze (DISABLED)
-        static uint32_t output_counter = 0;
-        static int32_t last_output_time = 0;
-        output_counter++;
-        
-        // Get current time for timing analysis
-        int32_t current_time = k_uptime_get_32();
-        // int32_t time_diff = current_time - last_output_time;  // Unused, commented out
-        
-        // Temporarily disabled to test if logging affects cursor movement
-        // if ((output_counter % 20) == 0 || abs(accelerated_value) > 50 || time_diff > 100) {
-        //     LOG_INF("DIAG: Output #%u - Final value=%d (from input=%d) [time_diff=%dms]", 
-        //             output_counter, accelerated_value, input_value, time_diff);
-        // }
-        last_output_time = current_time;
+        // Update event with accelerated value
         
         // Update event value
         event->value = accelerated_value;
-        
-        // Legacy debug logging removed - replaced with configurable version above
+
         
         return 0;
     }
