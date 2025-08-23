@@ -1,4 +1,4 @@
-// accel_config.c - Unified configuration management
+// accel_config.c - Unified configuration management with memory optimization
 // Centralizes all configuration logic and reduces complexity
 //
 // Copyright (c) 2024 The ZMK Contributors
@@ -13,33 +13,82 @@
 LOG_MODULE_DECLARE(input_processor_accel);
 
 // =============================================================================
+// MEMORY POOL MANAGEMENT
+// =============================================================================
+
+struct accel_data *accel_data_alloc(void) {
+    struct accel_data *data;
+    int ret = k_mem_slab_alloc(&accel_data_pool, (void **)&data, K_NO_WAIT);
+    if (ret == 0) {
+        memset(data, 0, sizeof(struct accel_data));
+        LOG_DBG("Allocated accel_data from pool: %p", data);
+        return data;
+    }
+    LOG_ERR("Failed to allocate accel_data from pool: %d", ret);
+    return NULL;
+}
+
+void accel_data_free(struct accel_data *data) {
+    if (data) {
+        k_mem_slab_free(&accel_data_pool, (void *)data);
+        LOG_DBG("Freed accel_data to pool: %p", data);
+    }
+}
+
+// =============================================================================
+// CONFIGURATION ENCODING/DECODING HELPERS
+// =============================================================================
+
+static uint8_t accel_encode_y_boost(uint16_t y_boost) {
+    // Encode 1000-3000 range to 0-200
+    if (y_boost < 1000) return 0;
+    if (y_boost > 3000) return 200;
+    return (uint8_t)((y_boost - 1000) / 10);
+}
+
+static uint8_t accel_encode_sensor_dpi(uint16_t sensor_dpi) {
+    // Encode common DPI values to classes
+    if (sensor_dpi <= 400) return 0;
+    if (sensor_dpi <= 800) return 1;
+    if (sensor_dpi <= 1200) return 2;
+    if (sensor_dpi <= 1600) return 3;
+    if (sensor_dpi <= 3200) return 4;
+    if (sensor_dpi <= 6400) return 5;
+    if (sensor_dpi <= 8000) return 6;
+    return 1; // Default to 800 DPI class
+}
+
+// =============================================================================
 // DEFAULT CONFIGURATIONS
 // =============================================================================
 
 static const struct accel_config level1_defaults = {
     .level = 1,
-    .sensitivity = 1000,       // 1.0x (neutral base sensitivity)
-    .max_factor = 2500,        // 2.5x (more noticeable acceleration)
-    .curve_type = 1,           // Mild (smooth acceleration curve)
-    .y_boost = 1000,           // 1.0x (no Y-axis boost)
-    .speed_threshold = 800,    // Moderate threshold for balanced control
-    .speed_max = 3000,         // Reasonable maximum speed
-    .min_factor = 1000,        // 1.0x (no minimum acceleration)
-    .acceleration_exponent = 2,
-    .sensor_dpi = 800          // Standard DPI sensor support
+    .input_type = INPUT_EV_REL,
+    .y_boost_scaled = 0,       // 1.0x (no Y-axis boost)
+    .sensor_dpi_class = 1,     // 800 DPI class
+    .cfg.level1 = {
+        .sensitivity = 1000,   // 1.0x (neutral base sensitivity)
+        .max_factor = 2500,    // 2.5x (more noticeable acceleration)
+        .curve_type = 1,       // Mild (smooth acceleration curve)
+        .reserved = 0
+    }
 };
 
 static const struct accel_config level2_defaults = {
     .level = 2,
-    .sensitivity = 1000,       // 1.0x (neutral base sensitivity)
-    .max_factor = 2500,        // 2.5x (moderate acceleration for standard level)
-    .curve_type = 1,           // Mild (smooth acceleration curve)
-    .y_boost = 1000,           // 1.0x (no Y-axis boost by default)
-    .speed_threshold = 600,    // Lower threshold for more responsive acceleration
-    .speed_max = 3500,         // Higher maximum speed for standard level
-    .min_factor = 900,         // 0.9x (slight precision boost for slow movements)
-    .acceleration_exponent = 2, // Mild exponential curve
-    .sensor_dpi = 800          // Standard DPI sensor support
+    .input_type = INPUT_EV_REL,
+    .y_boost_scaled = 0,       // 1.0x (no Y-axis boost by default)
+    .sensor_dpi_class = 1,     // 800 DPI class
+    .cfg.level2 = {
+        .sensitivity = 1000,   // 1.0x (neutral base sensitivity)
+        .max_factor = 2500,    // 2.5x (moderate acceleration for standard level)
+        .min_factor = 900,     // 0.9x (slight precision boost for slow movements)
+        .speed_threshold = 600, // Lower threshold for more responsive acceleration
+        .speed_max = 3500,     // Higher maximum speed for standard level
+        .acceleration_exponent = 2, // Mild exponential curve
+        .reserved = 0
+    }
 };
 
 
@@ -90,15 +139,24 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
     // Ensure level is correctly set
     cfg->level = level;
     
-    // Validate basic configuration
-    if (cfg->sensitivity == 0 || cfg->max_factor == 0) {
+    // Validate basic configuration based on level
+    uint16_t sensitivity, max_factor;
+    if (level == 1) {
+        sensitivity = cfg->cfg.level1.sensitivity;
+        max_factor = cfg->cfg.level1.max_factor;
+    } else {
+        sensitivity = cfg->cfg.level2.sensitivity;
+        max_factor = cfg->cfg.level2.max_factor;
+    }
+    
+    if (sensitivity == 0 || max_factor == 0) {
         LOG_ERR("Invalid default configuration: sensitivity=%u, max_factor=%u", 
-                cfg->sensitivity, cfg->max_factor);
+                sensitivity, max_factor);
         return -EINVAL;
     }
     
     LOG_INF("Base configuration initialized: level=%u, max_factor=%u, sensitivity=%u", 
-            cfg->level, cfg->max_factor, cfg->sensitivity);
+            cfg->level, max_factor, sensitivity);
     
     return 0;
 }
