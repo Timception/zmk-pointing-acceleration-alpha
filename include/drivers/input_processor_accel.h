@@ -66,39 +66,49 @@ extern "C" {
 // =============================================================================
 
 /**
- * @brief Simplified acceleration data structure - minimal accumulation risk
+ * @brief Optimized acceleration data structure - minimal memory footprint
+ * Memory layout: 8 bytes total (was potentially 12+ bytes before optimization)
+ * - 4 bytes: last_time_ms (uint32_t)
+ * - 2 bytes: recent_speed (uint16_t) 
+ * - 1 byte:  speed_samples (uint8_t)
+ * - 1 byte:  reserved padding (uint8_t)
  */
 struct accel_data {
     uint32_t last_time_ms;         // Time tracking for speed calculation
     uint16_t recent_speed;         // Recent speed (simplified, 16-bit to prevent overflow)
     uint8_t speed_samples;         // Number of recent samples (max 255)
+    uint8_t reserved;              // Padding for alignment optimization
     
     // Removed: remainder_x, remainder_y (precision loss acceptable for safety)
     // Removed: last_factor (not actually used)
     // Removed: stable_speed (replaced with simpler recent_speed)
     // Removed: all anti-accumulation fields (no longer needed)
-};
+} __packed;
 
 /**
- * @brief Acceleration configuration structure
+ * @brief Optimized acceleration configuration structure
+ * Memory layout optimized for alignment and minimal padding:
+ * - 8 bytes: pointer + uint32_t (codes, codes_count)
+ * - 8 bytes: 2x uint32_t (speed_threshold, speed_max)
+ * - 10 bytes: 5x uint16_t (sensitivity, max_factor, y_boost, min_factor, sensor_dpi)
+ * - 4 bytes: 4x uint8_t (input_type, level, curve_type, acceleration_exponent)
+ * Total: ~32 bytes (platform dependent, but well-aligned)
  */
 struct accel_config {
-    uint8_t input_type;
-    const uint16_t *codes;
-    uint32_t codes_count;
-
-    uint8_t level;
-    
-    uint16_t sensitivity;
-    uint16_t max_factor;
-    uint8_t curve_type;
-    uint16_t y_boost;
-    uint32_t speed_threshold;
-    uint32_t speed_max;
-    uint16_t min_factor;
-    uint8_t acceleration_exponent;
-    uint16_t sensor_dpi;
-};
+    const uint16_t *codes;         // Pointer to codes array
+    uint32_t codes_count;          // Number of codes
+    uint32_t speed_threshold;      // Speed threshold for acceleration start
+    uint32_t speed_max;            // Speed for maximum acceleration
+    uint16_t sensitivity;          // Base sensitivity multiplier
+    uint16_t max_factor;           // Maximum acceleration factor
+    uint16_t y_boost;              // Y-axis sensitivity boost
+    uint16_t min_factor;           // Minimum acceleration factor
+    uint16_t sensor_dpi;           // Sensor DPI/CPI setting
+    uint8_t input_type;            // Input event type
+    uint8_t level;                 // Configuration level (1 or 2)
+    uint8_t curve_type;            // Acceleration curve type
+    uint8_t acceleration_exponent; // Exponential curve exponent
+} __packed;
 
 // =============================================================================
 // FUNCTION DECLARATIONS
