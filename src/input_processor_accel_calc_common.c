@@ -56,27 +56,33 @@ uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
     
     uint32_t dpi_adjusted_sensitivity;
     
-    // CRITICAL FIX: DPI adjustment was causing extreme sensitivity changes
-    // The original calculation was mathematically correct but caused cursor freeze
-    // For middleware stability, we'll use a more conservative approach
-    
     if (cfg->sensor_dpi > 0 && cfg->sensor_dpi <= MAX_SENSOR_DPI) {
-        // Conservative DPI scaling to prevent extreme values
+        // Improved DPI scaling using 64-bit arithmetic for precision
         if (cfg->sensor_dpi > STANDARD_DPI_REFERENCE) {
-            // High DPI sensor: reduce sensitivity proportionally but conservatively
-            uint32_t dpi_ratio = cfg->sensor_dpi / STANDARD_DPI_REFERENCE;
-            if (dpi_ratio > 4) dpi_ratio = 4; // Cap at 4x reduction
-            dpi_adjusted_sensitivity = cfg->sensitivity / dpi_ratio;
+            // High DPI sensor: reduce sensitivity with precise calculation
+            uint64_t temp = (uint64_t)cfg->sensitivity * STANDARD_DPI_REFERENCE;
+            dpi_adjusted_sensitivity = (uint32_t)(temp / cfg->sensor_dpi);
+            
+            // Apply conservative limits to prevent extreme reduction
+            uint32_t min_allowed = cfg->sensitivity / 4; // Max 4x reduction
+            if (dpi_adjusted_sensitivity < min_allowed) {
+                dpi_adjusted_sensitivity = min_allowed;
+            }
             
             // Ensure minimum sensitivity
             if (dpi_adjusted_sensitivity < MIN_SAFE_SENSITIVITY) {
                 dpi_adjusted_sensitivity = MIN_SAFE_SENSITIVITY;
             }
         } else if (cfg->sensor_dpi < STANDARD_DPI_REFERENCE) {
-            // Low DPI sensor: increase sensitivity proportionally but conservatively
-            uint32_t dpi_ratio = STANDARD_DPI_REFERENCE / cfg->sensor_dpi;
-            if (dpi_ratio > 3) dpi_ratio = 3; // Cap at 3x increase
-            dpi_adjusted_sensitivity = cfg->sensitivity * dpi_ratio;
+            // Low DPI sensor: increase sensitivity with precise calculation
+            uint64_t temp = (uint64_t)cfg->sensitivity * STANDARD_DPI_REFERENCE;
+            dpi_adjusted_sensitivity = (uint32_t)(temp / cfg->sensor_dpi);
+            
+            // Apply conservative limits to prevent extreme increase
+            uint32_t max_allowed = cfg->sensitivity * 3; // Max 3x increase
+            if (dpi_adjusted_sensitivity > max_allowed) {
+                dpi_adjusted_sensitivity = max_allowed;
+            }
             
             // Ensure maximum sensitivity
             if (dpi_adjusted_sensitivity > MAX_SAFE_SENSITIVITY) {
@@ -87,7 +93,7 @@ uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
             dpi_adjusted_sensitivity = cfg->sensitivity;
         }
         
-        LOG_DBG("DPI adjustment: %u DPI, sensitivity %u -> %u", 
+        LOG_DBG("DPI adjustment: %u DPI, sensitivity %u -> %u (precise calc)", 
                 cfg->sensor_dpi, cfg->sensitivity, dpi_adjusted_sensitivity);
     } else {
         // Invalid or missing DPI: use original sensitivity
