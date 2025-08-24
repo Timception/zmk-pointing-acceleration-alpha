@@ -23,47 +23,50 @@ int accel_validate_config(const struct accel_config *cfg) {
         return -EINVAL;
     }
 
-    // Prevent division by zero in DPI calculations
-    if (cfg->sensor_dpi == 0) {
-        LOG_ERR("Invalid sensor DPI: 0 (division by zero risk)");
+    // Validate DPI class
+    if (cfg->sensor_dpi_class > 6) {
+        LOG_ERR("Invalid sensor DPI class: %u (must be 0-6)", cfg->sensor_dpi_class);
         return -EINVAL;
     }
     
-    // Validate DPI range
-    if (cfg->sensor_dpi < 400 || cfg->sensor_dpi > MAX_SENSOR_DPI) {
-        LOG_ERR("Sensor DPI %u out of reasonable range (400-%u)", cfg->sensor_dpi, MAX_SENSOR_DPI);
+    uint16_t sensor_dpi = accel_decode_sensor_dpi(cfg->sensor_dpi_class);
+    if (sensor_dpi < 400 || sensor_dpi > MAX_SENSOR_DPI) {
+        LOG_ERR("Sensor DPI %u out of reasonable range (400-%u)", sensor_dpi, MAX_SENSOR_DPI);
         return -EINVAL;
     }
     
     // Prevent extreme values that could cause overflow
-    if (cfg->max_factor > MAX_SAFE_FACTOR) {
-        LOG_ERR("Max factor %u exceeds safe limit %u", cfg->max_factor, MAX_SAFE_FACTOR);
+    uint16_t max_factor = (cfg->level == 1) ? cfg->cfg.level1.max_factor : cfg->cfg.level2.max_factor;
+    if (max_factor > MAX_SAFE_FACTOR) {
+        LOG_ERR("Max factor %u exceeds safe limit %u", max_factor, MAX_SAFE_FACTOR);
         return -EINVAL;
     }
-    if (cfg->max_factor < 1000) {
-        LOG_ERR("Max factor %u below minimum 1000 (1.0x)", cfg->max_factor);
+    if (max_factor < 1000) {
+        LOG_ERR("Max factor %u below minimum 1000 (1.0x)", max_factor);
         return -EINVAL;
     }
     
     // Validate sensitivity range
-    if (cfg->sensitivity > MAX_SAFE_SENSITIVITY) {
-        LOG_ERR("Sensitivity %u exceeds safe limit %u", cfg->sensitivity, MAX_SAFE_SENSITIVITY);
+    uint16_t sensitivity = (cfg->level == 1) ? cfg->cfg.level1.sensitivity : cfg->cfg.level2.sensitivity;
+    if (sensitivity > MAX_SAFE_SENSITIVITY) {
+        LOG_ERR("Sensitivity %u exceeds safe limit %u", sensitivity, MAX_SAFE_SENSITIVITY);
         return -EINVAL;
     }
-    if (cfg->sensitivity < MIN_SAFE_SENSITIVITY) {
-        LOG_ERR("Sensitivity %u below minimum %u", cfg->sensitivity, MIN_SAFE_SENSITIVITY);
+    if (sensitivity < MIN_SAFE_SENSITIVITY) {
+        LOG_ERR("Sensitivity %u below minimum %u", sensitivity, MIN_SAFE_SENSITIVITY);
         return -EINVAL;
     }
     
-    // Validate curve type
-    if (cfg->curve_type > 2) {
-        LOG_ERR("Invalid curve type: %u (must be 0-2)", cfg->curve_type);
+    // Validate curve type (Level 1 only)
+    if (cfg->level == 1 && cfg->cfg.level1.curve_type > 2) {
+        LOG_ERR("Invalid curve type: %u (must be 0-2)", cfg->cfg.level1.curve_type);
         return -EINVAL;
     }
     
     // Validate Y-axis boost (common to both levels)
-    if (cfg->y_boost < 500 || cfg->y_boost > 3000) {
-        LOG_ERR("Y-axis boost %u out of reasonable range (500-3000)", cfg->y_boost);
+    uint16_t y_boost = accel_decode_y_boost(cfg->y_boost_scaled);
+    if (y_boost < 500 || y_boost > 3000) {
+        LOG_ERR("Y-axis boost %u out of reasonable range (500-3000)", y_boost);
         return -EINVAL;
     }
     
@@ -77,48 +80,48 @@ int accel_validate_config(const struct accel_config *cfg) {
         LOG_DBG("Level 2 (Standard) validation: comprehensive checks");
         
         // Prevent division by zero in speed calculation
-        if (cfg->speed_max <= cfg->speed_threshold) {
+        if (cfg->cfg.level2.speed_max <= cfg->cfg.level2.speed_threshold) {
             LOG_ERR("Speed max (%u) must be greater than speed threshold (%u)", 
-                    cfg->speed_max, cfg->speed_threshold);
+                    cfg->cfg.level2.speed_max, cfg->cfg.level2.speed_threshold);
             return -EINVAL;
         }
         
         // Validate speed ranges
-        if (cfg->speed_threshold > MAX_REASONABLE_SPEED) {
+        if (cfg->cfg.level2.speed_threshold > MAX_REASONABLE_SPEED) {
             LOG_ERR("Speed threshold %u exceeds reasonable limit %u", 
-                    cfg->speed_threshold, MAX_REASONABLE_SPEED);
+                    cfg->cfg.level2.speed_threshold, MAX_REASONABLE_SPEED);
             return -EINVAL;
         }
-        if (cfg->speed_max > MAX_REASONABLE_SPEED) {
+        if (cfg->cfg.level2.speed_max > MAX_REASONABLE_SPEED) {
             LOG_ERR("Speed max %u exceeds reasonable limit %u", 
-                    cfg->speed_max, MAX_REASONABLE_SPEED);
+                    cfg->cfg.level2.speed_max, MAX_REASONABLE_SPEED);
             return -EINVAL;
         }
         
         // Prevent invalid factor relationship
-        if (cfg->min_factor > cfg->max_factor) {
+        if (cfg->cfg.level2.min_factor > cfg->cfg.level2.max_factor) {
             LOG_ERR("Min factor (%u) cannot be greater than max factor (%u)", 
-                    cfg->min_factor, cfg->max_factor);
+                    cfg->cfg.level2.min_factor, cfg->cfg.level2.max_factor);
             return -EINVAL;
         }
         
         // Validate factor ranges
-        if (cfg->min_factor < 200 || cfg->min_factor > 2000) {
-            LOG_ERR("Min factor %u out of reasonable range (200-2000)", cfg->min_factor);
+        if (cfg->cfg.level2.min_factor < 200 || cfg->cfg.level2.min_factor > 2000) {
+            LOG_ERR("Min factor %u out of reasonable range (200-2000)", cfg->cfg.level2.min_factor);
             return -EINVAL;
         }
         
         // Validate acceleration exponent
-        if (cfg->acceleration_exponent < 1 || cfg->acceleration_exponent > 5) {
-            LOG_ERR("Acceleration exponent %u out of valid range (1-5)", cfg->acceleration_exponent);
+        if (cfg->cfg.level2.acceleration_exponent < 1 || cfg->cfg.level2.acceleration_exponent > 5) {
+            LOG_ERR("Acceleration exponent %u out of valid range (1-5)", cfg->cfg.level2.acceleration_exponent);
             return -EINVAL;
         }
     }
     
     // Logical consistency checks
-    if (cfg->max_factor <= cfg->sensitivity) {
+    if (max_factor <= sensitivity) {
         LOG_WRN("Max factor (%u) should typically be greater than sensitivity (%u)", 
-                cfg->max_factor, cfg->sensitivity);
+                max_factor, sensitivity);
     }
     
     LOG_DBG("Configuration validation passed for level %u", cfg->level);
