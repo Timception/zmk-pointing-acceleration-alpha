@@ -39,14 +39,14 @@ void accel_data_free(struct accel_data *data) {
 // CONFIGURATION ENCODING/DECODING HELPERS
 // =============================================================================
 
-static uint8_t accel_encode_y_boost(uint16_t y_boost) {
+uint8_t accel_encode_y_boost(uint16_t y_boost) {
     // Encode 1000-3000 range to 0-200
     if (y_boost < 1000) return 0;
     if (y_boost > 3000) return 200;
     return (uint8_t)((y_boost - 1000) / 10);
 }
 
-static uint8_t accel_encode_sensor_dpi(uint16_t sensor_dpi) {
+uint8_t accel_encode_sensor_dpi(uint16_t sensor_dpi) {
     // Encode common DPI values to classes
     if (sensor_dpi <= 400) return 0;
     if (sensor_dpi <= 800) return 1;
