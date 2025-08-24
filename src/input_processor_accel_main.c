@@ -76,11 +76,17 @@ static int accel_init_device(const struct device *dev) {
         bool use_custom_config = IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM);       \
         if (use_custom_config) {                                                                  \
             /* Apply common DTS properties for both levels */                                   \
-            cfg->sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->sensitivity), 200, 2000); \
-            cfg->max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->max_factor), 1000, 5000); \
-            cfg->curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, cfg->curve_type), 0, 2); \
-            cfg->y_boost = ACCEL_CLAMP(DT_INST_PROP_OR(inst, y_boost, cfg->y_boost), 500, 3000); \
-            cfg->sensor_dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, cfg->sensor_dpi), 400, 8000); \
+            if (cfg->level == 1) { \
+                cfg->cfg.level1.sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->cfg.level1.sensitivity), 200, 2000); \
+                cfg->cfg.level1.max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->cfg.level1.max_factor), 1000, 5000); \
+                cfg->cfg.level1.curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, cfg->cfg.level1.curve_type), 0, 2); \
+            } else { \
+                cfg->cfg.level2.sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->cfg.level2.sensitivity), 200, 2000); \
+                cfg->cfg.level2.max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->cfg.level2.max_factor), 1000, 5000); \
+            } \
+            cfg->y_boost_scaled = ACCEL_CLAMP((DT_INST_PROP_OR(inst, y_boost, 1000) - 1000) / 10, 0, 200); \
+            uint16_t dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, 800), 400, 8000); \
+            cfg->sensor_dpi_class = (dpi <= 400) ? 0 : (dpi <= 800) ? 1 : (dpi <= 1200) ? 2 : (dpi <= 1600) ? 3 : (dpi <= 3200) ? 4 : (dpi <= 6400) ? 5 : 6; \
                                                                                                   \
             /* Apply Level 2 specific DTS properties only for Standard level */                \
             if (cfg->level == 2) {                                                              \

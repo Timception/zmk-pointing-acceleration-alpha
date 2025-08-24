@@ -96,7 +96,7 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     if (last_time_ms == 0 || current_time_ms < last_time_ms) {
         data->last_time_ms = current_time_ms;
         data->recent_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR; // Initial speed estimation
-        data->speed_samples = 1;
+        // speed_samples removed for memory optimization
         return data->recent_speed;
     }
     
@@ -113,10 +113,7 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
         current_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR;
     }
     
-    // **Fixed**: More stable averaging
-    if (data->speed_samples < ACCEL_MAX_SPEED_SAMPLES) {
-        data->speed_samples++;
-    }
+    // Speed samples removed for memory optimization
     
     // Exponential moving average (smoother speed changes)
     uint16_t alpha = 300; // 0.3 in thousandths

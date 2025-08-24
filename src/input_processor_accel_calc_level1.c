@@ -68,8 +68,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     }
     
     // Enhanced safety: Configuration validation
-    if (cfg->sensitivity == 0 || cfg->sensitivity > MAX_SAFE_SENSITIVITY) {
-        LOG_ERR("Level1: Invalid sensitivity %u, using default", cfg->sensitivity);
+    if (cfg->cfg.level1.sensitivity == 0 || cfg->cfg.level1.sensitivity > MAX_SAFE_SENSITIVITY) {
+        LOG_ERR("Level1: Invalid sensitivity %u, using default", cfg->cfg.level1.sensitivity);
         return input_value; // Safe fallback
     }
     
@@ -109,9 +109,9 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         uint32_t curve_factor = SENSITIVITY_SCALE; // Start with 1.0x
         
         // Enhanced safety: Validate max_factor before use
-        uint32_t safe_max_factor = ACCEL_CLAMP(cfg->max_factor, SENSITIVITY_SCALE, MAX_SAFE_FACTOR);
+        uint32_t safe_max_factor = ACCEL_CLAMP(cfg->cfg.level1.max_factor, SENSITIVITY_SCALE, MAX_SAFE_FACTOR);
         
-        switch (cfg->curve_type) {
+        switch (cfg->cfg.level1.curve_type) {
             case 0: // Linear - Enhanced safety
                 {
                     uint64_t linear_add = safe_multiply_64((int64_t)abs_input, 
