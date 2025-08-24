@@ -16,12 +16,12 @@ typedef struct {
     const char *name;
     uint16_t sensitivity;
     uint16_t max_factor;
-    uint8_t curve_type;
+    uint8_t curve_type;          // Simple curve type (0-2) used for both levels in presets
     uint16_t y_boost;
-    uint16_t speed_threshold;
-    uint16_t speed_max;
-    uint16_t min_factor;
-    uint16_t sensor_dpi;      // Sensor DPI setting
+    uint16_t speed_threshold;    // Level 2 only
+    uint16_t speed_max;          // Level 2 only
+    uint16_t min_factor;         // Level 2 only
+    uint16_t sensor_dpi;         // Sensor DPI setting
 } preset_config_t;
 
 static const preset_config_t presets[] = {
@@ -35,6 +35,7 @@ static const preset_config_t presets[] = {
         .speed_threshold = 700,   // Early acceleration start
         .speed_max = 2600,        // Moderate maximum speed
         .min_factor = 980,        // 0.98x precision control
+
         .sensor_dpi = 800         // Standard optical sensor
     },
     {
@@ -206,7 +207,9 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
         cfg->cfg.level2.speed_threshold = preset->speed_threshold;
         cfg->cfg.level2.speed_max = preset->speed_max;
         cfg->cfg.level2.min_factor = preset->min_factor;
-        cfg->cfg.level2.acceleration_exponent = preset->acceleration_exponent;
+        // For presets, use default acceleration_exponent (2 = mild exponential)
+        // Advanced curve customization is only available in custom configuration
+        cfg->cfg.level2.acceleration_exponent = 2;
     }
     
     // Common settings (encoded format)
