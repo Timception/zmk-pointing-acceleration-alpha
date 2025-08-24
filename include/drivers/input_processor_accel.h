@@ -165,6 +165,25 @@ static inline uint16_t accel_decode_sensor_dpi(uint8_t dpi_class) {
 }
 
 /**
+ * @brief Encode configuration values to scaled format
+ */
+static inline uint8_t accel_encode_y_boost(uint16_t y_boost) {
+    if (y_boost < 1000) return 0;
+    if (y_boost > 3000) return 200;
+    return (y_boost - 1000) / 10; // 1000-3000 -> 0-200
+}
+
+static inline uint8_t accel_encode_sensor_dpi(uint16_t sensor_dpi) {
+    if (sensor_dpi <= 400) return 0;
+    if (sensor_dpi <= 800) return 1;
+    if (sensor_dpi <= 1200) return 2;
+    if (sensor_dpi <= 1600) return 3;
+    if (sensor_dpi <= 3200) return 4;
+    if (sensor_dpi <= 6400) return 5;
+    return 6; // 8000 or higher
+}
+
+/**
  * @brief Safely clamp input value to prevent overflow - optimized for speed
  */
 static inline int32_t accel_clamp_input_value(int32_t input_value) {
