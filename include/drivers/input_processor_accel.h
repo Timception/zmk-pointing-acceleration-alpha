@@ -67,10 +67,6 @@ extern "C" {
 
 // Memory pool for acceleration data - reduces heap fragmentation
 #define ACCEL_MAX_INSTANCES 4
-#define ACCEL_DATA_POOL_SIZE (ACCEL_MAX_INSTANCES * sizeof(struct accel_data))
-
-// Static memory pool for runtime data
-K_MEM_SLAB_DEFINE(accel_data_pool, sizeof(struct accel_data), ACCEL_MAX_INSTANCES, 4);
 
 // =============================================================================
 // DATA STRUCTURES - ULTRA-OPTIMIZED FOR MCU
@@ -89,6 +85,9 @@ struct accel_data {
     // Removed: speed_samples (not critical for performance)
     // Removed: reserved padding (not needed with 6-byte structure)
 } __packed;
+
+// Static memory pool for runtime data - defined after struct declaration
+K_MEM_SLAB_DEFINE(accel_data_pool, sizeof(struct accel_data), ACCEL_MAX_INSTANCES, 4);
 
 /**
  * @brief Level-specific configuration union - saves memory
