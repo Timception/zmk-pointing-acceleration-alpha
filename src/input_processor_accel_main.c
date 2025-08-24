@@ -90,10 +90,10 @@ static int accel_init_device(const struct device *dev) {
                                                                                                   \
             /* Apply Level 2 specific DTS properties only for Standard level */                \
             if (cfg->level == 2) {                                                              \
-                cfg->speed_threshold = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_threshold, cfg->speed_threshold), 100, 2000); \
-                cfg->speed_max = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_max, cfg->speed_max), 1000, 8000); \
-                cfg->min_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, min_factor, cfg->min_factor), 200, 1500); \
-                cfg->acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, cfg->acceleration_exponent), 1, 5); \
+                cfg->cfg.level2.speed_threshold = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_threshold, cfg->cfg.level2.speed_threshold), 100, 2000); \
+                cfg->cfg.level2.speed_max = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_max, cfg->cfg.level2.speed_max), 1000, 8000); \
+                cfg->cfg.level2.min_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, min_factor, cfg->cfg.level2.min_factor), 200, 1500); \
+                cfg->cfg.level2.acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, cfg->cfg.level2.acceleration_exponent), 1, 5); \
             }                                                                                    \
         }                                                                                        \
                                                                                                   \
