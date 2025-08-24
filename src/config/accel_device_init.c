@@ -43,12 +43,16 @@ void accel_log_final_config(const struct accel_config *cfg, uint8_t config_level
     }
 
     if (config_level == 1) {
+        uint16_t y_boost = accel_decode_y_boost(cfg->y_boost_scaled);
+        uint16_t sensor_dpi = accel_decode_sensor_dpi(cfg->sensor_dpi_class);
         LOG_INF("Final Level 1 config: sens=%u, max=%u, curve=%u, y_boost=%u, dpi=%u",
-                cfg->sensitivity, cfg->max_factor, cfg->curve_type, cfg->y_boost, cfg->sensor_dpi);
+                cfg->cfg.level1.sensitivity, cfg->cfg.level1.max_factor, cfg->cfg.level1.curve_type, y_boost, sensor_dpi);
     } else {
-        LOG_INF("Final Level 2 config: sens=%u, max=%u, curve=%u, y_boost=%u, thresh=%u, max_speed=%u, min=%u, exp=%u, dpi=%u",
-                cfg->sensitivity, cfg->max_factor, cfg->curve_type, cfg->y_boost,
-                cfg->speed_threshold, cfg->speed_max, cfg->min_factor, cfg->acceleration_exponent, cfg->sensor_dpi);
+        uint16_t y_boost = accel_decode_y_boost(cfg->y_boost_scaled);
+        uint16_t sensor_dpi = accel_decode_sensor_dpi(cfg->sensor_dpi_class);
+        LOG_INF("Final Level 2 config: sens=%u, max=%u, thresh=%u, max_speed=%u, min=%u, exp=%u, y_boost=%u, dpi=%u",
+                cfg->cfg.level2.sensitivity, cfg->cfg.level2.max_factor,
+                cfg->cfg.level2.speed_threshold, cfg->cfg.level2.speed_max, cfg->cfg.level2.min_factor, cfg->cfg.level2.acceleration_exponent, y_boost, sensor_dpi);
     }
 }
 

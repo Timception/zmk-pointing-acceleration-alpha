@@ -19,11 +19,33 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
 // =============================================================================
-// DEVICE INITIALIZATION
+// MEMORY POOL DEFINITION
 // =============================================================================
 
+// Define the memory pool for acceleration data (only once in main.c)
+K_MEM_SLAB_DEFINE(accel_data_pool, sizeof(struct accel_data), ACCEL_MAX_INSTANCES, 4);
 
+// =============================================================================
+// INTERRUPT PROCESSING OPTIMIZATION
+// =============================================================================
 
+// Fast path processing flags - minimize branching in interrupt context
+#define ACCEL_FAST_PATH_ENABLED     BIT(0)
+#define ACCEL_BYPASS_VALIDATION     BIT(1)
+#define ACCEL_SKIP_DEBUG_LOG        BIT(2)
+
+// Pre-computed lookup tables for common calculations (ROM storage)
+static const uint16_t dpi_adjustment_table[8] = {
+    2000, 1250, 833, 625, 312, 156, 125, 1000  // For DPI classes 0-7
+};
+
+static const uint16_t curve_multiplier_table[3] = {
+    10, 25, 50  // For curve types 0-2 (Linear, Mild, Strong)
+};
+
+// =============================================================================
+// DEVICE INITIALIZATION
+// =============================================================================
 
 static int accel_init_device(const struct device *dev) {
     const struct accel_config *cfg = dev->config;
@@ -61,18 +83,24 @@ static int accel_init_device(const struct device *dev) {
         bool use_custom_config = IS_ENABLED(CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM);       \
         if (use_custom_config) {                                                                  \
             /* Apply common DTS properties for both levels */                                   \
-            cfg->sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->sensitivity), 200, 2000); \
-            cfg->max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->max_factor), 1000, 5000); \
-            cfg->curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, cfg->curve_type), 0, 2); \
-            cfg->y_boost = ACCEL_CLAMP(DT_INST_PROP_OR(inst, y_boost, cfg->y_boost), 500, 3000); \
-            cfg->sensor_dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, cfg->sensor_dpi), 400, 8000); \
+            if (cfg->level == 1) { \
+                cfg->cfg.level1.sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->cfg.level1.sensitivity), 200, 2000); \
+                cfg->cfg.level1.max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->cfg.level1.max_factor), 1000, 5000); \
+                cfg->cfg.level1.curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, cfg->cfg.level1.curve_type), 0, 2); \
+            } else { \
+                cfg->cfg.level2.sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->cfg.level2.sensitivity), 200, 2000); \
+                cfg->cfg.level2.max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->cfg.level2.max_factor), 1000, 5000); \
+            } \
+            cfg->y_boost_scaled = ACCEL_CLAMP((DT_INST_PROP_OR(inst, y_boost, 1000) - 1000) / 10, 0, 200); \
+            uint16_t dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, 800), 400, 8000); \
+            cfg->sensor_dpi_class = (dpi <= 400) ? 0 : (dpi <= 800) ? 1 : (dpi <= 1200) ? 2 : (dpi <= 1600) ? 3 : (dpi <= 3200) ? 4 : (dpi <= 6400) ? 5 : 6; \
                                                                                                   \
             /* Apply Level 2 specific DTS properties only for Standard level */                \
             if (cfg->level == 2) {                                                              \
-                cfg->speed_threshold = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_threshold, cfg->speed_threshold), 100, 2000); \
-                cfg->speed_max = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_max, cfg->speed_max), 1000, 8000); \
-                cfg->min_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, min_factor, cfg->min_factor), 200, 1500); \
-                cfg->acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, cfg->acceleration_exponent), 1, 5); \
+                cfg->cfg.level2.speed_threshold = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_threshold, cfg->cfg.level2.speed_threshold), 100, 2000); \
+                cfg->cfg.level2.speed_max = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_max, cfg->cfg.level2.speed_max), 1000, 8000); \
+                cfg->cfg.level2.min_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, min_factor, cfg->cfg.level2.min_factor), 200, 1500); \
+                cfg->cfg.level2.acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, cfg->cfg.level2.acceleration_exponent), 1, 5); \
             }                                                                                    \
         }                                                                                        \
                                                                                                   \
@@ -103,208 +131,91 @@ DT_INST_FOREACH_STATUS_OKAY(ACCEL_DEVICE_DEFINE)
 // MAIN EVENT HANDLER
 // =============================================================================
 
+// =============================================================================
+// OPTIMIZED FAST-PATH EVENT HANDLER
+// =============================================================================
+
+static inline int32_t accel_fast_calculate_level1(const struct accel_config *cfg, 
+                                                  int32_t input_value, uint16_t code) {
+    // Ultra-fast Level 1 calculation - minimal branching
+    uint32_t sensitivity = cfg->cfg.level1.sensitivity;
+    uint32_t max_factor = cfg->cfg.level1.max_factor;
+    uint8_t curve_type = cfg->cfg.level1.curve_type;
+    
+    // DPI adjustment using lookup table
+    uint16_t dpi_mult = dpi_adjustment_table[cfg->sensor_dpi_class];
+    int64_t result = ((int64_t)input_value * sensitivity * dpi_mult) / (SENSITIVITY_SCALE * 1000);
+    
+    // Fast curve calculation using lookup table
+    int32_t abs_input = (input_value < 0) ? -input_value : input_value;
+    if (abs_input > 1) {
+        uint32_t curve_mult = curve_multiplier_table[curve_type];
+        uint32_t curve_factor = SENSITIVITY_SCALE + (abs_input * abs_input * curve_mult) / 100;
+        curve_factor = (curve_factor > max_factor) ? max_factor : curve_factor;
+        result = (result * curve_factor) / SENSITIVITY_SCALE;
+    }
+    
+    // Y-axis boost
+    if (code == INPUT_REL_Y) {
+        uint16_t y_boost = accel_decode_y_boost(cfg->y_boost_scaled);
+        result = (result * y_boost) / SENSITIVITY_SCALE;
+    }
+    
+    // Clamp result
+    return (result > 400) ? 400 : ((result < -400) ? -400 : (int32_t)result);
+}
+
 int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
                       struct zmk_input_processor_state *state) {
+    // CRITICAL: Minimize interrupt processing time
+    // Fast validation with minimal branching
+    if (!dev || !event || !dev->config || !dev->data) {
+        return 0; // Fast exit for invalid pointers
+    }
+    
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
-
-
-    if (!dev) {
-        LOG_ERR("Critical error: Device pointer is NULL");
-        return 0; // Pass through instead of blocking
-    }
-    if (!event) {
-        LOG_ERR("Critical error: Event pointer is NULL");
-        return 0; // Pass through instead of blocking
-    }
-    if (!cfg) {
-        LOG_ERR("Critical error: Configuration pointer is NULL for device %s", dev->name);
-        return 0; // Pass through instead of blocking
-    }
-    if (!data) {
-        LOG_ERR("Critical error: Data pointer is NULL for device %s", dev->name);
-        return 0; // Pass through instead of blocking
-    }
-
-    // Configuration sanity check
-    if (cfg->level < 1 || cfg->level > 2) {
-        LOG_ERR("Invalid configuration level %u for device %s", cfg->level, dev->name);
-        return 0; // Pass through instead of blocking
+    
+    // Fast path checks - optimized for common cases
+    if (event->type != cfg->input_type || 
+        event->value == 0 ||
+        (event->code != INPUT_REL_X && event->code != INPUT_REL_Y)) {
+        return 0; // Fast exit for non-movement events
     }
     
-    // Initialize data structure only on first use
-    if (data && data->last_time_ms == 0) {
-        memset(data, 0, sizeof(struct accel_data));
-    }
+    // Skip expensive validation in interrupt context
+    // (validation done at initialization time)
+    
+    // Fast input clamping
+    int32_t input_value = accel_clamp_input_value(event->value);
 
-    // Pass through if not the specified type
-    if (event->type != cfg->input_type) {
-        return 0;
-    }
-
-    // Validate codes array before processing
-    if (!cfg->codes || cfg->codes_count == 0) {
-        LOG_ERR("Invalid codes configuration for device %s", dev->name);
-        return 1;
-    }
-
-    // Pass through if not the specified code
-    bool code_matched = false;
-    for (uint32_t i = 0; i < cfg->codes_count; ++i) {
-        if (event->code == cfg->codes[i]) {
-            code_matched = true;
-            break;
-        }
-    }
-    if (!code_matched) {
-        // Event code not in configured codes - pass through
-        return 0;
-    }
-
-    // Pass through wheel events as-is
-    if (event->code == INPUT_REL_WHEEL || event->code == INPUT_REL_HWHEEL) {
-        return 0;
-    }
-
-    // Pass through zero values as-is
-    if (event->value == 0) {
-        // Zero value events pass through unchanged
-        return 0;
+    // OPTIMIZED: Fast-path processing with minimal overhead
+    int32_t accelerated_value;
+    
+    // Ultra-fast calculation dispatch - branch prediction optimized
+    if (cfg->level == 1) {
+        // Level 1: Use optimized fast-path calculation
+        accelerated_value = accel_fast_calculate_level1(cfg, input_value, event->code);
+    } else {
+        // Level 2: Use standard calculation (less common path)
+        accelerated_value = accel_standard_calculate(cfg, data, input_value, event->code);
     }
     
-    // Check if acceleration is effectively disabled
-    if (cfg->max_factor <= 1000) {
-        // Acceleration effectively disabled
-        return 0;
+    // Minimal safety check - emergency brake only
+    if (__builtin_expect(abs(accelerated_value) > 500, 0)) {
+        // Unlikely path - extreme values
+        accelerated_value = (accelerated_value > 0) ? 400 : -400;
     }
-
-    // Pointing device movement event acceleration processing
-    if (event->code == INPUT_REL_X || event->code == INPUT_REL_Y) {
-        // Process pointer movement events
-        
-        // Clamp input value to prevent overflow
-        int32_t input_value = accel_clamp_input_value(event->value);
-        int32_t accelerated_value;
-
-        // Handle extreme input values
-        if (abs(event->value) > MAX_SAFE_INPUT_VALUE * 10) {
-            LOG_ERR("Abnormal input value %d", event->value);
-            return 1;
-        } else if (abs(event->value) > MAX_SAFE_INPUT_VALUE) {
-            LOG_WRN("Input value %d clamped to %d", event->value, input_value);
-        }
-
-        // Call appropriate calculation function based on configuration level
-        switch (cfg->level) {
-            case 1:
-                accelerated_value = accel_simple_calculate(cfg, input_value, event->code);
-                break;
-            case 2:
-                accelerated_value = accel_standard_calculate(cfg, data, input_value, event->code);
-                break;
-            default:
-                LOG_ERR("Invalid configuration level: %u", cfg->level);
-                return 1;
-        }
-
-        // CRITICAL: Emergency brake for extreme cursor jump prevention
-        // Allow reasonable acceleration while preventing extreme jumps
-        if (abs(accelerated_value) > 500) {
-            LOG_ERR("EMERGENCY BRAKE: Accelerated value %d too extreme (input=%d), using conservative fallback", 
-                    accelerated_value, input_value);
-            // Use conservative scaling instead of minimal values
-            accelerated_value = (accelerated_value > 0) ? 
-                ACCEL_CLAMP(accelerated_value / 2, 1, 500) : 
-                ACCEL_CLAMP(accelerated_value / 2, -500, -1);
-        }
-
-        // Check for calculation errors
-        if (abs(accelerated_value) > INT16_MAX) {
-            LOG_ERR("Calculation error: result %d exceeds safe range, clamping and continuing", accelerated_value);
-            accelerated_value = (accelerated_value > 0) ? INT16_MAX : INT16_MIN;
-            // Continue processing instead of returning error
-        }
-
-        // Enhanced safety checks
-        if (abs(accelerated_value) > 32767) {
-            LOG_ERR("Accelerated value %d exceeds safe range, clamping", accelerated_value);
-            accelerated_value = (accelerated_value > 0) ? 32767 : -32767;
-        }
-        
-        // Final safety check with reasonable limits - allow proper acceleration
-        accelerated_value = ACCEL_CLAMP(accelerated_value, -400, 400);
-        
-        // Enhanced sanity check: intelligent minimum movement guarantee
-        if (input_value != 0 && accelerated_value == 0) {
-            // Get DPI-adjusted sensitivity for threshold calculation
-            uint32_t dpi_adjusted_sensitivity = calculate_dpi_adjusted_sensitivity(cfg);
-            int64_t raw_result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
-            
-            // Only force movement if the raw calculation was >= 0.5
-            if (abs(raw_result) >= SENSITIVITY_SCALE / 2) {
-                accelerated_value = (raw_result > 0) ? 1 : -1;
-                LOG_DBG("Main: Minimum movement applied - input=%d, raw=%lld -> output=%d", 
-                        input_value, raw_result, accelerated_value);
-            } else {
-                // Micro movement legitimately should be ignored
-                accelerated_value = 0;
-                LOG_DBG("Main: Micro movement ignored - input=%d, raw=%lld (< 0.5 threshold)", 
-                        input_value, raw_result);
-            }
-        }
-
-        // Enhanced debug logging - controlled by configuration
-        #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
-        static uint32_t debug_log_counter = 0;
-        // More frequent logging for debugging: every 10th event
-        uint32_t log_frequency = 10;
-        
-        // Always log significant movements or acceleration changes
-        bool significant_movement = (abs(input_value) > 5) || (abs(accelerated_value) != abs(input_value));
-        bool periodic_log = ((debug_log_counter++ % log_frequency) == 0);
-        
-        // Always log configuration on first event (regardless of movement size)
-        static bool config_logged = false;
-        if (!config_logged) {
-            LOG_DBG("=== RUNTIME CONFIG CHECK ===");
-            LOG_DBG("Config: L%u sens=%u max=%u curve=%u dpi=%u", 
-                    cfg->level, cfg->sensitivity, cfg->max_factor, cfg->curve_type, cfg->sensor_dpi);
-            LOG_DBG("Config: y_boost=%u speed_thresh=%u speed_max=%u min_factor=%u", 
-                    cfg->y_boost, cfg->speed_threshold, cfg->speed_max, cfg->min_factor);
-            LOG_DBG("=== END CONFIG CHECK ===");
-            config_logged = true;
-        }
-        
-        if (significant_movement || periodic_log) {
-            const char* axis = (event->code == INPUT_REL_X) ? "X" : "Y";
-            // Avoid floating point calculation for better performance
-            int32_t accel_ratio_x10 = (input_value != 0) ? 
-                (accelerated_value * 10) / input_value : 10;
-            
-            // Emergency debug: Log every significant movement for troubleshooting
-            if (significant_movement) {
-                LOG_DBG("DEBUG: input=%d, accel=%d, sens=%u, max=%u", 
-                        input_value, accelerated_value, cfg->sensitivity, cfg->max_factor);
-            }
-            
-            LOG_DBG("Accel: L%u %s %d->%d (%d.%dx)%s", 
-                    cfg->level, axis, input_value, accelerated_value,
-                    accel_ratio_x10 / 10, abs(accel_ratio_x10 % 10),
-                    significant_movement ? " [SIG]" : "");
-        }
-        #endif
-        
-        // Update event with accelerated value
-        
-        // Update event value
-        event->value = accelerated_value;
-
-        
-        return 0;
+    
+    // Minimum movement guarantee - optimized
+    if (__builtin_expect(input_value != 0 && accelerated_value == 0, 0)) {
+        accelerated_value = (input_value > 0) ? 1 : -1;
     }
-
-    // Pass through other events as-is
+    
+    // Update event value - single assignment
+    event->value = accelerated_value;
+    
     return 0;
 }
 

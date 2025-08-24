@@ -56,27 +56,37 @@ uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
     
     uint32_t dpi_adjusted_sensitivity;
     
-    // CRITICAL FIX: DPI adjustment was causing extreme sensitivity changes
-    // The original calculation was mathematically correct but caused cursor freeze
-    // For middleware stability, we'll use a more conservative approach
-    
-    if (cfg->sensor_dpi > 0 && cfg->sensor_dpi <= MAX_SENSOR_DPI) {
-        // Conservative DPI scaling to prevent extreme values
-        if (cfg->sensor_dpi > STANDARD_DPI_REFERENCE) {
-            // High DPI sensor: reduce sensitivity proportionally but conservatively
-            uint32_t dpi_ratio = cfg->sensor_dpi / STANDARD_DPI_REFERENCE;
-            if (dpi_ratio > 4) dpi_ratio = 4; // Cap at 4x reduction
-            dpi_adjusted_sensitivity = cfg->sensitivity / dpi_ratio;
+    uint16_t sensor_dpi = accel_decode_sensor_dpi(cfg->sensor_dpi_class);
+    if (sensor_dpi > 0 && sensor_dpi <= MAX_SENSOR_DPI) {
+        // Get sensitivity based on level
+        uint16_t sensitivity = (cfg->level == 1) ? cfg->cfg.level1.sensitivity : cfg->cfg.level2.sensitivity;
+        
+        // Improved DPI scaling using 64-bit arithmetic for precision
+        if (sensor_dpi > STANDARD_DPI_REFERENCE) {
+            // High DPI sensor: reduce sensitivity with precise calculation
+            uint64_t temp = (uint64_t)sensitivity * STANDARD_DPI_REFERENCE;
+            dpi_adjusted_sensitivity = (uint32_t)(temp / sensor_dpi);
+            
+            // Apply conservative limits to prevent extreme reduction
+            uint32_t min_allowed = sensitivity / 4; // Max 4x reduction
+            if (dpi_adjusted_sensitivity < min_allowed) {
+                dpi_adjusted_sensitivity = min_allowed;
+            }
             
             // Ensure minimum sensitivity
             if (dpi_adjusted_sensitivity < MIN_SAFE_SENSITIVITY) {
                 dpi_adjusted_sensitivity = MIN_SAFE_SENSITIVITY;
             }
-        } else if (cfg->sensor_dpi < STANDARD_DPI_REFERENCE) {
-            // Low DPI sensor: increase sensitivity proportionally but conservatively
-            uint32_t dpi_ratio = STANDARD_DPI_REFERENCE / cfg->sensor_dpi;
-            if (dpi_ratio > 3) dpi_ratio = 3; // Cap at 3x increase
-            dpi_adjusted_sensitivity = cfg->sensitivity * dpi_ratio;
+        } else if (sensor_dpi < STANDARD_DPI_REFERENCE) {
+            // Low DPI sensor: increase sensitivity with precise calculation
+            uint64_t temp = (uint64_t)sensitivity * STANDARD_DPI_REFERENCE;
+            dpi_adjusted_sensitivity = (uint32_t)(temp / sensor_dpi);
+            
+            // Apply conservative limits to prevent extreme increase
+            uint32_t max_allowed = sensitivity * 3; // Max 3x increase
+            if (dpi_adjusted_sensitivity > max_allowed) {
+                dpi_adjusted_sensitivity = max_allowed;
+            }
             
             // Ensure maximum sensitivity
             if (dpi_adjusted_sensitivity > MAX_SAFE_SENSITIVITY) {
@@ -84,16 +94,17 @@ uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
             }
         } else {
             // Standard DPI: use as-is
-            dpi_adjusted_sensitivity = cfg->sensitivity;
+            dpi_adjusted_sensitivity = sensitivity;
         }
         
-        LOG_DBG("DPI adjustment: %u DPI, sensitivity %u -> %u", 
-                cfg->sensor_dpi, cfg->sensitivity, dpi_adjusted_sensitivity);
+        LOG_DBG("DPI adjustment: %u DPI, sensitivity %u -> %u (precise calc)", 
+                sensor_dpi, sensitivity, dpi_adjusted_sensitivity);
     } else {
         // Invalid or missing DPI: use original sensitivity
-        dpi_adjusted_sensitivity = cfg->sensitivity;
+        uint16_t sensitivity = (cfg->level == 1) ? cfg->cfg.level1.sensitivity : cfg->cfg.level2.sensitivity;
+        dpi_adjusted_sensitivity = sensitivity;
         LOG_WRN("Invalid sensor DPI %u, using original sensitivity %u", 
-                cfg->sensor_dpi, cfg->sensitivity);
+                sensor_dpi, sensitivity);
     }
     
     // Final safety clamp
