@@ -86,8 +86,8 @@ struct accel_data {
     // Removed: reserved padding (not needed with 6-byte structure)
 } __packed;
 
-// Static memory pool for runtime data - defined after struct declaration
-K_MEM_SLAB_DEFINE(accel_data_pool, sizeof(struct accel_data), ACCEL_MAX_INSTANCES, 4);
+// Static memory pool for runtime data - declared here, defined in main.c
+extern struct k_mem_slab accel_data_pool;
 
 /**
  * @brief Level-specific configuration union - saves memory

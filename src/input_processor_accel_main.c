@@ -19,6 +19,13 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
 // =============================================================================
+// MEMORY POOL DEFINITION
+// =============================================================================
+
+// Define the memory pool for acceleration data (only once in main.c)
+K_MEM_SLAB_DEFINE(accel_data_pool, sizeof(struct accel_data), ACCEL_MAX_INSTANCES, 4);
+
+// =============================================================================
 // INTERRUPT PROCESSING OPTIMIZATION
 // =============================================================================
 
