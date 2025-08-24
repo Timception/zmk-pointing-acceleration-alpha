@@ -217,8 +217,7 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
     cfg->sensor_dpi_class = accel_encode_sensor_dpi(preset->sensor_dpi);
     
     LOG_DBG("Applied preset values to config");
-    }
-
+    
     LOG_INF("Applied preset '%s': sens=%u, max=%u, curve=%u", 
             preset_name, preset->sensitivity, preset->max_factor, preset->curve_type);
 
