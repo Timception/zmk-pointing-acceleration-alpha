@@ -195,20 +195,25 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
     LOG_DBG("Preset values: sens=%u, max=%u, curve=%u, dpi=%u", 
             preset->sensitivity, preset->max_factor, preset->curve_type, preset->sensor_dpi);
     
-    // Apply preset values (works for both level 1 and 2)
-    cfg->sensitivity = preset->sensitivity;
-    cfg->max_factor = preset->max_factor;
-    cfg->curve_type = preset->curve_type;
-    cfg->y_boost = preset->y_boost;
-    cfg->sensor_dpi = preset->sensor_dpi;  // Sensor DPI setting
+    // Apply preset values based on level
+    if (cfg->level == 1) {
+        cfg->cfg.level1.sensitivity = preset->sensitivity;
+        cfg->cfg.level1.max_factor = preset->max_factor;
+        cfg->cfg.level1.curve_type = preset->curve_type;
+    } else if (cfg->level == 2) {
+        cfg->cfg.level2.sensitivity = preset->sensitivity;
+        cfg->cfg.level2.max_factor = preset->max_factor;
+        cfg->cfg.level2.speed_threshold = preset->speed_threshold;
+        cfg->cfg.level2.speed_max = preset->speed_max;
+        cfg->cfg.level2.min_factor = preset->min_factor;
+        cfg->cfg.level2.acceleration_exponent = preset->acceleration_exponent;
+    }
+    
+    // Common settings (encoded format)
+    cfg->y_boost_scaled = accel_encode_y_boost(preset->y_boost);
+    cfg->sensor_dpi_class = accel_encode_sensor_dpi(preset->sensor_dpi);
     
     LOG_DBG("Applied preset values to config");
-    
-    // Level 2 specific settings
-    if (cfg->level == 2) {
-        cfg->speed_threshold = preset->speed_threshold;
-        cfg->speed_max = preset->speed_max;
-        cfg->min_factor = preset->min_factor;
     }
 
     LOG_INF("Applied preset '%s': sens=%u, max=%u, curve=%u", 
