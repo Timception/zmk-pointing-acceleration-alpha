@@ -23,11 +23,11 @@ extern "C" {
 // CONSTANTS AND CONFIGURATION
 // =============================================================================
 
-// Core safety limits to prevent overflow and system crashes
+// Core safety limits to prevent overflow and system crashes - aligned with Kconfig
 #define MAX_SAFE_INPUT_VALUE    2000    // Maximum safe input value (increased for trackball support)
 #define MAX_SAFE_FACTOR         10000   // Maximum safe acceleration factor
-#define MAX_SAFE_SENSITIVITY    5000    // Maximum safe sensitivity
-#define MIN_SAFE_SENSITIVITY    100     // Minimum safe sensitivity
+#define MAX_SAFE_SENSITIVITY    2000    // Maximum safe sensitivity (aligned with Kconfig)
+#define MIN_SAFE_SENSITIVITY    200     // Minimum safe sensitivity (aligned with Kconfig)
 #define MAX_REASONABLE_SPEED    50000   // Maximum reasonable speed (counts/sec)
 
 // DPI calculation constants

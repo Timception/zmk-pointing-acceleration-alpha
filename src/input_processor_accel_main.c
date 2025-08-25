@@ -58,8 +58,16 @@ static int accel_init_device(const struct device *dev) {
         return ret;
     }
     
-    // Initialize runtime data structures
-    memset(data, 0, sizeof(struct accel_data));
+    // Initialize runtime data structures - ensure proper memory initialization
+    if (data) {
+        memset(data, 0, sizeof(struct accel_data));
+        // Initialize timing data to prevent division by zero
+        data->last_time_ms = k_uptime_get_32();
+        data->recent_speed = 0;
+    } else {
+        LOG_ERR("Device %s: Data structure is NULL", dev->name);
+        return -ENOMEM;
+    }
     
     LOG_INF("Device %s: Acceleration processor ready (Level %d)", dev->name, cfg->level);
     return 0;
@@ -213,7 +221,13 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         accelerated_value = (input_value > 0) ? 1 : -1;
     }
     
-    // Update event value - single assignment
+    // Final safety validation before updating event
+    if (abs(accelerated_value) > INT16_MAX) {
+        LOG_ERR("Final accelerated value %d exceeds safe range, emergency clamp", accelerated_value);
+        accelerated_value = (accelerated_value > 0) ? INT16_MAX : INT16_MIN;
+    }
+    
+    // Update event value - single assignment with final validation
     event->value = accelerated_value;
     
     return 0;

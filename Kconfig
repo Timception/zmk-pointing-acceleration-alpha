@@ -171,9 +171,10 @@ config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
     int "Maximum acceleration factor (scaled by 1000)"
     default 2000
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
-    range 1000 3000
+    range 1000 5000
     help
       Maximum acceleration factor at high speeds. 2000 = 2.0x (moderate acceleration).
+      Maximum safe value is 5000 (5.0x) to prevent system instability.
 
 config INPUT_PROCESSOR_ACCEL_CURVE_TYPE
     int "Acceleration curve type"
@@ -298,9 +299,10 @@ config INPUT_PROCESSOR_ACCEL_MAX_FACTOR
     int "Maximum acceleration factor (scaled by 1000)"
     default 2000
     depends on INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM
-    range 1000 3000
+    range 1000 5000
     help
       Maximum acceleration factor at high speeds. 2000 = 2.0x (moderate acceleration).
+      Maximum safe value is 5000 (5.0x) to prevent system instability.
 
 config INPUT_PROCESSOR_ACCEL_Y_BOOST
     int "Y-axis sensitivity boost (scaled by 1000)"
