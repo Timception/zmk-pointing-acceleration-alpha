@@ -23,11 +23,11 @@ extern "C" {
 // CONSTANTS AND CONFIGURATION
 // =============================================================================
 
-// Core safety limits to prevent overflow and system crashes
+// Core safety limits to prevent overflow and system crashes - aligned with Kconfig
 #define MAX_SAFE_INPUT_VALUE    2000    // Maximum safe input value (increased for trackball support)
 #define MAX_SAFE_FACTOR         10000   // Maximum safe acceleration factor
-#define MAX_SAFE_SENSITIVITY    5000    // Maximum safe sensitivity
-#define MIN_SAFE_SENSITIVITY    100     // Minimum safe sensitivity
+#define MAX_SAFE_SENSITIVITY    2000    // Maximum safe sensitivity (aligned with Kconfig)
+#define MIN_SAFE_SENSITIVITY    200     // Minimum safe sensitivity (aligned with Kconfig)
 #define MAX_REASONABLE_SPEED    50000   // Maximum reasonable speed (counts/sec)
 
 // DPI calculation constants
@@ -141,10 +141,9 @@ struct accel_config {
 int accel_validate_config(const struct accel_config *cfg);
 
 /**
- * @brief Apply Kconfig preset to configuration
- * @param cfg Configuration structure to modify
+ * @brief Apply Kconfig preset to configuration (implemented in device initialization)
+ * Note: This functionality is handled during device tree initialization
  */
-void accel_config_apply_kconfig_preset(struct accel_config *cfg);
 
 /**
  * @brief Memory pool management functions
@@ -161,7 +160,9 @@ static inline uint16_t accel_decode_y_boost(uint8_t scaled) {
 
 static inline uint16_t accel_decode_sensor_dpi(uint8_t dpi_class) {
     static const uint16_t dpi_table[] = {400, 800, 1200, 1600, 3200, 6400, 8000, 800};
-    return (dpi_class < 7) ? dpi_table[dpi_class] : dpi_table[7]; // Default to 800
+    // Enhanced bounds checking: ensure dpi_class is always within valid range
+    uint8_t safe_class = (dpi_class < 8) ? dpi_class : 7; // Default to 800 DPI (index 7)
+    return dpi_table[safe_class];
 }
 
 /**

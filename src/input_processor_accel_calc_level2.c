@@ -31,17 +31,20 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     LOG_DBG("Standard level not enabled, fallback to simple calculation");
     return accel_simple_calculate(cfg, input_value, code);
 #else
-    // Enhanced safety: Input value validation for reasonable range
+    // Enhanced safety: Input value validation for reasonable range with improved logic
     const int32_t MAX_REASONABLE_INPUT = 200;  // Covers most legitimate use cases
+    const int32_t MAX_EXTREME_INPUT = MAX_REASONABLE_INPUT * 3; // 600
     
     if (abs(input_value) > MAX_REASONABLE_INPUT) {
-        if (abs(input_value) > MAX_REASONABLE_INPUT * 3) {
-            // Extremely large values (>600) are likely sensor noise - ignore them
-            LOG_WRN("Level2: Input value %d too extreme, ignoring", input_value);
+        if (abs(input_value) > MAX_EXTREME_INPUT) {
+            // Extremely large values (>600) are likely sensor noise or malicious input
+            LOG_WRN("Level2: Input value %d too extreme (>%d), rejecting for safety", 
+                    input_value, MAX_EXTREME_INPUT);
             return 0;
         } else {
-            // Large but reasonable values (200-600) - clamp to limit
-            LOG_DBG("Level2: Input value %d clamped to %d", input_value, MAX_REASONABLE_INPUT);
+            // Large but reasonable values (200-600) - clamp to limit with warning
+            LOG_DBG("Level2: Input value %d clamped to %d for safety", 
+                    input_value, MAX_REASONABLE_INPUT);
             input_value = (input_value > 0) ? MAX_REASONABLE_INPUT : -MAX_REASONABLE_INPUT;
         }
     }
@@ -55,12 +58,18 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     uint32_t speed = accel_calculate_simple_speed(data, input_value);
     
+    // Enhanced safety: Type-safe speed validation with bounds checking
+    uint32_t speed_threshold = (cfg->cfg.level2.speed_threshold > 0) ? 
+        (uint32_t)cfg->cfg.level2.speed_threshold : 600; // Safe default
+    uint32_t speed_max = (cfg->cfg.level2.speed_max > speed_threshold) ? 
+        (uint32_t)cfg->cfg.level2.speed_max : speed_threshold + 1000; // Safe default
+    
     #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
     LOG_DBG("Level2: speed=%u, threshold=%u, max=%u", 
-            speed, cfg->cfg.level2.speed_threshold, cfg->cfg.level2.speed_max);
+            speed, speed_threshold, speed_max);
     #endif
     
-    // Enhanced safety: Speed validation
+    // Enhanced safety: Speed validation with type-safe comparison
     if (speed > MAX_REASONABLE_SPEED) {
         LOG_ERR("Level2: Calculated speed %u exceeds maximum %u, using fallback", 
                 speed, MAX_REASONABLE_SPEED);
@@ -76,32 +85,51 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         return accel_safe_fallback_calculate(input_value, cfg->cfg.level2.max_factor);
     }
     
-    // CRITICAL FIX: Apply sensitivity correctly
-    int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+    // CRITICAL FIX: Safe sensitivity application with comprehensive overflow protection
+    int64_t result;
     
-    // Enhanced safety: Check intermediate result
-    if (abs(result) > (int64_t)INT32_MAX) {
-        LOG_WRN("Level2: Intermediate result %lld too large, using fallback", result);
+    // Enhanced safety: Use 64-bit safe comparison for overflow detection
+    const int64_t max_safe_input = INT64_MAX / dpi_adjusted_sensitivity;
+    if (abs(input_value) > max_safe_input) {
+        LOG_WRN("Level2: Potential overflow detected, using safe calculation");
+        result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
+                                 (int64_t)INT32_MAX * SENSITIVITY_SCALE);
+    } else {
+        result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+    }
+    
+    // Enhanced safety: Comprehensive intermediate result validation
+    const int64_t max_intermediate = (int64_t)INT16_MAX * SENSITIVITY_SCALE;
+    if (abs(result) > max_intermediate) {
+        LOG_WRN("Level2: Intermediate result %lld exceeds safe limit, using fallback", result);
         return accel_safe_fallback_calculate(input_value, cfg->cfg.level2.max_factor);
     }
     
-    // Apply sensitivity scaling
-    result = result / SENSITIVITY_SCALE;
+    // Apply sensitivity scaling with safety validation
+    if (result != 0) {
+        result = result / SENSITIVITY_SCALE;
+        
+        // Additional safety check after scaling
+        if (abs(result) > INT16_MAX) {
+            LOG_WRN("Level2: Scaled result %lld exceeds int16 range, using fallback", result);
+            return accel_safe_fallback_calculate(input_value, cfg->cfg.level2.max_factor);
+        }
+    }
     
-    // Enhanced safety: Speed-based acceleration with comprehensive protection
-    uint32_t factor = cfg->cfg.level2.min_factor;
+    // Enhanced safety: Speed-based acceleration with type-safe operations
+    uint32_t factor = (uint32_t)cfg->cfg.level2.min_factor;
     
-    // Enhanced safety: Validate speed thresholds
-    if (cfg->cfg.level2.speed_threshold >= cfg->cfg.level2.speed_max) {
+    // Enhanced safety: Type-safe speed threshold validation
+    if (speed_threshold >= speed_max) {
         LOG_ERR("Level2: Invalid speed configuration (threshold=%u >= max=%u), using linear", 
-                cfg->cfg.level2.speed_threshold, cfg->cfg.level2.speed_max);
-        factor = cfg->cfg.level2.min_factor;
-    } else if (speed > cfg->cfg.level2.speed_threshold && cfg->cfg.level2.speed_max > cfg->cfg.level2.speed_threshold) {
-        if (speed >= cfg->cfg.level2.speed_max) {
-            factor = cfg->cfg.level2.max_factor;
+                speed_threshold, speed_max);
+        factor = (uint32_t)cfg->cfg.level2.min_factor;
+    } else if (speed > speed_threshold && speed_max > speed_threshold) {
+        if (speed >= speed_max) {
+            factor = (uint32_t)cfg->cfg.level2.max_factor;
         } else {
-            uint32_t speed_range = cfg->cfg.level2.speed_max - cfg->cfg.level2.speed_threshold;
-            uint32_t speed_offset = speed - cfg->cfg.level2.speed_threshold;
+            uint32_t speed_range = speed_max - speed_threshold;
+            uint32_t speed_offset = speed - speed_threshold;
             
             // Enhanced safety: Validate speed range
             if (speed_range == 0) {
@@ -136,28 +164,32 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                 // Final clamp and factor calculation
                 curve = ACCEL_CLAMP(curve, 0, SPEED_NORMALIZATION);
                 
-                // Enhanced safety: Factor calculation with overflow protection
-                if (cfg->cfg.level2.max_factor >= cfg->cfg.level2.min_factor) {
-                    uint64_t factor_range = cfg->cfg.level2.max_factor - cfg->cfg.level2.min_factor;
+                // Enhanced safety: Type-safe factor calculation with overflow protection
+                uint32_t max_factor = (uint32_t)cfg->cfg.level2.max_factor;
+                uint32_t min_factor = (uint32_t)cfg->cfg.level2.min_factor;
+                
+                if (max_factor >= min_factor) {
+                    uint64_t factor_range = (uint64_t)max_factor - min_factor;
                     
-                    // Enhanced safety: Check for potential overflow
+                    // Enhanced safety: Check for potential overflow with type safety
                     if (factor_range > UINT32_MAX / SPEED_NORMALIZATION) {
                         LOG_WRN("Level2: Factor range too large, using conservative calculation");
-                        factor = cfg->cfg.level2.min_factor + (factor_range * curve) / (SPEED_NORMALIZATION * 2);
+                        factor = min_factor + (uint32_t)((factor_range * curve) / (SPEED_NORMALIZATION * 2));
                     } else {
                         uint64_t factor_add = (factor_range * curve) / SPEED_NORMALIZATION;
-                        factor = cfg->cfg.level2.min_factor + (uint32_t)ACCEL_CLAMP(factor_add, 0, factor_range);
+                        factor = min_factor + (uint32_t)ACCEL_CLAMP(factor_add, 0, factor_range);
                     }
                 } else {
                     LOG_WRN("Level2: max_factor < min_factor, using min_factor");
-                    factor = cfg->cfg.level2.min_factor;
+                    factor = min_factor;
                 }
             }
         }
         
-        // Enhanced safety: Final factor validation
-        factor = ACCEL_CLAMP(factor, cfg->cfg.level2.min_factor, 
-                           ACCEL_CLAMP(cfg->cfg.level2.max_factor, SENSITIVITY_SCALE, MAX_SAFE_FACTOR));
+        // Enhanced safety: Type-safe final factor validation
+        uint32_t min_factor = (uint32_t)cfg->cfg.level2.min_factor;
+        uint32_t max_factor = (uint32_t)ACCEL_CLAMP(cfg->cfg.level2.max_factor, SENSITIVITY_SCALE, MAX_SAFE_FACTOR);
+        factor = ACCEL_CLAMP(factor, min_factor, max_factor);
         
         // Debug: Log acceleration factor calculation
         LOG_DBG("Level2: factor=%u, min=%u, max=%u", 
@@ -192,22 +224,22 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
             if (safe_y_boost != y_boost) {
                 LOG_WRN("Level2: Clamping y_boost from %u to %u", y_boost, safe_y_boost);
             }
-        
-        // Enhanced safety: Check if Y-boost would cause overflow
-        if (abs(result) > (int64_t)INT16_MAX * SENSITIVITY_SCALE / safe_y_boost) {
-            LOG_WRN("Level2: Y-boost would cause overflow, using conservative boost");
-            safe_y_boost = SENSITIVITY_SCALE + (safe_y_boost - SENSITIVITY_SCALE) / 2;
-        }
-        
-        int64_t temp_result = safe_multiply_64(result, (int64_t)safe_y_boost, 
-                                             (int64_t)INT16_MAX * SENSITIVITY_SCALE);
-        result = temp_result / SENSITIVITY_SCALE;
-        
-        // Enhanced safety: Check result after Y-boost
-        if (abs(result) > INT16_MAX) {
-            LOG_WRN("Level2: Y-boosted result %lld exceeds int16 range, clamping", result);
-            result = (result > 0) ? INT16_MAX : INT16_MIN;
-        }
+            
+            // Enhanced safety: Check if Y-boost would cause overflow
+            if (abs(result) > (int64_t)INT16_MAX * SENSITIVITY_SCALE / safe_y_boost) {
+                LOG_WRN("Level2: Y-boost would cause overflow, using conservative boost");
+                safe_y_boost = SENSITIVITY_SCALE + (safe_y_boost - SENSITIVITY_SCALE) / 2;
+            }
+            
+            int64_t temp_result = safe_multiply_64(result, (int64_t)safe_y_boost, 
+                                                 (int64_t)INT16_MAX * SENSITIVITY_SCALE);
+            result = temp_result / SENSITIVITY_SCALE;
+            
+            // Enhanced safety: Check result after Y-boost
+            if (abs(result) > INT16_MAX) {
+                LOG_WRN("Level2: Y-boosted result %lld exceeds int16 range, clamping", result);
+                result = (result > 0) ? INT16_MAX : INT16_MIN;
+            }
         }
     }
     

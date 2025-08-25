@@ -23,9 +23,9 @@ int accel_validate_config(const struct accel_config *cfg) {
         return -EINVAL;
     }
 
-    // Validate DPI class
-    if (cfg->sensor_dpi_class > 6) {
-        LOG_ERR("Invalid sensor DPI class: %u (must be 0-6)", cfg->sensor_dpi_class);
+    // Validate DPI class with enhanced bounds checking
+    if (cfg->sensor_dpi_class > 7) { // Allow up to 7 (8 total entries in table)
+        LOG_ERR("Invalid sensor DPI class: %u (must be 0-7)", cfg->sensor_dpi_class);
         return -EINVAL;
     }
     
@@ -122,6 +122,15 @@ int accel_validate_config(const struct accel_config *cfg) {
     if (max_factor <= sensitivity) {
         LOG_WRN("Max factor (%u) should typically be greater than sensitivity (%u)", 
                 max_factor, sensitivity);
+    }
+    
+    // Enhanced safety: Check for extreme value combinations that could cause overflow
+    // Note: sensor_dpi already declared above, reuse it
+    uint64_t overflow_check = (uint64_t)sensitivity * max_factor * sensor_dpi;
+    if (overflow_check > (UINT64_MAX / 4000)) { // Conservative limit
+        LOG_WRN("Extreme configuration detected: sensitivity=%u, max_factor=%u, dpi=%u", 
+                sensitivity, max_factor, sensor_dpi);
+        LOG_WRN("This combination may cause calculation overflow in extreme cases");
     }
     
     LOG_DBG("Configuration validation passed for level %u", cfg->level);

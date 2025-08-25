@@ -52,17 +52,20 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     int32_t safe_result = safe_int64_to_int32(result);
     return safe_int32_to_int16(safe_result);
 #else
-    // Enhanced safety: Input value validation for reasonable range
+    // Enhanced safety: Input value validation for reasonable range with improved logic
     const int32_t MAX_REASONABLE_INPUT = 200;  // Covers most legitimate use cases
+    const int32_t MAX_EXTREME_INPUT = MAX_REASONABLE_INPUT * 3; // 600
     
     if (abs(input_value) > MAX_REASONABLE_INPUT) {
-        if (abs(input_value) > MAX_REASONABLE_INPUT * 3) {
-            // Extremely large values (>600) are likely sensor noise - ignore them
-            LOG_WRN("Level1: Input value %d too extreme, ignoring", input_value);
+        if (abs(input_value) > MAX_EXTREME_INPUT) {
+            // Extremely large values (>600) are likely sensor noise or malicious input
+            LOG_WRN("Level1: Input value %d too extreme (>%d), rejecting for safety", 
+                    input_value, MAX_EXTREME_INPUT);
             return 0;
         } else {
-            // Large but reasonable values (200-600) - clamp to limit
-            LOG_DBG("Level1: Input value %d clamped to %d", input_value, MAX_REASONABLE_INPUT);
+            // Large but reasonable values (200-600) - clamp to limit with warning
+            LOG_DBG("Level1: Input value %d clamped to %d for safety", 
+                    input_value, MAX_REASONABLE_INPUT);
             input_value = (input_value > 0) ? MAX_REASONABLE_INPUT : -MAX_REASONABLE_INPUT;
         }
     }
@@ -84,23 +87,43 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         return input_value;
     }
     
-    // CRITICAL FIX: The DPI adjustment was being applied incorrectly
-    // We need to apply sensitivity as a multiplier, not a direct multiplication
-    int64_t result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+    // CRITICAL FIX: Safe DPI adjustment with comprehensive overflow protection
+    int64_t result;
+    
+    // Enhanced safety: Use 64-bit safe comparison for overflow detection
+    const int64_t max_safe_input = INT64_MAX / dpi_adjusted_sensitivity;
+    if (abs(input_value) > max_safe_input) {
+        LOG_WRN("Level1: Potential overflow detected, using safe calculation");
+        // Use safe multiplication with proper 64-bit limits
+        result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
+                                 (int64_t)INT32_MAX * SENSITIVITY_SCALE);
+    } else {
+        result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
+    }
     
     #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
     LOG_DBG("Level1: input=%d * adj_sens=%u = raw_result=%lld", 
             input_value, dpi_adjusted_sensitivity, result);
     #endif
     
-    // Enhanced safety: Check intermediate result
-    if (abs(result) > (int64_t)INT32_MAX * SENSITIVITY_SCALE / 2) {
-        LOG_WRN("Level1: Intermediate result %lld too large, scaling down", result);
-        result = result / 2; // Emergency scaling
+    // Enhanced safety: Comprehensive intermediate result validation
+    const int64_t max_intermediate = (int64_t)INT16_MAX * SENSITIVITY_SCALE;
+    if (abs(result) > max_intermediate) {
+        LOG_WRN("Level1: Intermediate result %lld exceeds safe limit %lld, clamping", 
+                result, max_intermediate);
+        result = (result > 0) ? max_intermediate : -max_intermediate;
     }
     
-    // Apply sensitivity scaling
-    result = result / SENSITIVITY_SCALE;
+    // Apply sensitivity scaling with additional safety check
+    if (result != 0) {
+        result = result / SENSITIVITY_SCALE;
+        
+        // Final safety check after scaling
+        if (abs(result) > INT16_MAX) {
+            LOG_WRN("Level1: Scaled result %lld exceeds int16 range, clamping", result);
+            result = (result > 0) ? INT16_MAX : INT16_MIN;
+        }
+    }
     
     // Level 1 curve processing
     int32_t abs_input = abs(input_value);
@@ -111,7 +134,10 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         // Enhanced safety: Validate max_factor before use
         uint32_t safe_max_factor = ACCEL_CLAMP(cfg->cfg.level1.max_factor, SENSITIVITY_SCALE, MAX_SAFE_FACTOR);
         
-        switch (cfg->cfg.level1.curve_type) {
+        // Enhanced safety: Validate curve_type with bounds checking
+        uint8_t safe_curve_type = (cfg->cfg.level1.curve_type < 3) ? cfg->cfg.level1.curve_type : 1;
+        
+        switch (safe_curve_type) {
             case 0: // Linear - Enhanced safety
                 {
                     uint64_t linear_add = safe_multiply_64((int64_t)abs_input, 
