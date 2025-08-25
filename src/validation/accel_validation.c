@@ -125,7 +125,7 @@ int accel_validate_config(const struct accel_config *cfg) {
     }
     
     // Enhanced safety: Check for extreme value combinations that could cause overflow
-    uint16_t sensor_dpi = accel_decode_sensor_dpi(cfg->sensor_dpi_class);
+    // Note: sensor_dpi already declared above, reuse it
     uint64_t overflow_check = (uint64_t)sensitivity * max_factor * sensor_dpi;
     if (overflow_check > (UINT64_MAX / 4000)) { // Conservative limit
         LOG_WRN("Extreme configuration detected: sensitivity=%u, max_factor=%u, dpi=%u", 
