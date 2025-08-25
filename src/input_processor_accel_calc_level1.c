@@ -87,13 +87,14 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         return input_value;
     }
     
-    // CRITICAL FIX: Safe DPI adjustment with overflow protection
+    // CRITICAL FIX: Safe DPI adjustment with comprehensive overflow protection
     int64_t result;
     
-    // Enhanced safety: Check for potential overflow before multiplication
-    if (abs(input_value) > INT32_MAX / dpi_adjusted_sensitivity) {
+    // Enhanced safety: Use 64-bit safe comparison for overflow detection
+    const int64_t max_safe_input = INT64_MAX / dpi_adjusted_sensitivity;
+    if (abs(input_value) > max_safe_input) {
         LOG_WRN("Level1: Potential overflow detected, using safe calculation");
-        // Use safe multiplication with clamping
+        // Use safe multiplication with proper 64-bit limits
         result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
                                  (int64_t)INT32_MAX * SENSITIVITY_SCALE);
     } else {

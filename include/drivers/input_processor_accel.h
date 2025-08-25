@@ -141,10 +141,9 @@ struct accel_config {
 int accel_validate_config(const struct accel_config *cfg);
 
 /**
- * @brief Apply Kconfig preset to configuration
- * @param cfg Configuration structure to modify
+ * @brief Apply Kconfig preset to configuration (implemented in device initialization)
+ * Note: This functionality is handled during device tree initialization
  */
-void accel_config_apply_kconfig_preset(struct accel_config *cfg);
 
 /**
  * @brief Memory pool management functions

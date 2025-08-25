@@ -153,7 +153,17 @@ static inline int32_t accel_fast_calculate_level1(const struct accel_config *cfg
     // DPI adjustment using lookup table with bounds checking
     uint8_t safe_dpi_class = (cfg->sensor_dpi_class < 8) ? cfg->sensor_dpi_class : 7; // Default to 800 DPI
     uint16_t dpi_mult = dpi_adjustment_table[safe_dpi_class];
-    int64_t result = ((int64_t)input_value * sensitivity * dpi_mult) / (SENSITIVITY_SCALE * 1000);
+    
+    // Enhanced safety: Prevent 3-value multiplication overflow
+    int64_t result;
+    // Check if any multiplication would overflow
+    if (abs(input_value) > INT64_MAX / (sensitivity * dpi_mult)) {
+        // Use safe step-by-step calculation
+        int64_t temp1 = safe_multiply_64((int64_t)input_value, (int64_t)sensitivity, INT64_MAX / 2000);
+        result = safe_multiply_64(temp1, (int64_t)dpi_mult, INT64_MAX / 1000) / (SENSITIVITY_SCALE * 1000);
+    } else {
+        result = ((int64_t)input_value * sensitivity * dpi_mult) / (SENSITIVITY_SCALE * 1000);
+    }
     
     // Fast curve calculation using lookup table with bounds checking
     int32_t abs_input = (input_value < 0) ? -input_value : input_value;
@@ -169,17 +179,26 @@ static inline int32_t accel_fast_calculate_level1(const struct accel_config *cfg
     if (code == INPUT_REL_Y) {
         uint16_t y_boost = accel_decode_y_boost(cfg->y_boost_scaled);
         if (y_boost != SENSITIVITY_SCALE) {
-            // Enhanced safety: Check for potential overflow
-            if (abs(result) <= INT32_MAX / y_boost) {
+            // Enhanced safety: Check for potential overflow using correct 64-bit comparison
+            const int64_t max_safe_result = INT64_MAX / y_boost;
+            if (abs(result) <= max_safe_result) {
                 result = (result * y_boost) / SENSITIVITY_SCALE;
             } else {
                 // Overflow would occur, use conservative boost
-                result = (result * (SENSITIVITY_SCALE + (y_boost - SENSITIVITY_SCALE) / 2)) / SENSITIVITY_SCALE;
+                uint16_t conservative_boost = SENSITIVITY_SCALE + (y_boost - SENSITIVITY_SCALE) / 2;
+                result = (result * conservative_boost) / SENSITIVITY_SCALE;
             }
         }
     }
     
-    // Clamp result
+    // Enhanced safety: Final result validation with comprehensive bounds checking
+    if (result > INT32_MAX) {
+        result = 400; // Conservative upper limit
+    } else if (result < INT32_MIN) {
+        result = -400; // Conservative lower limit
+    }
+    
+    // Clamp result to reasonable range
     return (result > 400) ? 400 : ((result < -400) ? -400 : (int32_t)result);
 }
 

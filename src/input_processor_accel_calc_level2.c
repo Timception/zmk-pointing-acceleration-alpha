@@ -88,8 +88,9 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     // CRITICAL FIX: Safe sensitivity application with comprehensive overflow protection
     int64_t result;
     
-    // Enhanced safety: Pre-check for potential overflow
-    if (abs(input_value) > INT32_MAX / dpi_adjusted_sensitivity) {
+    // Enhanced safety: Use 64-bit safe comparison for overflow detection
+    const int64_t max_safe_input = INT64_MAX / dpi_adjusted_sensitivity;
+    if (abs(input_value) > max_safe_input) {
         LOG_WRN("Level2: Potential overflow detected, using safe calculation");
         result = safe_multiply_64((int64_t)input_value, (int64_t)dpi_adjusted_sensitivity, 
                                  (int64_t)INT32_MAX * SENSITIVITY_SCALE);

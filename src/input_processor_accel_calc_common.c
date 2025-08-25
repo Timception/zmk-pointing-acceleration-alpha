@@ -19,14 +19,18 @@ LOG_MODULE_DECLARE(input_processor_accel);
 int64_t safe_multiply_64(int64_t a, int64_t b, int64_t max_result) {
     if (a == 0 || b == 0) return 0;
     
+    // Enhanced safety: More robust overflow detection
     if (a > 0 && b > 0) {
         if (a > max_result / b) return max_result;
     } else if (a < 0 && b < 0) {
-        if (a < max_result / b) return max_result;
+        // Both negative: result is positive
+        if ((-a) > max_result / (-b)) return max_result;
     } else if (a < 0 && b > 0) {
-        if (a < (-max_result) / b) return -max_result;
+        // a negative, b positive: result is negative
+        if ((-a) > max_result / b) return -max_result;
     } else if (a > 0 && b < 0) {
-        if (b < (-max_result) / a) return -max_result;
+        // a positive, b negative: result is negative
+        if (a > max_result / (-b)) return -max_result;
     }
     
     return a * b;
