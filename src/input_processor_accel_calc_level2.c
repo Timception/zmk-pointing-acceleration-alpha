@@ -58,9 +58,11 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     uint32_t speed = accel_calculate_simple_speed(data, input_value);
     
-    // Enhanced safety: Type-safe speed validation with explicit casting
-    uint32_t speed_threshold = (uint32_t)cfg->cfg.level2.speed_threshold;
-    uint32_t speed_max = (uint32_t)cfg->cfg.level2.speed_max;
+    // Enhanced safety: Type-safe speed validation with bounds checking
+    uint32_t speed_threshold = (cfg->cfg.level2.speed_threshold > 0) ? 
+        (uint32_t)cfg->cfg.level2.speed_threshold : 600; // Safe default
+    uint32_t speed_max = (cfg->cfg.level2.speed_max > speed_threshold) ? 
+        (uint32_t)cfg->cfg.level2.speed_max : speed_threshold + 1000; // Safe default
     
     #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
     LOG_DBG("Level2: speed=%u, threshold=%u, max=%u", 
@@ -221,22 +223,22 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
             if (safe_y_boost != y_boost) {
                 LOG_WRN("Level2: Clamping y_boost from %u to %u", y_boost, safe_y_boost);
             }
-        
-        // Enhanced safety: Check if Y-boost would cause overflow
-        if (abs(result) > (int64_t)INT16_MAX * SENSITIVITY_SCALE / safe_y_boost) {
-            LOG_WRN("Level2: Y-boost would cause overflow, using conservative boost");
-            safe_y_boost = SENSITIVITY_SCALE + (safe_y_boost - SENSITIVITY_SCALE) / 2;
-        }
-        
-        int64_t temp_result = safe_multiply_64(result, (int64_t)safe_y_boost, 
-                                             (int64_t)INT16_MAX * SENSITIVITY_SCALE);
-        result = temp_result / SENSITIVITY_SCALE;
-        
-        // Enhanced safety: Check result after Y-boost
-        if (abs(result) > INT16_MAX) {
-            LOG_WRN("Level2: Y-boosted result %lld exceeds int16 range, clamping", result);
-            result = (result > 0) ? INT16_MAX : INT16_MIN;
-        }
+            
+            // Enhanced safety: Check if Y-boost would cause overflow
+            if (abs(result) > (int64_t)INT16_MAX * SENSITIVITY_SCALE / safe_y_boost) {
+                LOG_WRN("Level2: Y-boost would cause overflow, using conservative boost");
+                safe_y_boost = SENSITIVITY_SCALE + (safe_y_boost - SENSITIVITY_SCALE) / 2;
+            }
+            
+            int64_t temp_result = safe_multiply_64(result, (int64_t)safe_y_boost, 
+                                                 (int64_t)INT16_MAX * SENSITIVITY_SCALE);
+            result = temp_result / SENSITIVITY_SCALE;
+            
+            // Enhanced safety: Check result after Y-boost
+            if (abs(result) > INT16_MAX) {
+                LOG_WRN("Level2: Y-boosted result %lld exceeds int16 range, clamping", result);
+                result = (result > 0) ? INT16_MAX : INT16_MIN;
+            }
         }
     }
     

@@ -19,7 +19,8 @@ LOG_MODULE_DECLARE(input_processor_accel);
 struct accel_data *accel_data_alloc(void) {
     struct accel_data *data;
     int ret = k_mem_slab_alloc(&accel_data_pool, (void **)&data, K_NO_WAIT);
-    if (ret == 0) {
+    if (ret == 0 && data != NULL) {
+        // Enhanced safety: Validate allocated pointer before use
         memset(data, 0, sizeof(struct accel_data));
         // Initialize with safe default values to prevent issues
         data->last_time_ms = k_uptime_get_32();
@@ -34,7 +35,7 @@ struct accel_data *accel_data_alloc(void) {
     } else if (ret == -EAGAIN) {
         LOG_ERR("Memory allocation would block - called from interrupt context");
     } else {
-        LOG_ERR("Failed to allocate accel_data from pool: %d", ret);
+        LOG_ERR("Failed to allocate accel_data from pool: %d (ptr=%p)", ret, data);
     }
     
     return NULL;

@@ -150,23 +150,33 @@ static inline int32_t accel_fast_calculate_level1(const struct accel_config *cfg
     uint32_t max_factor = cfg->cfg.level1.max_factor;
     uint8_t curve_type = cfg->cfg.level1.curve_type;
     
-    // DPI adjustment using lookup table
-    uint16_t dpi_mult = dpi_adjustment_table[cfg->sensor_dpi_class];
+    // DPI adjustment using lookup table with bounds checking
+    uint8_t safe_dpi_class = (cfg->sensor_dpi_class < 8) ? cfg->sensor_dpi_class : 7; // Default to 800 DPI
+    uint16_t dpi_mult = dpi_adjustment_table[safe_dpi_class];
     int64_t result = ((int64_t)input_value * sensitivity * dpi_mult) / (SENSITIVITY_SCALE * 1000);
     
-    // Fast curve calculation using lookup table
+    // Fast curve calculation using lookup table with bounds checking
     int32_t abs_input = (input_value < 0) ? -input_value : input_value;
     if (abs_input > 1) {
-        uint32_t curve_mult = curve_multiplier_table[curve_type];
+        uint8_t safe_curve_type = (curve_type < 3) ? curve_type : 1; // Default to Mild
+        uint32_t curve_mult = curve_multiplier_table[safe_curve_type];
         uint32_t curve_factor = SENSITIVITY_SCALE + (abs_input * abs_input * curve_mult) / 100;
         curve_factor = (curve_factor > max_factor) ? max_factor : curve_factor;
         result = (result * curve_factor) / SENSITIVITY_SCALE;
     }
     
-    // Y-axis boost
+    // Y-axis boost with overflow protection
     if (code == INPUT_REL_Y) {
         uint16_t y_boost = accel_decode_y_boost(cfg->y_boost_scaled);
-        result = (result * y_boost) / SENSITIVITY_SCALE;
+        if (y_boost != SENSITIVITY_SCALE) {
+            // Enhanced safety: Check for potential overflow
+            if (abs(result) <= INT32_MAX / y_boost) {
+                result = (result * y_boost) / SENSITIVITY_SCALE;
+            } else {
+                // Overflow would occur, use conservative boost
+                result = (result * (SENSITIVITY_SCALE + (y_boost - SENSITIVITY_SCALE) / 2)) / SENSITIVITY_SCALE;
+            }
+        }
     }
     
     // Clamp result
@@ -221,9 +231,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         accelerated_value = (input_value > 0) ? 1 : -1;
     }
     
-    // Final safety validation before updating event
-    if (abs(accelerated_value) > INT16_MAX) {
-        LOG_ERR("Final accelerated value %d exceeds safe range, emergency clamp", accelerated_value);
+    // Final safety validation before updating event (no logging in interrupt context)
+    if (__builtin_expect(abs(accelerated_value) > INT16_MAX, 0)) {
+        // Emergency clamp without logging to maintain real-time performance
         accelerated_value = (accelerated_value > 0) ? INT16_MAX : INT16_MIN;
     }
     

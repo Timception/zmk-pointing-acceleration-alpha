@@ -103,14 +103,21 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     uint32_t time_delta_ms = current_time_ms - last_time_ms;
     uint16_t current_speed;
     
-    // **Fixed**: Correct speed calculation (counts per second)
+    // **Fixed**: Correct speed calculation (counts per second) with overflow protection
     if (time_delta_ms > 0 && time_delta_ms < 1000) { // Within 1 second
         // Speed = movement / time * 1000 (counts/sec)
-        uint32_t temp_speed = (abs_input * 1000) / time_delta_ms;
-        current_speed = (temp_speed > UINT16_MAX) ? UINT16_MAX : (uint16_t)temp_speed;
+        // Enhanced safety: Check for potential overflow before multiplication
+        if (abs_input > UINT32_MAX / 1000) {
+            current_speed = UINT16_MAX; // Cap at maximum
+        } else {
+            uint32_t temp_speed = (abs_input * 1000) / time_delta_ms;
+            current_speed = (temp_speed > UINT16_MAX) ? UINT16_MAX : (uint16_t)temp_speed;
+        }
     } else {
         // Input-based estimation when time is too long
-        current_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR;
+        // Enhanced safety: Prevent overflow in multiplication
+        uint32_t temp_speed = (uint32_t)abs_input * ACCEL_SPEED_SCALE_FACTOR;
+        current_speed = (temp_speed > UINT16_MAX) ? UINT16_MAX : (uint16_t)temp_speed;
     }
     
     // Speed samples removed for memory optimization

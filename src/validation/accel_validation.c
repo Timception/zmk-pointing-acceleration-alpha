@@ -23,9 +23,9 @@ int accel_validate_config(const struct accel_config *cfg) {
         return -EINVAL;
     }
 
-    // Validate DPI class
-    if (cfg->sensor_dpi_class > 6) {
-        LOG_ERR("Invalid sensor DPI class: %u (must be 0-6)", cfg->sensor_dpi_class);
+    // Validate DPI class with enhanced bounds checking
+    if (cfg->sensor_dpi_class > 7) { // Allow up to 7 (8 total entries in table)
+        LOG_ERR("Invalid sensor DPI class: %u (must be 0-7)", cfg->sensor_dpi_class);
         return -EINVAL;
     }
     

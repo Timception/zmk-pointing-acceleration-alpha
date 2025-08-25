@@ -133,7 +133,10 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         // Enhanced safety: Validate max_factor before use
         uint32_t safe_max_factor = ACCEL_CLAMP(cfg->cfg.level1.max_factor, SENSITIVITY_SCALE, MAX_SAFE_FACTOR);
         
-        switch (cfg->cfg.level1.curve_type) {
+        // Enhanced safety: Validate curve_type with bounds checking
+        uint8_t safe_curve_type = (cfg->cfg.level1.curve_type < 3) ? cfg->cfg.level1.curve_type : 1;
+        
+        switch (safe_curve_type) {
             case 0: // Linear - Enhanced safety
                 {
                     uint64_t linear_add = safe_multiply_64((int64_t)abs_input, 
