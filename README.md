@@ -8,11 +8,32 @@ I have created a Repo from [Template](https://github.com/oleksandrmaslov/zmk-poi
 
 ---
 
-# ZMK MULTI-LEVEL POINTING ACCELERATION
+<div align="center">
+  <h1>ZMK MULTI-LEVEL POINTING ACCELERATION</h1>
+    <a href="https://badgen.net/badge/ZMK/v0.3.0/blue" alt="ZMK">
+      <img src="https://badgen.net/badge/ZMK/v0.3.0/blue" />
+    </a>
+    <a href="https://badgen.net/badge/license/MIT" alt="License">
+      <img src="https://badgen.net/badge/license/MIT" />
+    </a>
+    <a href="https://deepwiki.com/nuovotaka/zmk-pointing-acceleration-alpha" alt="Ask DeepWiki">
+        <img src="https://deepwiki.com/badge.svg" />
+    </a>
+  <hr>
+  <p align="center">
 
-This repository features a **two-level** pointer acceleration system for ZMK, suitable for both beginners and advanced users.
+This repository features a **two-level** pointer acceleration system for ZMK,<br>
+suitable for both beginners and advanced users.<br><br>
+The acceleration enhances precise cursor movement at slow speeds<br>
+and enables rapid movement at higher speeds.<br>
+Acceleration curves are customizable,<br>
+and settings can be tailored for pointing devices.
 
-The acceleration enhances precise cursor movement at slow speeds and enables rapid movement at higher speeds. Acceleration curves are customizable, and settings can be tailored for pointing devices.
+</p>
+
+</div>
+
+---
 
 ## 🎯 **Choose Your Level**
 

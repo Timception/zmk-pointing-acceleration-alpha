@@ -8,11 +8,29 @@
 
 ---
 
-# ZMK マルチレベル ポインティング アクセラレーション
+<div align="center">
+  <h1>ZMK マルチレベル ポインティング アクセラレーション</h1>
+    <a href="https://badgen.net/badge/ZMK/v0.3.0/blue" alt="ZMK">
+      <img src="https://badgen.net/badge/ZMK/v0.3.0/blue" />
+    </a>
+    <a href="https://badgen.net/badge/license/MIT" alt="License">
+      <img src="https://badgen.net/badge/license/MIT" />
+    </a>
+    <a href="https://deepwiki.com/nuovotaka/zmk-pointing-acceleration-alpha" alt="Ask DeepWiki">
+        <img src="https://deepwiki.com/badge.svg" />
+    </a>
+<hr>
+<p align="center">
 
-このリポジトリは、初心者から上級者まで対応した ZMK 用の**2 レベル**ポインターアクセラレーションシステムを提供します。
+このリポジトリは、初心者から上級者まで対応した<br> ZMK 用の**2 レベル**ポインターアクセラレーションシステムを提供します。
+<br><br>
+アクセラレーションは低速時の精密なカーソル移動を向上させ、高速時の迅速な移動を可能にします。<br>アクセラレーションカーブはカスタマイズ可能で、ポインティングデバイスに合わせて設定を調整できます。
 
-アクセラレーションは低速時の精密なカーソル移動を向上させ、高速時の迅速な移動を可能にします。アクセラレーションカーブはカスタマイズ可能で、ポインティングデバイスに合わせて設定を調整できます。
+</p>
+
+</div>
+
+---
 
 ## 🎯 **レベルを選択**
 
