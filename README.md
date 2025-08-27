@@ -167,6 +167,9 @@ Add the acceleration configuration to your device overlay. This configuration sh
 
 Available presets work for both Level 1 and Level 2 (12 device-specific presets):
 
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Settings Presets</summary>
+
 ```ini
 # In your prj.conf, choose a device-specific preset:
 
@@ -197,9 +200,14 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL=y     # Optical mouse (800 DP
 };
 ```
 
+</details>
+
 **Option B: Custom Simple Settings**
 
 > **Note**: Level 1 custom settings are designed for beginners and use conservative acceleration limits to prevent excessive cursor movement. The system intentionally limits maximum acceleration to 3.0x and uses moderate speed thresholds for predictable behavior. If you need more aggressive acceleration, please try Level 2 presets first, then consider Level 2 custom settings.
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```ini
 # In your prj.conf:
@@ -218,9 +226,14 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 #### **Level 2: Standard Configuration**
 
 **Option A: Use a Preset (Recommended)**
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Settings Presets</summary>
 
 ```ini
 # In your prj.conf:
@@ -240,7 +253,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y       # Gaming laser mouse
 };
 ```
 
+</details>
+
 **Option B: Custom Standard Settings**
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```ini
 # In your prj.conf:
@@ -263,9 +281,14 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 ### Add to Input Chain
 
 Add the acceleration processor to your input device's processor chain:
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```devicetree
 / {
@@ -280,6 +303,8 @@ Add the acceleration processor to your input device's processor chain:
     };
 };
 ```
+
+</details>
 
 ## Configuration Options
 
@@ -385,6 +410,9 @@ The configurations under are just starting points - every person's perfect point
 
 ### General Use (Level 2 Standard):
 
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
+
 ```devicetree
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
@@ -400,7 +428,12 @@ The configurations under are just starting points - every person's perfect point
 };
 ```
 
+</details>
+
 ### Light Acceleration (Level 2 Standard):
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```devicetree
 &pointer_accel {
@@ -416,7 +449,12 @@ The configurations under are just starting points - every person's perfect point
 };
 ```
 
+</details>
+
 ### Heavy Acceleration (Level 2 Standard):
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```devicetree
 &pointer_accel {
@@ -433,9 +471,14 @@ The configurations under are just starting points - every person's perfect point
 };
 ```
 
+</details>
+
 ### Optimized Widescreen (Level 2 Standard) - Tested Configuration:
 
 #### Gaming
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```devicetree
 &pointer_accel {
@@ -452,7 +495,12 @@ The configurations under are just starting points - every person's perfect point
 };
 ```
 
+</details>
+
 #### Office
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```devicetree
 &pointer_accel {
@@ -474,7 +522,12 @@ The configurations under are just starting points - every person's perfect point
 };
 ```
 
+</details>
+
 #### High-sens
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```devicetree
 &pointer_accel {
@@ -495,7 +548,12 @@ The configurations under are just starting points - every person's perfect point
 };
 ```
 
+</details>
+
 ### Precision Mode (Level 1 Simple):
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary></summary>
 
 ```devicetree
 &pointer_accel {
@@ -508,3 +566,5 @@ The configurations under are just starting points - every person's perfect point
     sensor-dpi = <800>;        // 800 DPI sensor
 };
 ```
+
+</details>
