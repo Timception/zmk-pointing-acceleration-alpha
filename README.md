@@ -233,7 +233,7 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 **Option A: Use a Preset (Recommended)**
 
 <details>
-<summary style="cursor:pointer; font-weight:bold;">Settings Presets</summary>
+<summary style="cursor:pointer; font-weight:bold;">Code Example</summary>
 
 ```ini
 # In your prj.conf:
