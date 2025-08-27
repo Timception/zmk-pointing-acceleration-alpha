@@ -164,6 +164,9 @@ CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE=y      # レベル1: シンプル
 
 利用可能なプリセットはレベル 1 とレベル 2 の両方で動作します（12 のデバイス固有プリセット）:
 
+<details>
+<summary style="cursor:pointer; font-weight:bold;">プリセットの設定</summary>
+
 ```ini
 # prj.confで、デバイス固有のプリセットを選択:
 
@@ -194,9 +197,14 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_OFFICE_OPTICAL=y     # 光学マウス (800 
 };
 ```
 
+</details>
+
 **オプション B: カスタムシンプル設定**
 
 > **注意**: レベル 1 のカスタム設定は初心者向けに設計されており、過度なカーソル移動を防ぐために控えめなアクセラレーション制限を使用します。システムは意図的に最大アクセラレーションを 3.0 倍に制限し、予測可能な動作のために適度な速度閾値を使用します。より積極的なアクセラレーションが必要な場合は、まずレベル 2 プリセットを試し、その後レベル 2 カスタム設定を検討してください。
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```ini
 # prj.confで:
@@ -215,9 +223,14 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 #### **レベル 2: スタンダード設定**
 
 **オプション A: プリセットを使用（推奨）**
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```ini
 # prj.confで:
@@ -237,7 +250,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_GAMING_LASER=y       # ゲーミングレー
 };
 ```
 
+</details>
+
 **オプション B: カスタムスタンダード設定**
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```ini
 # prj.confで:
@@ -260,9 +278,14 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 ### 入力チェーンに追加
 
 入力デバイスのプロセッサチェーンにアクセラレーションプロセッサを追加:
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```devicetree
 / {
@@ -277,6 +300,8 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     };
 };
 ```
+
+</details>
 
 ## 設定オプション
 
@@ -380,6 +405,9 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 
 ### 一般用途 (レベル 2 スタンダード):
 
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
+
 ```devicetree
 &pointer_accel {
     input-type = <INPUT_EV_REL>;
@@ -395,7 +423,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 ### ライトアクセラレーション (レベル 2 スタンダード):
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```devicetree
 &pointer_accel {
@@ -411,7 +444,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 ### ヘビーアクセラレーション (レベル 2 スタンダード):
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```devicetree
 &pointer_accel {
@@ -428,9 +466,14 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 ### ワイドスクリーン最適化 (レベル 2 スタンダード) - テスト済み設定:
 
 #### ゲーミング
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```devicetree
 &pointer_accel {
@@ -447,7 +490,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 #### オフィス
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```devicetree
 &pointer_accel {
@@ -469,7 +517,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 #### 高感度
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```devicetree
 &pointer_accel {
@@ -490,7 +543,12 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
 };
 ```
 
+</details>
+
 ### 精密モード (レベル 1 シンプル):
+
+<details>
+<summary style="cursor:pointer; font-weight:bold;">サンプルコード</summary>
 
 ```devicetree
 &pointer_accel {
@@ -503,3 +561,5 @@ CONFIG_INPUT_PROCESSOR_ACCEL_PRESET_CUSTOM=y
     sensor-dpi = <800>;        // 800 DPIセンサー
 };
 ```
+
+</details>
