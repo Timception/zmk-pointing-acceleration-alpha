@@ -58,16 +58,17 @@ static int accel_init_device(const struct device *dev) {
         return ret;
     }
     
-    // Initialize runtime data structures - ensure proper memory initialization
-    if (data) {
-        memset(data, 0, sizeof(struct accel_data));
-        // Initialize timing data to prevent division by zero
-        data->last_time_ms = k_uptime_get_32();
-        data->recent_speed = 0;
-    } else {
-        LOG_ERR("Device %s: Data structure is NULL", dev->name);
+    // Enhanced NULL pointer validation and initialization
+    if (!data) {
+        LOG_ERR("Device %s: Data structure is NULL", dev->name ? dev->name : "unknown");
         return -ENOMEM;
     }
+    
+    // Initialize runtime data structures - ensure proper memory initialization
+    memset(data, 0, sizeof(struct accel_data));
+    // Initialize timing data to prevent division by zero
+    data->last_time_ms = k_uptime_get_32();
+    data->recent_speed = 0;
     
     LOG_INF("Device %s: Acceleration processor ready (Level %d)", dev->name, cfg->level);
     return 0;
@@ -156,8 +157,23 @@ static inline int32_t accel_fast_calculate_level1(const struct accel_config *cfg
     
     // Enhanced safety: Prevent 3-value multiplication overflow
     int64_t result;
-    // Check if any multiplication would overflow
-    if (abs(input_value) > INT64_MAX / (sensitivity * dpi_mult)) {
+    
+    // Safe overflow check: Check each multiplication step separately
+    bool use_safe_calc = false;
+    
+    // First check: sensitivity * dpi_mult overflow
+    if (sensitivity > 0 && dpi_mult > UINT32_MAX / sensitivity) {
+        use_safe_calc = true;
+    }
+    // Second check: input_value * (sensitivity * dpi_mult) overflow
+    else if (abs(input_value) > 0) {
+        uint64_t mult_result = (uint64_t)sensitivity * dpi_mult;
+        if (mult_result > 0 && abs(input_value) > INT64_MAX / mult_result) {
+            use_safe_calc = true;
+        }
+    }
+    
+    if (use_safe_calc) {
         // Use safe step-by-step calculation
         int64_t temp1 = safe_multiply_64((int64_t)input_value, (int64_t)sensitivity, INT64_MAX / 2000);
         result = safe_multiply_64(temp1, (int64_t)dpi_mult, INT64_MAX / 1000) / (SENSITIVITY_SCALE * 1000);
@@ -168,7 +184,17 @@ static inline int32_t accel_fast_calculate_level1(const struct accel_config *cfg
     // Fast curve calculation using lookup table with bounds checking
     int32_t abs_input = (input_value < 0) ? -input_value : input_value;
     if (abs_input > 1) {
-        uint8_t safe_curve_type = (curve_type < 3) ? curve_type : 1; // Default to Mild
+        // Enhanced bounds checking for curve multiplier table
+        const size_t curve_table_size = sizeof(curve_multiplier_table) / sizeof(curve_multiplier_table[0]);
+        uint8_t safe_curve_type;
+        
+        if (curve_type >= curve_table_size) {
+            LOG_WRN("Invalid curve type %u (max %zu), using default", curve_type, curve_table_size - 1);
+            safe_curve_type = 1; // Default to Mild
+        } else {
+            safe_curve_type = curve_type;
+        }
+        
         uint32_t curve_mult = curve_multiplier_table[safe_curve_type];
         uint32_t curve_factor = SENSITIVITY_SCALE + (abs_input * abs_input * curve_mult) / 100;
         curve_factor = (curve_factor > max_factor) ? max_factor : curve_factor;
@@ -206,9 +232,22 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
                       struct zmk_input_processor_state *state) {
     // CRITICAL: Minimize interrupt processing time
-    // Fast validation with minimal branching
-    if (!dev || !event || !dev->config || !dev->data) {
-        return 0; // Fast exit for invalid pointers
+    // Enhanced NULL pointer validation with proper error reporting
+    if (!dev) {
+        LOG_ERR("Device pointer is NULL in event handler");
+        return -EINVAL;
+    }
+    if (!event) {
+        LOG_ERR("Event pointer is NULL in event handler");
+        return -EINVAL;
+    }
+    if (!dev->config) {
+        LOG_ERR("Device config is NULL for device %s", dev->name ? dev->name : "unknown");
+        return -ENODEV;
+    }
+    if (!dev->data) {
+        LOG_ERR("Device data is NULL for device %s", dev->name ? dev->name : "unknown");
+        return -ENODEV;
     }
     
     const struct accel_config *cfg = dev->config;

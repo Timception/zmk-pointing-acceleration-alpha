@@ -2,6 +2,8 @@
 // Separated for better code organization and maintainability
 
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <stdlib.h>
 #include "../include/drivers/input_processor_accel.h"
 
@@ -77,27 +79,33 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
  * @param input_value Current input value
  * @return Calculated speed (safe, bounded)
  */
+// Ultra-safe interrupt-compatible speed calculation
+// Uses minimal critical section with irq_lock for maximum safety
 uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value) {
     if (!data) {
         LOG_ERR("Data pointer is NULL in speed calculation");
         return abs(input_value) * ACCEL_SPEED_SCALE_FACTOR; // Simple fallback
     }
     
-    uint32_t current_time_ms = k_uptime_get_32();
-    uint32_t last_time_ms = data->last_time_ms;
-    
-    // Input value validation
+    // Input validation first (outside critical section)
     int32_t abs_input = abs(input_value);
     if (abs_input > MAX_SAFE_INPUT_VALUE) {
         abs_input = MAX_SAFE_INPUT_VALUE;
     }
     
-    // Handle first call or time overflow
+    // Minimal critical section for data consistency
+    unsigned int key = irq_lock();
+    
+    uint32_t current_time_ms = k_uptime_get_32();
+    uint32_t last_time_ms = data->last_time_ms;
+    
+    // Handle first call or time overflow (still in critical section)
     if (last_time_ms == 0 || current_time_ms < last_time_ms) {
+        uint16_t initial_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR;
         data->last_time_ms = current_time_ms;
-        data->recent_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR; // Initial speed estimation
-        // speed_samples removed for memory optimization
-        return data->recent_speed;
+        data->recent_speed = initial_speed;
+        irq_unlock(key); // Release critical section
+        return initial_speed;
     }
     
     uint32_t time_delta_ms = current_time_ms - last_time_ms;
@@ -126,9 +134,11 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     uint16_t alpha = 300; // 0.3 in thousandths
     uint16_t averaged_speed = (data->recent_speed * (1000 - alpha) + current_speed * alpha) / 1000;
     
-    // Update state
+    // Update state in critical section
     data->last_time_ms = current_time_ms;
     data->recent_speed = averaged_speed;
+    
+    irq_unlock(key); // Release critical section
     
     return (uint32_t)averaged_speed;
 }
