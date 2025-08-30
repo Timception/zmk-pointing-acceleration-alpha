@@ -98,7 +98,6 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     
     uint32_t current_time_ms = k_uptime_get_32();
     uint32_t last_time_ms = data->last_time_ms;
-    uint16_t recent_speed = data->recent_speed;
     
     // Handle first call or time overflow (still in critical section)
     if (last_time_ms == 0 || current_time_ms < last_time_ms) {

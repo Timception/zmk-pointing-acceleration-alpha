@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/input/input.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/printk.h>
 #include "input_processor.h"
 
 
