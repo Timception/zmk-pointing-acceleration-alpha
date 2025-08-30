@@ -26,24 +26,6 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 K_MEM_SLAB_DEFINE(accel_data_pool, sizeof(struct accel_data), ACCEL_MAX_INSTANCES, 4);
 
 // =============================================================================
-// INTERRUPT PROCESSING OPTIMIZATION
-// =============================================================================
-
-// Fast path processing flags - minimize branching in interrupt context
-#define ACCEL_FAST_PATH_ENABLED     BIT(0)
-#define ACCEL_BYPASS_VALIDATION     BIT(1)
-#define ACCEL_SKIP_DEBUG_LOG        BIT(2)
-
-// Pre-computed lookup tables for common calculations (ROM storage)
-static const uint16_t dpi_adjustment_table[8] = {
-    2000, 1250, 833, 625, 312, 156, 125, 1000  // For DPI classes 0-7
-};
-
-static const uint16_t curve_multiplier_table[3] = {
-    10, 25, 50  // For curve types 0-2 (Linear, Mild, Strong)
-};
-
-// =============================================================================
 // DEVICE INITIALIZATION
 // =============================================================================
 
@@ -136,6 +118,8 @@ static int accel_init_device(const struct device *dev) {
 // Create device instances for all enabled DT nodes
 DT_INST_FOREACH_STATUS_OKAY(ACCEL_DEVICE_DEFINE)
 
+
+
 // =============================================================================
 // MAIN EVENT HANDLER
 // =============================================================================
@@ -144,89 +128,7 @@ DT_INST_FOREACH_STATUS_OKAY(ACCEL_DEVICE_DEFINE)
 // OPTIMIZED FAST-PATH EVENT HANDLER
 // =============================================================================
 
-static inline int32_t accel_fast_calculate_level1(const struct accel_config *cfg, 
-                                                  int32_t input_value, uint16_t code) {
-    // Ultra-fast Level 1 calculation - minimal branching
-    uint32_t sensitivity = cfg->cfg.level1.sensitivity;
-    uint32_t max_factor = cfg->cfg.level1.max_factor;
-    uint8_t curve_type = cfg->cfg.level1.curve_type;
-    
-    // DPI adjustment using lookup table with bounds checking
-    uint8_t safe_dpi_class = (cfg->sensor_dpi_class < 8) ? cfg->sensor_dpi_class : 7; // Default to 800 DPI
-    uint16_t dpi_mult = dpi_adjustment_table[safe_dpi_class];
-    
-    // Enhanced safety: Prevent 3-value multiplication overflow
-    int64_t result;
-    
-    // Safe overflow check: Check each multiplication step separately
-    bool use_safe_calc = false;
-    
-    // First check: sensitivity * dpi_mult overflow
-    if (sensitivity > 0 && dpi_mult > UINT32_MAX / sensitivity) {
-        use_safe_calc = true;
-    }
-    // Second check: input_value * (sensitivity * dpi_mult) overflow
-    else if (abs(input_value) > 0) {
-        uint64_t mult_result = (uint64_t)sensitivity * dpi_mult;
-        if (mult_result > 0 && abs(input_value) > INT64_MAX / mult_result) {
-            use_safe_calc = true;
-        }
-    }
-    
-    if (use_safe_calc) {
-        // Use safe step-by-step calculation
-        int64_t temp1 = safe_multiply_64((int64_t)input_value, (int64_t)sensitivity, INT64_MAX / 2000);
-        result = safe_multiply_64(temp1, (int64_t)dpi_mult, INT64_MAX / 1000) / (SENSITIVITY_SCALE * 1000);
-    } else {
-        result = ((int64_t)input_value * sensitivity * dpi_mult) / (SENSITIVITY_SCALE * 1000);
-    }
-    
-    // Fast curve calculation using lookup table with bounds checking
-    int32_t abs_input = (input_value < 0) ? -input_value : input_value;
-    if (abs_input > 1) {
-        // Enhanced bounds checking for curve multiplier table
-        const size_t curve_table_size = sizeof(curve_multiplier_table) / sizeof(curve_multiplier_table[0]);
-        uint8_t safe_curve_type;
-        
-        if (curve_type >= curve_table_size) {
-            LOG_WRN("Invalid curve type %u (max %zu), using default", curve_type, curve_table_size - 1);
-            safe_curve_type = 1; // Default to Mild
-        } else {
-            safe_curve_type = curve_type;
-        }
-        
-        uint32_t curve_mult = curve_multiplier_table[safe_curve_type];
-        uint32_t curve_factor = SENSITIVITY_SCALE + (abs_input * abs_input * curve_mult) / 100;
-        curve_factor = (curve_factor > max_factor) ? max_factor : curve_factor;
-        result = (result * curve_factor) / SENSITIVITY_SCALE;
-    }
-    
-    // Y-axis boost with overflow protection
-    if (code == INPUT_REL_Y) {
-        uint16_t y_boost = accel_decode_y_boost(cfg->y_boost_scaled);
-        if (y_boost != SENSITIVITY_SCALE) {
-            // Enhanced safety: Check for potential overflow using correct 64-bit comparison
-            const int64_t max_safe_result = INT64_MAX / y_boost;
-            if (abs(result) <= max_safe_result) {
-                result = (result * y_boost) / SENSITIVITY_SCALE;
-            } else {
-                // Overflow would occur, use conservative boost
-                uint16_t conservative_boost = SENSITIVITY_SCALE + (y_boost - SENSITIVITY_SCALE) / 2;
-                result = (result * conservative_boost) / SENSITIVITY_SCALE;
-            }
-        }
-    }
-    
-    // Enhanced safety: Final result validation with comprehensive bounds checking
-    if (result > INT32_MAX) {
-        result = 400; // Conservative upper limit
-    } else if (result < INT32_MIN) {
-        result = -400; // Conservative lower limit
-    }
-    
-    // Clamp result to reasonable range
-    return (result > 400) ? 400 : ((result < -400) ? -400 : (int32_t)result);
-}
+
 
 int accel_handle_event(const struct device *dev, struct input_event *event,
                       uint32_t param1, uint32_t param2,
@@ -259,8 +161,11 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         return 0; // Wrong event type
     }
     
-    // Check for supported axis codes
-    if (event->code != INPUT_REL_X && event->code != INPUT_REL_Y) {
+    // Check for supported axis codes (movement + scroll)
+    if (event->code != INPUT_REL_X && 
+        event->code != INPUT_REL_Y && 
+        event->code != INPUT_REL_WHEEL && 
+        event->code != INPUT_REL_HWHEEL) {
         return 0; // Unsupported axis
     }
     
@@ -280,10 +185,10 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     
     // Ultra-fast calculation dispatch - branch prediction optimized
     if (cfg->level == 1) {
-        // Level 1: Use optimized fast-path calculation
-        accelerated_value = accel_fast_calculate_level1(cfg, input_value, event->code);
+        // Level 1: Use simple calculation from dedicated file
+        accelerated_value = accel_simple_calculate(cfg, input_value, event->code);
     } else {
-        // Level 2: Use standard calculation (less common path)
+        // Level 2: Use standard calculation from dedicated file
         accelerated_value = accel_standard_calculate(cfg, data, input_value, event->code);
     }
     
