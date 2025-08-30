@@ -2,6 +2,7 @@
 // Separated for better code organization and maintainability
 
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 #include <stdlib.h>
 #include "../include/drivers/input_processor_accel.h"
 
@@ -77,8 +78,8 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
  * @param input_value Current input value
  * @return Calculated speed (safe, bounded)
  */
-// Thread-safe speed calculation with atomic operations
-static K_SPINLOCK_DEFINE(speed_calc_lock);
+// Thread-safe speed calculation with mutex (more compatible than spinlock)
+static K_MUTEX_DEFINE(speed_calc_mutex);
 
 uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value) {
     if (!data) {
@@ -87,7 +88,7 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     }
     
     // Atomic time operations to prevent race conditions
-    k_spinlock_key_t key = k_spin_lock(&speed_calc_lock);
+    k_mutex_lock(&speed_calc_mutex, K_FOREVER);
     uint32_t current_time_ms = k_uptime_get_32();
     uint32_t last_time_ms = data->last_time_ms;
     
@@ -101,7 +102,7 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     if (last_time_ms == 0 || current_time_ms < last_time_ms) {
         data->last_time_ms = current_time_ms;
         data->recent_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR; // Initial speed estimation
-        k_spin_unlock(&speed_calc_lock, key);
+        k_mutex_unlock(&speed_calc_mutex);
         return data->recent_speed;
     }
     
@@ -134,7 +135,7 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     // Update state atomically
     data->last_time_ms = current_time_ms;
     data->recent_speed = averaged_speed;
-    k_spin_unlock(&speed_calc_lock, key);
+    k_mutex_unlock(&speed_calc_mutex);
     
     return (uint32_t)averaged_speed;
 }
