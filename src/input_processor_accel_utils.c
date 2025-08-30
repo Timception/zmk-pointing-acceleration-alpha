@@ -77,12 +77,17 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
  * @param input_value Current input value
  * @return Calculated speed (safe, bounded)
  */
+// Thread-safe speed calculation with atomic operations
+static K_SPINLOCK_DEFINE(speed_calc_lock);
+
 uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value) {
     if (!data) {
         LOG_ERR("Data pointer is NULL in speed calculation");
         return abs(input_value) * ACCEL_SPEED_SCALE_FACTOR; // Simple fallback
     }
     
+    // Atomic time operations to prevent race conditions
+    k_spinlock_key_t key = k_spin_lock(&speed_calc_lock);
     uint32_t current_time_ms = k_uptime_get_32();
     uint32_t last_time_ms = data->last_time_ms;
     
@@ -96,7 +101,7 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     if (last_time_ms == 0 || current_time_ms < last_time_ms) {
         data->last_time_ms = current_time_ms;
         data->recent_speed = abs_input * ACCEL_SPEED_SCALE_FACTOR; // Initial speed estimation
-        // speed_samples removed for memory optimization
+        k_spin_unlock(&speed_calc_lock, key);
         return data->recent_speed;
     }
     
@@ -126,9 +131,10 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     uint16_t alpha = 300; // 0.3 in thousandths
     uint16_t averaged_speed = (data->recent_speed * (1000 - alpha) + current_speed * alpha) / 1000;
     
-    // Update state
+    // Update state atomically
     data->last_time_ms = current_time_ms;
     data->recent_speed = averaged_speed;
+    k_spin_unlock(&speed_calc_lock, key);
     
     return (uint32_t)averaged_speed;
 }

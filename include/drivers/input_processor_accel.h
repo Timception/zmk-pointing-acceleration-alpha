@@ -160,9 +160,18 @@ static inline uint16_t accel_decode_y_boost(uint8_t scaled) {
 
 static inline uint16_t accel_decode_sensor_dpi(uint8_t dpi_class) {
     static const uint16_t dpi_table[] = {400, 800, 1200, 1600, 3200, 6400, 8000, 800};
-    // Enhanced bounds checking: ensure dpi_class is always within valid range
-    uint8_t safe_class = (dpi_class < 8) ? dpi_class : 7; // Default to 800 DPI (index 7)
-    return dpi_table[safe_class];
+    const size_t dpi_table_size = sizeof(dpi_table) / sizeof(dpi_table[0]);
+    
+    // Enhanced bounds checking: validate array size at compile time
+    BUILD_ASSERT(dpi_table_size == 8, "DPI table size mismatch");
+    
+    // Runtime bounds checking with explicit size validation
+    if (dpi_class >= dpi_table_size) {
+        LOG_WRN("Invalid DPI class %u (max %zu), using default 800 DPI", 
+                dpi_class, dpi_table_size - 1);
+        return 800; // Safe default value
+    }
+    return dpi_table[dpi_class];
 }
 
 /**
