@@ -253,11 +253,20 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     const struct accel_config *cfg = dev->config;
     struct accel_data *data = dev->data;
     
-    // Fast path checks - optimized for common cases
-    if (event->type != cfg->input_type || 
-        event->value == 0 ||
-        (event->code != INPUT_REL_X && event->code != INPUT_REL_Y)) {
-        return 0; // Fast exit for non-movement events
+    // Fast path checks - optimized for common cases with clear logic
+    // Check event type first
+    if (event->type != cfg->input_type) {
+        return 0; // Wrong event type
+    }
+    
+    // Check for supported axis codes
+    if (event->code != INPUT_REL_X && event->code != INPUT_REL_Y) {
+        return 0; // Unsupported axis
+    }
+    
+    // Check for zero movement (no acceleration needed)
+    if (event->value == 0) {
+        return 0; // No movement to accelerate
     }
     
     // Skip expensive validation in interrupt context
