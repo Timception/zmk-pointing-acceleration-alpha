@@ -29,7 +29,7 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
     }
     
     // Enhanced safety: Prevent overflow with more conservative limit
-    const uint32_t max_safe_input = 1000;  // More conservative for Level 1
+    const uint32_t max_safe_input = QUADRATIC_SAFE_INPUT_LIMIT;  // More conservative for Level 1
     
     if (abs_input > max_safe_input) {
         LOG_DBG("Clamping input %d to safe limit %u", abs_input, max_safe_input);
@@ -40,7 +40,7 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
     if (abs_input > 0 && multiplier > UINT32_MAX / (abs_input * abs_input)) {
         LOG_WRN("Potential overflow detected, using conservative calculation");
         // Use linear approximation instead
-        uint32_t linear_result = SENSITIVITY_SCALE + (abs_input * multiplier / 10);
+        uint32_t linear_result = SENSITIVITY_SCALE + (abs_input * multiplier / QUADRATIC_LINEAR_DIVISOR);
         return ACCEL_CLAMP(linear_result, SENSITIVITY_SCALE, MAX_SAFE_FACTOR);
     }
     
@@ -48,22 +48,22 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
     uint64_t temp = (uint64_t)abs_input * abs_input * multiplier;
     
     // Enhanced safety: More conservative overflow check
-    if (temp > (UINT32_MAX - SENSITIVITY_SCALE) / 100) {
+    if (temp > (UINT32_MAX - SENSITIVITY_SCALE) / QUADRATIC_SCALE_DIVISOR) {
         LOG_WRN("Quadratic result too large, using maximum safe value");
         return MAX_SAFE_FACTOR;
     }
     
     // Scale down the result to prevent excessive acceleration
-    uint32_t scaled_result = SENSITIVITY_SCALE + (uint32_t)(temp / 100);
+    uint32_t scaled_result = SENSITIVITY_SCALE + (uint32_t)(temp / QUADRATIC_SCALE_DIVISOR);
     
     // Enhanced safety: Final bounds check
     uint32_t final_result = ACCEL_CLAMP(scaled_result, SENSITIVITY_SCALE, MAX_SAFE_FACTOR);
     
     // Enhanced safety: Sanity check - result should be reasonable
-    if (final_result > SENSITIVITY_SCALE * 5) { // Max 5x acceleration
-        LOG_WRN("Quadratic curve result %u seems excessive for input %d, limiting to 5x", 
-                final_result, abs_input);
-        final_result = SENSITIVITY_SCALE * 5;
+    if (final_result > SENSITIVITY_SCALE * FALLBACK_MAX_ACCEL_LIMIT) { // Max acceleration limit
+        LOG_WRN("Quadratic curve result %u seems excessive for input %d, limiting to %dx", 
+                final_result, abs_input, FALLBACK_MAX_ACCEL_LIMIT);
+        final_result = SENSITIVITY_SCALE * FALLBACK_MAX_ACCEL_LIMIT;
     }
     
     return final_result;
@@ -84,7 +84,7 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
 uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value) {
     if (!data) {
         LOG_ERR("Data pointer is NULL in speed calculation");
-        return abs(input_value) * ACCEL_SPEED_SCALE_FACTOR; // Simple fallback
+        return abs(input_value) * ACCEL_SPEED_SCALE_FACTOR; // Graceful degradation: simple fallback
     }
     
     // Input validation first (outside critical section)
@@ -112,13 +112,13 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     uint16_t current_speed;
     
     // **Fixed**: Correct speed calculation (counts per second) with overflow protection
-    if (time_delta_ms > 0 && time_delta_ms < 1000) { // Within 1 second
+    if (time_delta_ms > 0 && time_delta_ms < SPEED_CALC_TIME_LIMIT_MS) { // Within time limit
         // Speed = movement / time * 1000 (counts/sec)
         // Enhanced safety: Check for potential overflow before multiplication
-        if (abs_input > UINT32_MAX / 1000) {
+        if (abs_input > UINT32_MAX / SPEED_CALC_TIME_LIMIT_MS) {
             current_speed = UINT16_MAX; // Cap at maximum
         } else {
-            uint32_t temp_speed = (abs_input * 1000) / time_delta_ms;
+            uint32_t temp_speed = (abs_input * SPEED_CALC_TIME_LIMIT_MS) / time_delta_ms;
             current_speed = (temp_speed > UINT16_MAX) ? UINT16_MAX : (uint16_t)temp_speed;
         }
     } else {
@@ -131,8 +131,8 @@ uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_val
     // Speed samples removed for memory optimization
     
     // Exponential moving average (smoother speed changes)
-    uint16_t alpha = 300; // 0.3 in thousandths
-    uint16_t averaged_speed = (data->recent_speed * (1000 - alpha) + current_speed * alpha) / 1000;
+    uint16_t alpha = SPEED_MOVING_AVERAGE_ALPHA; // Alpha value in thousandths
+    uint16_t averaged_speed = (data->recent_speed * (SPEED_MOVING_AVERAGE_BASE - alpha) + current_speed * alpha) / SPEED_MOVING_AVERAGE_BASE;
     
     // Update state in critical section
     data->last_time_ms = current_time_ms;
@@ -161,10 +161,10 @@ int32_t accel_safe_fallback_calculate(int32_t input_value, uint32_t max_factor) 
     }
     
     // Enhanced safety: Simple linear acceleration based on input magnitude
-    if (abs_input > 5) { // Lower threshold for more responsive fallback
+    if (abs_input > FALLBACK_ACCEL_THRESHOLD) { // Lower threshold for more responsive fallback
         // Apply conservative acceleration for larger movements
         uint32_t base_factor = SENSITIVITY_SCALE;
-        uint32_t accel_add = (abs_input * 3); // More conservative than before
+        uint32_t accel_add = (abs_input * FALLBACK_ACCEL_MULTIPLIER); // More conservative than before
         
         // Enhanced safety: Prevent overflow in factor calculation
         if (accel_add > safe_max_factor - base_factor) {
@@ -177,7 +177,7 @@ int32_t accel_safe_fallback_calculate(int32_t input_value, uint32_t max_factor) 
         // Enhanced safety: Safe multiplication with overflow check
         if (abs(input_value) > INT16_MAX * SENSITIVITY_SCALE / factor) {
             LOG_WRN("Fallback: Would overflow, using linear scaling");
-            result = input_value * 2; // Simple 2x scaling
+            result = input_value * CONSERVATIVE_FALLBACK_MULTIPLIER; // Simple scaling
         } else {
             int64_t temp = safe_multiply_64((int64_t)input_value, (int64_t)factor, 
                                           (int64_t)INT16_MAX * SENSITIVITY_SCALE);
@@ -190,10 +190,10 @@ int32_t accel_safe_fallback_calculate(int32_t input_value, uint32_t max_factor) 
     result = (int32_t)ACCEL_CLAMP(result, INT16_MIN, INT16_MAX);
     
     // Enhanced safety: Sanity check
-    if (abs(input_value) <= 20 && abs(result) > abs(input_value) * 10) {
+    if (abs(input_value) <= FALLBACK_SANITY_INPUT_LIMIT && abs(result) > abs(input_value) * SUSPICIOUS_RESULT_MULTIPLIER) {
         LOG_WRN("Fallback: Suspicious result %d for input %d, using conservative", 
                 result, input_value);
-        result = input_value * 2; // Very conservative fallback
+        result = input_value * CONSERVATIVE_FALLBACK_MULTIPLIER; // Very conservative fallback
     }
     
     return result;

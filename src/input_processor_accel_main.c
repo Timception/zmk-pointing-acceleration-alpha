@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 #include <string.h>
+#include <drivers/input_processor.h>
 #include "../include/drivers/input_processor_accel.h"
 #include "config/accel_config.h"
 #include "config/accel_device_init.h"
@@ -23,7 +24,7 @@ LOG_MODULE_REGISTER(input_processor_accel, CONFIG_ZMK_LOG_LEVEL);
 // =============================================================================
 
 // Define the memory pool for acceleration data (only once in main.c)
-K_MEM_SLAB_DEFINE(accel_data_pool, sizeof(struct accel_data), ACCEL_MAX_INSTANCES, 4);
+K_MEM_SLAB_DEFINE(accel_data_pool, sizeof(struct accel_data), ACCEL_MAX_INSTANCES, ACCEL_DATA_POOL_ALIGNMENT);
 
 // =============================================================================
 // DEVICE INITIALIZATION
@@ -37,13 +38,13 @@ static int accel_init_device(const struct device *dev) {
     int ret = accel_validate_config(cfg);
     if (ret < 0) {
         LOG_ERR("Device %s: Configuration validation failed: %d", dev->name, ret);
-        return ret;
+        return ret; // Pass through validation error code
     }
     
     // Enhanced NULL pointer validation and initialization
     if (!data) {
         LOG_ERR("Device %s: Data structure is NULL", dev->name ? dev->name : "unknown");
-        return -ENOMEM;
+        return ACCEL_ERR_NO_MEMORY;
     }
     
     // Initialize runtime data structures - ensure proper memory initialization
@@ -75,23 +76,23 @@ static int accel_init_device(const struct device *dev) {
         if (use_custom_config) {                                                                  \
             /* Apply common DTS properties for both levels */                                   \
             if (cfg->level == 1) { \
-                cfg->cfg.level1.sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->cfg.level1.sensitivity), 200, 2000); \
-                cfg->cfg.level1.max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->cfg.level1.max_factor), 1000, 5000); \
-                cfg->cfg.level1.curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, cfg->cfg.level1.curve_type), 0, 2); \
+                cfg->cfg.level1.sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->cfg.level1.sensitivity), SENSITIVITY_MIN, SENSITIVITY_MAX); \
+                cfg->cfg.level1.max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->cfg.level1.max_factor), MAX_FACTOR_MIN, MAX_FACTOR_MAX); \
+                cfg->cfg.level1.curve_type = ACCEL_CLAMP(DT_INST_PROP_OR(inst, curve_type, cfg->cfg.level1.curve_type), CURVE_TYPE_MIN, CURVE_TYPE_MAX); \
             } else { \
-                cfg->cfg.level2.sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->cfg.level2.sensitivity), 200, 2000); \
-                cfg->cfg.level2.max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->cfg.level2.max_factor), 1000, 5000); \
+                cfg->cfg.level2.sensitivity = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensitivity, cfg->cfg.level2.sensitivity), SENSITIVITY_MIN, SENSITIVITY_MAX); \
+                cfg->cfg.level2.max_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, max_factor, cfg->cfg.level2.max_factor), MAX_FACTOR_MIN, MAX_FACTOR_MAX); \
             } \
-            cfg->y_boost_scaled = ACCEL_CLAMP((DT_INST_PROP_OR(inst, y_boost, 1000) - 1000) / 10, 0, 200); \
-            uint16_t dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, 800), 400, 8000); \
+            cfg->y_boost_scaled = ACCEL_CLAMP((DT_INST_PROP_OR(inst, y_boost, SENSITIVITY_SCALE) - SENSITIVITY_SCALE) / 10, 0, 200); \
+            uint16_t dpi = ACCEL_CLAMP(DT_INST_PROP_OR(inst, sensor_dpi, STANDARD_DPI_REFERENCE), SENSOR_DPI_MIN, SENSOR_DPI_MAX); \
             cfg->sensor_dpi_class = (dpi <= 400) ? 0 : (dpi <= 800) ? 1 : (dpi <= 1200) ? 2 : (dpi <= 1600) ? 3 : (dpi <= 3200) ? 4 : (dpi <= 6400) ? 5 : 6; \
                                                                                                   \
             /* Apply Level 2 specific DTS properties only for Standard level */                \
             if (cfg->level == 2) {                                                              \
-                cfg->cfg.level2.speed_threshold = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_threshold, cfg->cfg.level2.speed_threshold), 100, 2000); \
-                cfg->cfg.level2.speed_max = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_max, cfg->cfg.level2.speed_max), 1000, 8000); \
-                cfg->cfg.level2.min_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, min_factor, cfg->cfg.level2.min_factor), 200, 1500); \
-                cfg->cfg.level2.acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, cfg->cfg.level2.acceleration_exponent), 1, 5); \
+                cfg->cfg.level2.speed_threshold = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_threshold, cfg->cfg.level2.speed_threshold), SPEED_THRESHOLD_MIN, SPEED_THRESHOLD_MAX); \
+                cfg->cfg.level2.speed_max = ACCEL_CLAMP(DT_INST_PROP_OR(inst, speed_max, cfg->cfg.level2.speed_max), SPEED_MAX_MIN, SPEED_MAX_MAX); \
+                cfg->cfg.level2.min_factor = ACCEL_CLAMP(DT_INST_PROP_OR(inst, min_factor, cfg->cfg.level2.min_factor), MIN_FACTOR_MIN, MIN_FACTOR_MAX); \
+                cfg->cfg.level2.acceleration_exponent = ACCEL_CLAMP(DT_INST_PROP_OR(inst, acceleration_exponent, cfg->cfg.level2.acceleration_exponent), ACCEL_EXPONENT_MIN, ACCEL_EXPONENT_MAX); \
             }                                                                                    \
         }                                                                                        \
                                                                                                   \
@@ -137,19 +138,19 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     // Enhanced NULL pointer validation with proper error reporting
     if (!dev) {
         LOG_ERR("Device pointer is NULL in event handler");
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
     if (!event) {
         LOG_ERR("Event pointer is NULL in event handler");
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
     if (!dev->config) {
         LOG_ERR("Device config is NULL for device %s", dev->name ? dev->name : "unknown");
-        return -ENODEV;
+        return ACCEL_ERR_NO_DEVICE;
     }
     if (!dev->data) {
         LOG_ERR("Device data is NULL for device %s", dev->name ? dev->name : "unknown");
-        return -ENODEV;
+        return ACCEL_ERR_NO_DEVICE;
     }
     
     const struct accel_config *cfg = dev->config;
@@ -158,7 +159,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     // Fast path checks - optimized for common cases with clear logic
     // Check event type first
     if (event->type != cfg->input_type) {
-        return 0; // Wrong event type
+        return ZMK_INPUT_PROC_CONTINUE; // Wrong event type, continue processing
     }
     
     // Check for supported axis codes (movement + scroll)
@@ -166,12 +167,12 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         event->code != INPUT_REL_Y && 
         event->code != INPUT_REL_WHEEL && 
         event->code != INPUT_REL_HWHEEL) {
-        return 0; // Unsupported axis
+        return ZMK_INPUT_PROC_CONTINUE; // Unsupported axis, continue processing
     }
     
     // Check for zero movement (no acceleration needed)
     if (event->value == 0) {
-        return 0; // No movement to accelerate
+        return ZMK_INPUT_PROC_CONTINUE; // No movement to accelerate, continue processing
     }
     
     // Skip expensive validation in interrupt context
@@ -193,9 +194,9 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     }
     
     // Minimal safety check - emergency brake only
-    if (__builtin_expect(abs(accelerated_value) > 500, 0)) {
+    if (__builtin_expect(abs(accelerated_value) > EMERGENCY_BRAKE_THRESHOLD, 0)) {
         // Unlikely path - extreme values
-        accelerated_value = (accelerated_value > 0) ? 400 : -400;
+        accelerated_value = (accelerated_value > 0) ? EMERGENCY_BRAKE_LIMIT : -EMERGENCY_BRAKE_LIMIT;
     }
     
     // Minimum movement guarantee - optimized
@@ -212,7 +213,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     // Update event value - single assignment with final validation
     event->value = accelerated_value;
     
-    return 0;
+    return ZMK_INPUT_PROC_CONTINUE;
 }
 
 #endif // DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)

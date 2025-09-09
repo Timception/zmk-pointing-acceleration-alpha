@@ -20,11 +20,11 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                                 int32_t input_value, uint16_t code) {
     if (!cfg) {
         LOG_ERR("Configuration pointer is NULL in standard calculation");
-        return input_value;
+        return input_value; // Graceful degradation: return original value
     }
     if (!data) {
         LOG_ERR("Data pointer is NULL in standard calculation");
-        return input_value;
+        return input_value; // Graceful degradation: return original value
     }
 
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)
@@ -32,17 +32,14 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     return accel_simple_calculate(cfg, input_value, code);
 #else
     // Enhanced safety: Input value validation for reasonable range with improved logic
-    const int32_t MAX_REASONABLE_INPUT = 200;  // Covers most legitimate use cases
-    const int32_t MAX_EXTREME_INPUT = MAX_REASONABLE_INPUT * 3; // 600
-    
     if (abs(input_value) > MAX_REASONABLE_INPUT) {
         if (abs(input_value) > MAX_EXTREME_INPUT) {
-            // Extremely large values (>600) are likely sensor noise or malicious input
+            // Extremely large values are likely sensor noise or malicious input
             LOG_WRN("Level2: Input value %d too extreme (>%d), rejecting for safety", 
                     input_value, MAX_EXTREME_INPUT);
             return 0;
         } else {
-            // Large but reasonable values (200-600) - clamp to limit with warning
+            // Large but reasonable values - clamp to limit with warning
             LOG_DBG("Level2: Input value %d clamped to %d for safety", 
                     input_value, MAX_REASONABLE_INPUT);
             input_value = (input_value > 0) ? MAX_REASONABLE_INPUT : -MAX_REASONABLE_INPUT;
@@ -60,9 +57,9 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     // Enhanced safety: Type-safe speed validation with bounds checking
     uint32_t speed_threshold = (cfg->cfg.level2.speed_threshold > 0) ? 
-        (uint32_t)cfg->cfg.level2.speed_threshold : 600; // Safe default
+        (uint32_t)cfg->cfg.level2.speed_threshold : DEFAULT_SPEED_THRESHOLD; // Safe default
     uint32_t speed_max = (cfg->cfg.level2.speed_max > speed_threshold) ? 
-        (uint32_t)cfg->cfg.level2.speed_max : speed_threshold + 1000; // Safe default
+        (uint32_t)cfg->cfg.level2.speed_max : speed_threshold + DEFAULT_SPEED_MAX_OFFSET; // Safe default
     
     #if defined(CONFIG_INPUT_PROCESSOR_ACCEL_DEBUG_LOG)
     LOG_DBG("Level2: speed=%u, threshold=%u, max=%u", 
@@ -268,7 +265,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
         int64_t raw_result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
         
         // Only output movement if the raw calculation was >= 0.5 (half of SENSITIVITY_SCALE)
-        if (abs(raw_result) >= SENSITIVITY_SCALE / 2) {
+        if (abs(raw_result) >= SENSITIVITY_SCALE / CONSERVATIVE_FALLBACK_MULTIPLIER) {
             accelerated_value = (raw_result > 0) ? 1 : -1;
             LOG_DBG("Level2: Minimum movement applied - raw=%lld -> output=%d", raw_result, accelerated_value);
         } else {
@@ -291,7 +288,7 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
     
     // Enhanced safety: Log suspicious Level 2 results
     static uint32_t level2_log_counter = 0;
-    if ((level2_log_counter++ % 200) == 0 || abs(final_result) > abs(input_value) * 10) {
+    if ((level2_log_counter++ % LOG_COUNTER_INTERVAL) == 0 || abs(final_result) > abs(input_value) * SUSPICIOUS_RESULT_MULTIPLIER) {
         LOG_DBG("Level2: Input=%d, Speed=%u, Factor=%u, Final=%d", 
                 input_value, speed, factor, final_result);
     }

@@ -29,11 +29,13 @@ struct accel_data *accel_data_alloc(void) {
         return data;
     }
     
-    // Enhanced error handling with specific error codes
+    // Enhanced error handling with acceleration-specific error codes
     if (ret == -ENOMEM) {
         LOG_ERR("Memory pool exhausted - no available accel_data blocks");
+        // Note: Keep original -ENOMEM for k_mem_slab compatibility, but could map to ACCEL_ERR_NO_MEMORY
     } else if (ret == -EAGAIN) {
         LOG_ERR("Memory allocation would block - called from interrupt context");
+        // Note: Keep original -EAGAIN for k_mem_slab compatibility, but could map to ACCEL_ERR_TEMP_UNAVAIL
     } else {
         LOG_ERR("Failed to allocate accel_data from pool: %d (ptr=%p)", ret, data);
     }
@@ -127,12 +129,12 @@ const struct accel_config *accel_config_get_defaults(uint8_t level) {
 int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
     if (!cfg) {
         LOG_ERR("Configuration pointer is NULL");
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
 
     if (level < 1 || level > 2) {
         LOG_ERR("Invalid configuration level: %u (must be 1 or 2)", level);
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
 
     LOG_INF("Initializing acceleration config: level=%u, instance=%d", level, inst);
@@ -144,7 +146,7 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
     const struct accel_config *defaults = accel_config_get_defaults(level);
     if (!defaults) {
         LOG_ERR("Failed to get default configuration for level %u", level);
-        return -ENOENT;
+        return ACCEL_ERR_NO_DATA;
     }
     
     memcpy(cfg, defaults, sizeof(struct accel_config));
@@ -165,7 +167,7 @@ int accel_config_init(struct accel_config *cfg, uint8_t level, int inst) {
     if (sensitivity == 0 || max_factor == 0) {
         LOG_ERR("Invalid default configuration: sensitivity=%u, max_factor=%u", 
                 sensitivity, max_factor);
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
     
     LOG_INF("Base configuration initialized: level=%u, max_factor=%u, sensitivity=%u", 

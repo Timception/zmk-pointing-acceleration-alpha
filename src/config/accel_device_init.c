@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(input_processor_accel);
 // This function is a placeholder for future non-DT custom properties
 int accel_apply_dt_custom_properties(struct accel_config *cfg, uint8_t config_level, int inst) {
     if (!cfg) {
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
 
     LOG_INF("Instance %d: Custom configuration applied via macro (Level %u)", inst, config_level);
@@ -65,7 +65,7 @@ int accel_device_init_instance(const struct device *dev, int inst) {
     
     if (!cfg) {
         LOG_ERR("Configuration pointer is NULL");
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
 
     LOG_INF("Accel init: instance %d", inst);
