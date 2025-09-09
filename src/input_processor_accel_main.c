@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 #include <string.h>
+#include <drivers/input_processor.h>
 #include "../include/drivers/input_processor_accel.h"
 #include "config/accel_config.h"
 #include "config/accel_device_init.h"
