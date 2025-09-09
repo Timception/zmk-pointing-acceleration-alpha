@@ -175,7 +175,7 @@ static const preset_config_t presets[] = {
 
 int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name) {
     if (!cfg || !preset_name) {
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
 
     // Find matching preset
@@ -189,7 +189,7 @@ int accel_config_apply_preset(struct accel_config *cfg, const char *preset_name)
 
     if (!preset) {
         LOG_ERR("Unknown preset: %s", preset_name);
-        return -ENOENT;
+        return ACCEL_ERR_NO_DATA;
     }
 
     LOG_DBG("Found preset: %s", preset_name);

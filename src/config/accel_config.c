@@ -29,11 +29,13 @@ struct accel_data *accel_data_alloc(void) {
         return data;
     }
     
-    // Enhanced error handling with specific error codes
+    // Enhanced error handling with acceleration-specific error codes
     if (ret == -ENOMEM) {
         LOG_ERR("Memory pool exhausted - no available accel_data blocks");
+        // Note: Keep original -ENOMEM for k_mem_slab compatibility, but could map to ACCEL_ERR_NO_MEMORY
     } else if (ret == -EAGAIN) {
         LOG_ERR("Memory allocation would block - called from interrupt context");
+        // Note: Keep original -EAGAIN for k_mem_slab compatibility, but could map to ACCEL_ERR_TEMP_UNAVAIL
     } else {
         LOG_ERR("Failed to allocate accel_data from pool: %d (ptr=%p)", ret, data);
     }
