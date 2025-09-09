@@ -53,17 +53,14 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     return safe_int32_to_int16(safe_result);
 #else
     // Enhanced safety: Input value validation for reasonable range with improved logic
-    const int32_t MAX_REASONABLE_INPUT = 200;  // Covers most legitimate use cases
-    const int32_t MAX_EXTREME_INPUT = MAX_REASONABLE_INPUT * 3; // 600
-    
     if (abs(input_value) > MAX_REASONABLE_INPUT) {
         if (abs(input_value) > MAX_EXTREME_INPUT) {
-            // Extremely large values (>600) are likely sensor noise or malicious input
+            // Extremely large values are likely sensor noise or malicious input
             LOG_WRN("Level1: Input value %d too extreme (>%d), rejecting for safety", 
                     input_value, MAX_EXTREME_INPUT);
             return 0;
         } else {
-            // Large but reasonable values (200-600) - clamp to limit with warning
+            // Large but reasonable values - clamp to limit with warning
             LOG_DBG("Level1: Input value %d clamped to %d for safety", 
                     input_value, MAX_REASONABLE_INPUT);
             input_value = (input_value > 0) ? MAX_REASONABLE_INPUT : -MAX_REASONABLE_INPUT;
@@ -155,8 +152,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 {
                     // More effective calculation: input^2 * multiplier / divisor
                     uint64_t quad_add = safe_multiply_64((int64_t)abs_input * abs_input, 
-                                                       25LL, (int64_t)UINT32_MAX);
-                    quad_add = quad_add / 100; // Scale down
+                                                       CURVE_MILD_QUAD_NUMERATOR, (int64_t)UINT32_MAX);
+                    quad_add = quad_add / CURVE_MILD_QUAD_DENOMINATOR; // Scale down
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)quad_add, 0, max_add);
@@ -170,8 +167,8 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
                 {
                     // More aggressive calculation for strong curve
                     uint64_t quad_add = safe_multiply_64((int64_t)abs_input * abs_input, 
-                                                       50LL, (int64_t)UINT32_MAX);
-                    quad_add = quad_add / 100; // Scale down
+                                                       CURVE_STRONG_QUAD_NUMERATOR, (int64_t)UINT32_MAX);
+                    quad_add = quad_add / CURVE_STRONG_QUAD_DENOMINATOR; // Scale down
                     uint32_t max_add = (safe_max_factor > SENSITIVITY_SCALE) ? 
                         safe_max_factor - SENSITIVITY_SCALE : 0;
                     curve_factor = SENSITIVITY_SCALE + ACCEL_CLAMP((uint32_t)quad_add, 0, max_add);
@@ -216,7 +213,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
         int64_t raw_result = (int64_t)input_value * (int64_t)dpi_adjusted_sensitivity;
         
         // Only output movement if the raw calculation was >= 0.5 (half of SENSITIVITY_SCALE)
-        if (abs(raw_result) >= SENSITIVITY_SCALE / 2) {
+        if (abs(raw_result) >= SENSITIVITY_SCALE / CONSERVATIVE_FALLBACK_MULTIPLIER) {
             result = (raw_result > 0) ? 1 : -1;
             LOG_DBG("Level1: Minimum movement applied - raw=%lld -> output=%lld", raw_result, result);
         } else {
@@ -240,7 +237,7 @@ int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_val
     if (abs(input_value) <= 100 && abs(final_result) > 1000) {
         LOG_WRN("Level1: Suspicious result %d for input %d, using conservative value", 
                 final_result, input_value);
-        final_result = input_value * 2; // Conservative fallback
+        final_result = input_value * CONSERVATIVE_FALLBACK_MULTIPLIER; // Conservative fallback
         final_result = safe_int32_to_int16(final_result);
     }
     

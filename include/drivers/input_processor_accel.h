@@ -31,6 +31,68 @@ extern "C" {
 #define MIN_SAFE_SENSITIVITY    200     // Minimum safe sensitivity (aligned with Kconfig)
 #define MAX_REASONABLE_SPEED    50000   // Maximum reasonable speed (counts/sec)
 
+// Input validation constants
+#define MAX_REASONABLE_INPUT    200     // Maximum reasonable input for normal use
+#define MAX_EXTREME_INPUT_MULTIPLIER 3  // Multiplier for extreme input limit (200 * 3 = 600)
+#define MAX_EXTREME_INPUT       (MAX_REASONABLE_INPUT * MAX_EXTREME_INPUT_MULTIPLIER)
+
+// Configuration range constants
+#define SENSITIVITY_MIN         200     // Minimum sensitivity value
+#define SENSITIVITY_MAX         2000    // Maximum sensitivity value
+#define MAX_FACTOR_MIN          1000    // Minimum max_factor value
+#define MAX_FACTOR_MAX          5000    // Maximum max_factor value
+#define CURVE_TYPE_MIN          0       // Minimum curve type
+#define CURVE_TYPE_MAX          2       // Maximum curve type
+#define SENSOR_DPI_MIN          400     // Minimum sensor DPI
+#define SENSOR_DPI_MAX          8000    // Maximum sensor DPI
+#define SPEED_THRESHOLD_MIN     100     // Minimum speed threshold
+#define SPEED_THRESHOLD_MAX     2000    // Maximum speed threshold
+#define SPEED_MAX_MIN           1000    // Minimum speed max
+#define SPEED_MAX_MAX           8000    // Maximum speed max
+#define MIN_FACTOR_MIN          200     // Minimum min_factor value
+#define MIN_FACTOR_MAX          1500    // Maximum min_factor value
+#define ACCEL_EXPONENT_MIN      1       // Minimum acceleration exponent
+#define ACCEL_EXPONENT_MAX      5       // Maximum acceleration exponent
+
+// Emergency brake and safety constants
+#define EMERGENCY_BRAKE_THRESHOLD   500     // Emergency brake activation threshold
+#define EMERGENCY_BRAKE_LIMIT       400     // Emergency brake output limit
+#define SUSPICIOUS_RESULT_MULTIPLIER 10     // Multiplier for suspicious result detection
+#define CONSERVATIVE_FALLBACK_MULTIPLIER 2  // Conservative fallback multiplier
+
+// Acceleration curve constants
+#define ACCEL_THRESHOLD_BASIC       5       // Basic acceleration threshold
+#define CURVE_MILD_QUAD_NUMERATOR   25      // Mild curve quadratic numerator
+#define CURVE_MILD_QUAD_DENOMINATOR 100     // Mild curve quadratic denominator
+#define CURVE_STRONG_QUAD_NUMERATOR 50      // Strong curve quadratic numerator
+#define CURVE_STRONG_QUAD_DENOMINATOR 100   // Strong curve quadratic denominator
+
+// Speed calculation constants
+#define SPEED_CALC_TIME_LIMIT_MS    1000    // Time limit for speed calculation (1 second)
+#define SPEED_MOVING_AVERAGE_ALPHA  300     // Alpha for exponential moving average (0.3 * 1000)
+#define SPEED_MOVING_AVERAGE_BASE   1000    // Base for moving average calculation
+
+// Fallback calculation constants
+#define FALLBACK_ACCEL_THRESHOLD    5       // Threshold for fallback acceleration
+#define FALLBACK_ACCEL_MULTIPLIER   3       // Multiplier for fallback acceleration
+#define FALLBACK_MAX_REDUCTION      4       // Maximum reduction factor (1/4)
+#define FALLBACK_MAX_INCREASE       3       // Maximum increase factor (3x)
+#define FALLBACK_MAX_ACCEL_LIMIT    5       // Maximum acceleration limit (5x)
+#define FALLBACK_SANITY_INPUT_LIMIT 20      // Input limit for sanity check
+
+// Utility calculation constants
+#define QUADRATIC_SAFE_INPUT_LIMIT  1000    // Safe input limit for quadratic calculations
+#define QUADRATIC_LINEAR_DIVISOR    10      // Divisor for linear approximation
+#define QUADRATIC_SCALE_DIVISOR     100     // Scale divisor for quadratic results
+#define LOG_COUNTER_INTERVAL        200     // Interval for debug logging
+
+// Memory pool alignment
+#define ACCEL_DATA_POOL_ALIGNMENT   4       // Memory pool alignment in bytes
+
+// Default values
+#define DEFAULT_SPEED_THRESHOLD     600     // Default speed threshold
+#define DEFAULT_SPEED_MAX_OFFSET    1000    // Default offset for speed max calculation
+
 // DPI calculation constants
 #define STANDARD_DPI_REFERENCE  800     // Reference DPI for normalization
 #define MAX_SENSOR_DPI          8000    // Maximum supported sensor DPI

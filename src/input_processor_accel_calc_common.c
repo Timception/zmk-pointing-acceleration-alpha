@@ -72,7 +72,7 @@ uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
             dpi_adjusted_sensitivity = (uint32_t)(temp / sensor_dpi);
             
             // Apply conservative limits to prevent extreme reduction
-            uint32_t min_allowed = sensitivity / 4; // Max 4x reduction
+            uint32_t min_allowed = sensitivity / FALLBACK_MAX_REDUCTION; // Max reduction
             if (dpi_adjusted_sensitivity < min_allowed) {
                 dpi_adjusted_sensitivity = min_allowed;
             }
@@ -87,7 +87,7 @@ uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
             dpi_adjusted_sensitivity = (uint32_t)(temp / sensor_dpi);
             
             // Apply conservative limits to prevent extreme increase
-            uint32_t max_allowed = sensitivity * 3; // Max 3x increase
+            uint32_t max_allowed = sensitivity * FALLBACK_MAX_INCREASE; // Max increase
             if (dpi_adjusted_sensitivity > max_allowed) {
                 dpi_adjusted_sensitivity = max_allowed;
             }
