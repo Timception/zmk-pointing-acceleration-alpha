@@ -20,11 +20,11 @@ int32_t accel_standard_calculate(const struct accel_config *cfg, struct accel_da
                                 int32_t input_value, uint16_t code) {
     if (!cfg) {
         LOG_ERR("Configuration pointer is NULL in standard calculation");
-        return input_value;
+        return input_value; // Graceful degradation: return original value
     }
     if (!data) {
         LOG_ERR("Data pointer is NULL in standard calculation");
-        return input_value;
+        return input_value; // Graceful degradation: return original value
     }
 
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_STANDARD)

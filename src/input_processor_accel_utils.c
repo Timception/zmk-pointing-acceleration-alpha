@@ -84,7 +84,7 @@ uint32_t accel_safe_quadratic_curve(int32_t abs_input, uint32_t multiplier) {
 uint32_t accel_calculate_simple_speed(struct accel_data *data, int32_t input_value) {
     if (!data) {
         LOG_ERR("Data pointer is NULL in speed calculation");
-        return abs(input_value) * ACCEL_SPEED_SCALE_FACTOR; // Simple fallback
+        return abs(input_value) * ACCEL_SPEED_SCALE_FACTOR; // Graceful degradation: simple fallback
     }
     
     // Input validation first (outside critical section)

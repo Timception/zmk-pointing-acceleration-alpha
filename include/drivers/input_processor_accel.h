@@ -12,6 +12,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/printk.h>
+#include <drivers/input_processor.h>
 #include "input_processor.h"
 
 
@@ -114,6 +115,31 @@ extern "C" {
 
 // Essential utility macros (optimized for MCU)
 #define ACCEL_CLAMP(val, min, max) ((val) < (min) ? (min) : ((val) > (max) ? (max) : (val)))
+
+
+// Error severity levels for acceleration processor
+// Level 1: Minor issues (processing continues with fallback)
+#define ACCEL_ERR_MINOR_BASE        -1
+#define ACCEL_ERR_TEMP_UNAVAIL      -EAGAIN     // Temporary issue, retry possible
+#define ACCEL_ERR_NO_DATA           -ENODATA    // No data available (normal)
+
+// Level 2: Warning issues (processing continues with alternative)
+#define ACCEL_ERR_WARNING_BASE      -10
+#define ACCEL_ERR_OUT_OF_RANGE      -ERANGE     // Value out of range (clamped)
+#define ACCEL_ERR_OVERFLOW          -EOVERFLOW  // Calculation overflow (limited)
+#define ACCEL_ERR_NOT_SUPPORTED     -ENOTSUP    // Feature not supported (fallback)
+
+// Level 3: Error issues (processing aborted)
+#define ACCEL_ERR_ERROR_BASE        -20
+#define ACCEL_ERR_INVALID_ARG       -EINVAL     // Invalid argument
+#define ACCEL_ERR_NO_DEVICE         -ENODEV     // Device not available
+#define ACCEL_ERR_NO_MEMORY         -ENOMEM     // Memory allocation failed
+
+// Level 4: Critical issues (system protection)
+#define ACCEL_ERR_CRITICAL_BASE     -30
+#define ACCEL_ERR_MEMORY_FAULT      -EFAULT     // Memory access violation
+#define ACCEL_ERR_NO_SYSTEM         -ENOSYS     // System function unavailable
+#define ACCEL_ERR_NO_PERMISSION     -EPERM      // Permission denied
 
 // Simplified speed calculation constants
 #define ACCEL_MAX_SPEED_SAMPLES     8       // Maximum speed samples for averaging

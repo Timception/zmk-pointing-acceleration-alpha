@@ -55,7 +55,7 @@ int16_t safe_int32_to_int16(int32_t value) {
 uint32_t calculate_dpi_adjusted_sensitivity(const struct accel_config *cfg) {
     if (!cfg) {
         LOG_ERR("Configuration pointer is NULL in DPI adjustment");
-        return SENSITIVITY_SCALE;
+        return SENSITIVITY_SCALE; // Graceful degradation: return neutral sensitivity
     }
     
     uint32_t dpi_adjusted_sensitivity;

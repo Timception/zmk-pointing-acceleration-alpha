@@ -37,13 +37,13 @@ static int accel_init_device(const struct device *dev) {
     int ret = accel_validate_config(cfg);
     if (ret < 0) {
         LOG_ERR("Device %s: Configuration validation failed: %d", dev->name, ret);
-        return ret;
+        return ret; // Pass through validation error code
     }
     
     // Enhanced NULL pointer validation and initialization
     if (!data) {
         LOG_ERR("Device %s: Data structure is NULL", dev->name ? dev->name : "unknown");
-        return -ENOMEM;
+        return ACCEL_ERR_NO_MEMORY;
     }
     
     // Initialize runtime data structures - ensure proper memory initialization
@@ -137,19 +137,19 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     // Enhanced NULL pointer validation with proper error reporting
     if (!dev) {
         LOG_ERR("Device pointer is NULL in event handler");
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
     if (!event) {
         LOG_ERR("Event pointer is NULL in event handler");
-        return -EINVAL;
+        return ACCEL_ERR_INVALID_ARG;
     }
     if (!dev->config) {
         LOG_ERR("Device config is NULL for device %s", dev->name ? dev->name : "unknown");
-        return -ENODEV;
+        return ACCEL_ERR_NO_DEVICE;
     }
     if (!dev->data) {
         LOG_ERR("Device data is NULL for device %s", dev->name ? dev->name : "unknown");
-        return -ENODEV;
+        return ACCEL_ERR_NO_DEVICE;
     }
     
     const struct accel_config *cfg = dev->config;
@@ -158,7 +158,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     // Fast path checks - optimized for common cases with clear logic
     // Check event type first
     if (event->type != cfg->input_type) {
-        return 0; // Wrong event type
+        return ZMK_INPUT_PROC_CONTINUE; // Wrong event type, continue processing
     }
     
     // Check for supported axis codes (movement + scroll)
@@ -166,12 +166,12 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
         event->code != INPUT_REL_Y && 
         event->code != INPUT_REL_WHEEL && 
         event->code != INPUT_REL_HWHEEL) {
-        return 0; // Unsupported axis
+        return ZMK_INPUT_PROC_CONTINUE; // Unsupported axis, continue processing
     }
     
     // Check for zero movement (no acceleration needed)
     if (event->value == 0) {
-        return 0; // No movement to accelerate
+        return ZMK_INPUT_PROC_CONTINUE; // No movement to accelerate, continue processing
     }
     
     // Skip expensive validation in interrupt context
@@ -212,7 +212,7 @@ int accel_handle_event(const struct device *dev, struct input_event *event,
     // Update event value - single assignment with final validation
     event->value = accelerated_value;
     
-    return 0;
+    return ZMK_INPUT_PROC_CONTINUE;
 }
 
 #endif // DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)

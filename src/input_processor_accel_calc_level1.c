@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(input_processor_accel);
 int32_t accel_simple_calculate(const struct accel_config *cfg, int32_t input_value, uint16_t code) {
     if (!cfg) {
         LOG_ERR("Configuration pointer is NULL in simple calculation");
-        return input_value;
+        return input_value; // Graceful degradation: return original value
     }
 
 #if !defined(CONFIG_INPUT_PROCESSOR_ACCEL_LEVEL_SIMPLE)
